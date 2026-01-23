@@ -1,0 +1,200 @@
+/* ============================================
+   🎮 Gaming Form Styles (Neon Theme)
+   ============================================ */
+
+.form-container {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 2rem;
+    animation: fadeIn 0.4s ease-out;
+}
+
+.form-header {
+    margin-bottom: 2rem;
+    text-align: center;
+}
+
+.form-header h1 {
+    font-family: 'Orbitron', sans-serif;
+    color: var(--neon-blue);
+    text-shadow: 0 0 10px rgba(0, 212, 255, 0.4);
+    margin-bottom: 0.5rem;
+    letter-spacing: 1px;
+}
+
+.form-header p {
+    color: var(--text-secondary);
+}
+
+.donation-form,
+.receipt-form {
+    background: rgba(11, 15, 26, 0.6);
+    backdrop-filter: blur(10px);
+    padding: 2rem;
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--border-neon);
+    box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+}
+
+.form-section {
+    margin-bottom: 2rem;
+    padding-bottom: 2rem;
+    border-bottom: 1px solid rgba(0, 212, 255, 0.1);
+}
+
+.form-section:last-child {
+    border-bottom: none;
+}
+
+.form-section h3 {
+    font-family: 'Orbitron', sans-serif;
+    color: var(--neon-cyan);
+    margin-bottom: 1.5rem;
+    font-size: 1.1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+}
+
+.form-group {
+    margin-bottom: 1.5rem;
+    display: flex;
+    flex-direction: column;
+}
+
+.form-group label {
+    color: var(--text-secondary);
+    margin-bottom: 0.5rem;
+    font-size: 0.9rem;
+    font-weight: 500;
+}
+
+.form-group input,
+.form-group select,
+.form-group textarea {
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid var(--border-neon);
+    border-radius: var(--radius-sm);
+    padding: 0.75rem 1rem;
+    color: #fff;
+    font-family: 'Inter', sans-serif;
+    transition: var(--transition);
+}
+
+.form-group input:focus,
+.form-group select:focus,
+.form-group textarea:focus {
+    outline: none;
+    border-color: var(--neon-blue);
+    box-shadow: 0 0 10px rgba(0, 212, 255, 0.2);
+    background: rgba(0, 212, 255, 0.05);
+}
+
+.input-error {
+    border-color: #ff4444 !important;
+    animation: shake 0.4s ease-in-out;
+}
+
+.error-message {
+    color: #ff4444;
+    font-size: 0.8rem;
+    margin-top: 0.25rem;
+}
+
+.form-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 1rem;
+    margin-top: 2rem;
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, var(--neon-blue), var(--electric-blue));
+    border: none;
+    padding: 0.75rem 2rem;
+    color: #fff;
+    border-radius: var(--radius-sm);
+    font-family: 'Orbitron', sans-serif;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    transition: var(--transition);
+    box-shadow: 0 0 15px rgba(0, 212, 255, 0.4);
+}
+
+.btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 0 25px rgba(0, 212, 255, 0.6);
+}
+
+.compliance-notice {
+    background: rgba(0, 255, 136, 0.1);
+    border: 1px solid var(--neon-green);
+    padding: 1rem;
+    border-radius: var(--radius-sm);
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+    margin-bottom: 2rem;
+    color: var(--neon-green);
+}
+
+.success-message {
+    text-align: center;
+    padding: 3rem;
+    background: rgba(11, 15, 26, 0.8);
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--neon-green);
+    box-shadow: 0 0 30px rgba(0, 255, 136, 0.2);
+}
+
+.success-icon {
+    width: 80px;
+    height: 80px;
+    background: var(--neon-green);
+    color: #000;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2.5rem;
+    margin: 0 auto 1.5rem;
+    box-shadow: 0 0 20px var(--neon-green);
+}
+
+.donation-ref {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 1.25rem;
+    color: var(--neon-blue);
+    margin-top: 1rem;
+}
+
+@keyframes shake {
+
+    0%,
+    100% {
+        transform: translateX(0);
+    }
+
+    25% {
+        transform: translateX(-5px);
+    }
+
+    75% {
+        transform: translateX(5px);
+    }
+}
+
+@media (max-width: 768px) {
+    .form-row {
+        grid-template-columns: 1fr;
+    }
+}

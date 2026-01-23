@@ -1,0 +1,373 @@
+/* Audit Container */
+.audit-container {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 30px;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.audit-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 30px;
+  padding-bottom: 20px;
+  border-bottom: 2px solid #e0e0e0;
+}
+
+.header-content {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex: 1;
+}
+
+.header-icon {
+  color: #e74c3c;
+}
+
+.audit-header h1 {
+  font-size: 28px;
+  color: #2c3e50;
+  margin: 0;
+}
+
+.audit-header p {
+  font-size: 14px;
+  color: #7f8c8d;
+  margin: 4px 0 0 0;
+}
+
+/* Audit Controls */
+.audit-controls {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 16px;
+  margin-bottom: 24px;
+  align-items: center;
+}
+
+/* Timeline Styles */
+.timeline {
+  position: relative;
+  padding: 20px 0;
+}
+
+.timeline-item {
+  display: flex;
+  margin-bottom: 30px;
+  position: relative;
+}
+
+.timeline-item::before {
+  content: '';
+  position: absolute;
+  left: 20px;
+  top: 60px;
+  bottom: -30px;
+  width: 2px;
+  background: #ecf0f1;
+}
+
+.timeline-item:last-child::before {
+  display: none;
+}
+
+.timeline-item.completed::before {
+  background: #27ae60;
+}
+
+.timeline-marker {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: #e0e0e0;
+  color: #7f8c8d;
+  font-weight: bold;
+  font-size: 16px;
+  flex-shrink: 0;
+  position: relative;
+  z-index: 1;
+}
+
+.timeline-item.completed .timeline-marker {
+  background: #27ae60;
+  color: white;
+}
+
+.timeline-item.pending .timeline-marker {
+  background: #f39c12;
+  color: white;
+}
+
+.timeline-content {
+  flex: 1;
+  margin-left: 20px;
+  padding: 16px;
+  background: #f8f9fa;
+  border-radius: 8px;
+  border-left: 3px solid #e0e0e0;
+}
+
+.timeline-item.completed .timeline-content {
+  border-left-color: #27ae60;
+}
+
+.timeline-item.pending .timeline-content {
+  border-left-color: #f39c12;
+}
+
+.timeline-content h4 {
+  font-size: 16px;
+  color: #2c3e50;
+  margin: 0 0 8px 0;
+  font-weight: 600;
+}
+
+.timeline-content p {
+  font-size: 13px;
+  color: #7f8c8d;
+  margin: 6px 0;
+}
+
+.timestamp {
+  font-family: monospace;
+  font-size: 12px;
+  color: #95a5a6;
+  font-weight: 500;
+}
+
+.donor-info,
+.ngo-info,
+.clinic-info,
+.receipt-info {
+  color: #34495e;
+  font-size: 13px;
+}
+
+.donor-info strong,
+.ngo-info strong,
+.clinic-info strong,
+.receipt-info strong {
+  color: #2c3e50;
+}
+
+.pending-status {
+  color: #f39c12 !important;
+  font-weight: 500;
+  font-size: 13px;
+}
+
+/* Blockchain Hash Display */
+.blockchain-hash {
+  margin-top: 12px;
+  padding: 12px;
+  background: white;
+  border-radius: 6px;
+  border: 1px solid #e0e0e0;
+}
+
+.blockchain-hash strong {
+  display: block;
+  font-size: 12px;
+  color: #2c3e50;
+  margin-bottom: 8px;
+}
+
+.blockchain-hash code {
+  display: block;
+  font-family: 'Courier New', monospace;
+  font-size: 11px;
+  color: #e74c3c;
+  word-break: break-all;
+  padding: 8px;
+  background: #ecf0f1;
+  border-radius: 4px;
+  overflow-x: auto;
+}
+
+.copy-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 14px;
+  margin-left: 8px;
+  transition: transform 0.2s ease;
+}
+
+.copy-btn:hover {
+  transform: scale(1.2);
+}
+
+/* Audit Detail Panel */
+.audit-detail-panel {
+  margin-top: 30px;
+  padding: 24px;
+  background: #f8f9fa;
+  border-radius: 8px;
+  border: 2px solid #ecf0f1;
+}
+
+.detail-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 24px;
+  padding-bottom: 16px;
+  border-bottom: 2px solid #e0e0e0;
+}
+
+.detail-header h3 {
+  font-size: 18px;
+  color: #2c3e50;
+  margin: 0;
+  font-weight: 600;
+}
+
+.detail-header .close-btn {
+  background: none;
+  border: none;
+  font-size: 24px;
+  color: #7f8c8d;
+  cursor: pointer;
+  padding: 4px 8px;
+  transition: color 0.2s ease;
+}
+
+.detail-header .close-btn:hover {
+  color: #2c3e50;
+}
+
+/* Audit Summary */
+.audit-summary {
+  margin-top: 24px;
+  padding: 16px;
+  background: white;
+  border-radius: 6px;
+  border-left: 4px solid #3498db;
+}
+
+.audit-summary h4 {
+  font-size: 14px;
+  color: #2c3e50;
+  margin: 0 0 12px 0;
+  font-weight: 600;
+}
+
+.summary-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.summary-table tr {
+  border-bottom: 1px solid #ecf0f1;
+}
+
+.summary-table tr:last-child {
+  border-bottom: none;
+}
+
+.summary-table .label {
+  font-weight: 600;
+  color: #2c3e50;
+  padding: 8px 0;
+  width: 150px;
+}
+
+.summary-table .value {
+  color: #34495e;
+  padding: 8px 0;
+}
+
+/* Blockchain Info Section */
+.blockchain-info {
+  padding: 20px;
+  background: #ecf0f1;
+  border-radius: 8px;
+  border-left: 4px solid #3498db;
+  margin-top: 30px;
+}
+
+.blockchain-info h3 {
+  font-size: 16px;
+  color: #2c3e50;
+  margin: 0 0 12px 0;
+  font-weight: 600;
+}
+
+.blockchain-info ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.blockchain-info li {
+  font-size: 13px;
+  color: #34495e;
+  padding-left: 20px;
+  position: relative;
+}
+
+.blockchain-info li::before {
+  content: '✓';
+  position: absolute;
+  left: 0;
+  color: #27ae60;
+  font-weight: bold;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .audit-container {
+    padding: 20px;
+  }
+
+  .audit-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .audit-controls {
+    grid-template-columns: 1fr;
+  }
+
+  .timeline-item {
+    flex-direction: column;
+  }
+
+  .timeline-content {
+    margin-left: 0;
+    margin-top: 12px;
+  }
+
+  .timeline-marker {
+    margin-bottom: 12px;
+  }
+
+  .audit-detail-panel {
+    margin-top: 20px;
+    padding: 16px;
+  }
+
+  .blockchain-hash code {
+    font-size: 10px;
+  }
+
+  .detail-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .detail-header .close-btn {
+    align-self: flex-end;
+  }
+}

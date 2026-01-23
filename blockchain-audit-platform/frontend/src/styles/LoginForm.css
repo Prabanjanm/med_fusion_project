@@ -1,0 +1,127 @@
+.login-form {
+  width: 100%;
+}
+
+.form-title {
+  font-size: 1.75rem;
+  font-weight: 600;
+  color: #ffffff;
+  margin-bottom: 0.5rem;
+}
+
+.form-subtitle {
+  font-size: 0.875rem;
+  color: #94a3b8;
+  margin-bottom: 2rem;
+}
+
+.form-error {
+  padding: 0.75rem 1rem;
+  background: rgba(220, 38, 38, 0.1);
+  border: 1px solid rgba(220, 38, 38, 0.3);
+  border-radius: 8px;
+  color: #fca5a5;
+  font-size: 0.875rem;
+  margin-bottom: 1.5rem;
+}
+
+.form-group {
+  margin-bottom: 1.25rem;
+}
+
+.form-label {
+  display: block;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #e2e8f0;
+  margin-bottom: 0.5rem;
+}
+
+.input-wrapper {
+  position: relative;
+}
+
+.form-input {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  font-size: 0.875rem;
+  border: 1.5px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.05);
+  color: #ffffff;
+  transition: all 0.3s ease;
+  backdrop-filter: blur(10px);
+}
+
+.form-input:focus {
+  border-color: rgba(255, 200, 100, 0.5);
+  box-shadow: 0 0 0 3px rgba(255, 200, 100, 0.1);
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.form-input::placeholder {
+  color: #64748b;
+}
+
+.input-border {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 0;
+  height: 2px;
+  background: linear-gradient(90deg, #FFB84D, #FDD680);
+  transition: width 0.3s ease;
+}
+
+.form-input:focus+.input-border {
+  width: 100%;
+}
+
+.password-strength {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  height: 2px;
+  background: linear-gradient(90deg, #FFB84D, #FDD680);
+  transition: all 0.3s ease;
+  border-radius: 0 0 8px 8px;
+}
+
+.password-hint {
+  display: flex;
+  gap: 1rem;
+  margin-top: 0.5rem;
+  font-size: 0.75rem;
+}
+
+.password-hint span {
+  color: #64748b;
+  transition: color 0.2s ease;
+}
+
+.password-hint span.valid {
+  color: #5eead4;
+}
+
+.password-hint span.invalid {
+  color: #64748b;
+}
+
+.form-footer {
+  text-align: center;
+  font-size: 0.875rem;
+  color: #94a3b8;
+  margin-top: 1.5rem;
+}
+
+.footer-link {
+  color: #FDD680;
+  cursor: pointer;
+  font-weight: 500;
+  transition: color 0.2s ease;
+}
+
+.footer-link:hover {
+  color: #FFB84D;
+  text-decoration: underline;
+}

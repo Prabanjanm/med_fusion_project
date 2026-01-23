@@ -1,0 +1,157 @@
+/* App Layout Styles */
+
+.app-layout {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  background-color: var(--bg-white);
+}
+
+.app-layout .navbar {
+  flex-shrink: 0;
+}
+
+.app-layout main,
+.app-layout > div:not(.navbar) {
+  flex: 1;
+  overflow-y: auto;
+}
+
+/* Error Boundary / Not Found Styles */
+.error-boundary {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+  text-align: center;
+  padding: 2rem;
+}
+
+.error-boundary h1 {
+  color: var(--text-primary);
+  margin-bottom: 1rem;
+  font-size: 2.5rem;
+}
+
+.error-boundary p {
+  color: var(--text-secondary);
+  font-size: 1.1rem;
+  margin-bottom: 2rem;
+  max-width: 500px;
+}
+
+.error-boundary a {
+  display: inline-block;
+  background-color: var(--primary-blue);
+  color: white;
+  padding: 0.75rem 2rem;
+  border-radius: var(--radius-sm);
+  text-decoration: none;
+  transition: background-color 0.3s ease;
+}
+
+.error-boundary a:hover {
+  background-color: #0052a3;
+}
+
+/* Global Loading State */
+.loading-spinner {
+  display: inline-block;
+  width: 20px;
+  height: 20px;
+  border: 3px solid rgba(0, 102, 204, 0.2);
+  border-top-color: var(--primary-blue);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.loading-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  gap: 1rem;
+}
+
+.loading-container p {
+  color: var(--text-secondary);
+  font-size: 1rem;
+}
+
+/* Utility Classes */
+.container {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 0 1.5rem;
+}
+
+.section {
+  margin-bottom: 2rem;
+}
+
+.section-title {
+  color: var(--text-primary);
+  font-size: 1.75rem;
+  font-weight: 700;
+  margin-bottom: 1.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+/* Responsive Layout */
+@media (max-width: 768px) {
+  .app-layout {
+    min-height: 100vh;
+  }
+
+  .error-boundary h1 {
+    font-size: 1.75rem;
+  }
+
+  .error-boundary p {
+    font-size: 1rem;
+  }
+
+  .section-title {
+    font-size: 1.5rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .container {
+    padding: 0 1rem;
+  }
+
+  .section {
+    margin-bottom: 1.5rem;
+  }
+
+  .section-title {
+    font-size: 1.25rem;
+    margin-bottom: 1rem;
+  }
+
+  .error-boundary {
+    padding: 1rem;
+  }
+
+  .error-boundary h1 {
+    font-size: 1.5rem;
+    margin-bottom: 0.75rem;
+  }
+
+  .error-boundary p {
+    font-size: 0.9rem;
+    margin-bottom: 1rem;
+  }
+}

@@ -1,0 +1,497 @@
+/* ================================================
+   LAMP LOGIN STYLES
+   Creative, Animated, Responsive
+   ================================================ */
+
+.lamp-login-wrapper {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  transition: background 0.8s ease;
+  position: relative;
+  overflow: hidden;
+  padding: 20px;
+}
+
+.lamp-login-wrapper.lamp-off {
+  background: linear-gradient(135deg, #1a1a2e 0%, #0f3460 100%);
+}
+
+.lamp-background {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.1) 0%, transparent 100%);
+  pointer-events: none;
+}
+
+/* Main Container */
+.lamp-container {
+  position: relative;
+  z-index: 10;
+}
+
+.lamp-content {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 60px;
+  align-items: center;
+  max-width: 1000px;
+  margin: 0 auto;
+}
+
+/* LAMP SECTION */
+.lamp-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 30px;
+}
+
+.lamp-wrapper {
+  position: relative;
+  height: 350px;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Rope */
+.rope {
+  width: 3px;
+  height: 80px;
+  background: linear-gradient(to bottom, #8b7355, #a0826d);
+  border-radius: 2px;
+  cursor: pointer;
+  position: relative;
+  margin-bottom: 20px;
+  transition: all 0.3s ease;
+  box-shadow: -1px 0 3px rgba(0, 0, 0, 0.3);
+}
+
+.rope:hover {
+  width: 4px;
+  box-shadow: -2px 0 5px rgba(0, 0, 0, 0.4);
+}
+
+.rope-knot {
+  width: 15px;
+  height: 15px;
+  background: radial-gradient(circle, #d4a574, #8b7355);
+  border-radius: 50%;
+  position: absolute;
+  bottom: -12px;
+  left: 50%;
+  transform: translateX(-50%);
+  box-shadow: inset -1px -1px 2px rgba(0, 0, 0, 0.3);
+}
+
+.rope-knot::before {
+  content: '';
+  position: absolute;
+  top: -3px;
+  left: -2px;
+  right: -2px;
+  bottom: -3px;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+/* Lamp Bulb Container */
+.lamp-bulb-container {
+  position: relative;
+  height: 200px;
+  width: 120px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 20px;
+}
+
+.lamp-bulb {
+  width: 100%;
+  height: 100%;
+  filter: drop-shadow(0 10px 20px rgba(0, 0, 0, 0.2));
+  position: relative;
+  z-index: 1;
+}
+
+.lamp-bulb .eye {
+  cursor: pointer;
+}
+
+.lamp-bulb .eye circle {
+  transition: all 0.3s ease;
+}
+
+/* Lamp Base */
+.lamp-base {
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0;
+  z-index: 0;
+}
+
+.base-top {
+  width: 90px;
+  height: 15px;
+  background: linear-gradient(to bottom, #d4a574, #c9985e);
+  border-radius: 50% 50% 0 0;
+  border: 1px solid #8b7355;
+  box-shadow: inset 0 1px 3px rgba(255, 255, 255, 0.3);
+}
+
+.base-middle {
+  width: 100px;
+  height: 35px;
+  background: linear-gradient(135deg, #d4a574, #8b7355);
+  border: 1px solid #6b5344;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3), inset -1px -1px 2px rgba(0, 0, 0, 0.2);
+}
+
+.base-bottom {
+  width: 110px;
+  height: 12px;
+  background: linear-gradient(to bottom, #8b7355, #6b5344);
+  border-radius: 0 0 50% 50%;
+  border: 1px solid #4a3d33;
+}
+
+/* Mode Indicator */
+.mode-indicator {
+  font-size: 24px;
+  font-weight: bold;
+  color: white;
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+  text-align: center;
+  letter-spacing: 1px;
+}
+
+/* Rope Pull Hint */
+.rope-hint {
+  color: rgba(255, 255, 255, 0.8);
+  text-align: center;
+  font-size: 0.9rem;
+  font-weight: 500;
+  margin-top: 20px;
+  animation: pulse 2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%,
+  100% {
+    opacity: 0.7;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+/* FORM SECTION */
+.form-section {
+  display: flex;
+  justify-content: center;
+}
+
+.form-paper {
+  padding: 40px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
+  width: 100%;
+  max-width: 400px;
+}
+
+.form-header {
+  margin-bottom: 30px;
+  text-align: center;
+}
+
+.form-title {
+  color: #333;
+  font-weight: 700 !important;
+  margin-bottom: 8px;
+}
+
+.form-subtitle {
+  color: #888;
+  font-weight: 400 !important;
+}
+
+/* Form Input Styles */
+.form-input {
+  margin-bottom: 20px !important;
+}
+
+.form-input input {
+  border-radius: 8px !important;
+}
+
+.form-input .MuiOutlinedInput-root {
+  font-size: 0.95rem;
+}
+
+.form-input .MuiOutlinedInput-root:hover .MuiOutlinedInput-notchedOutline {
+  border-color: #667eea;
+}
+
+.form-input .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline {
+  border-color: #667eea;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+/* Privacy Hint */
+.privacy-hint {
+  color: #667eea;
+  font-size: 0.8rem;
+  margin-top: -15px;
+  margin-bottom: 10px;
+  font-weight: 500;
+}
+
+/* Role Selection */
+.role-selection-compact {
+  margin: 20px 0;
+}
+
+.role-label {
+  display: block;
+  margin-bottom: 12px;
+  color: #333;
+  font-weight: 600;
+}
+
+.role-buttons-compact {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+}
+
+.role-btn-compact {
+  padding: 12px;
+  border: 2px solid #e0e0e0;
+  background: #f8f9fa;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-family: inherit;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: #333;
+}
+
+.role-btn-compact:hover:not(:disabled) {
+  border-color: #667eea;
+  background: #f0f4ff;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.15);
+}
+
+.role-btn-compact.active {
+  border-color: #667eea;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  box-shadow: 0 8px 20px rgba(102, 126, 234, 0.3);
+}
+
+.role-btn-compact:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.role-icon-compact {
+  font-size: 18px;
+}
+
+.role-text-compact {
+  font-size: 0.75rem;
+}
+
+/* Error Alert */
+.error-alert {
+  background: #fee;
+  border: 1px solid #fcc;
+  color: #c33;
+  padding: 12px;
+  border-radius: 8px;
+  margin: 15px 0;
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  font-size: 0.9rem;
+}
+
+.error-icon {
+  font-size: 1.1rem;
+  flex-shrink: 0;
+}
+
+/* Submit Button */
+.submit-button {
+  margin-top: 20px;
+  transition: all 0.3s ease;
+}
+
+.spinner-inline {
+  display: inline-block;
+  margin-right: 8px;
+  font-size: 1.2rem;
+}
+
+/* Demo Notice */
+.demo-notice-lamp {
+  margin-top: 20px;
+  padding-top: 15px;
+  border-top: 1px solid #e0e0e0;
+  text-align: center;
+  color: #888;
+}
+
+/* RESPONSIVE DESIGN */
+@media (max-width: 1024px) {
+  .lamp-content {
+    gap: 40px;
+  }
+
+  .lamp-wrapper {
+    height: 300px;
+  }
+
+  .form-paper {
+    padding: 35px;
+  }
+}
+
+@media (max-width: 768px) {
+  .lamp-content {
+    grid-template-columns: 1fr;
+    gap: 30px;
+  }
+
+  .lamp-section {
+    gap: 20px;
+  }
+
+  .lamp-wrapper {
+    height: 280px;
+  }
+
+  .lamp-bulb-container {
+    height: 180px;
+    width: 110px;
+  }
+
+  .form-paper {
+    padding: 30px;
+    max-width: 100%;
+  }
+
+  .rope-hint {
+    font-size: 0.85rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .lamp-login-wrapper {
+    padding: 10px;
+  }
+
+  .lamp-content {
+    gap: 20px;
+  }
+
+  .lamp-wrapper {
+    height: 250px;
+  }
+
+  .lamp-bulb-container {
+    height: 160px;
+    width: 100px;
+  }
+
+  .form-paper {
+    padding: 25px;
+  }
+
+  .form-header {
+    margin-bottom: 25px;
+  }
+
+  .form-title {
+    font-size: 1.3rem !important;
+  }
+
+  .form-subtitle {
+    font-size: 0.85rem !important;
+  }
+
+  .role-buttons-compact {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+  }
+
+  .role-btn-compact {
+    padding: 10px;
+    font-size: 0.8rem;
+  }
+
+  .rope-hint {
+    font-size: 0.8rem;
+  }
+
+  .mode-indicator {
+    font-size: 20px;
+  }
+}
+
+/* Dark Mode Support */
+@media (prefers-color-scheme: dark) {
+  .form-paper {
+    background: rgba(50, 50, 70, 0.95);
+    color: white;
+  }
+
+  .form-title {
+    color: white !important;
+  }
+
+  .form-subtitle {
+    color: #aaa !important;
+  }
+
+  .role-btn-compact {
+    background: #2a2a4a;
+    border-color: #444;
+    color: white;
+  }
+
+  .role-btn-compact:hover:not(:disabled) {
+    background: #3a3a5a;
+    border-color: #667eea;
+  }
+
+  .role-label {
+    color: white;
+  }
+
+  .demo-notice-lamp {
+    border-top-color: #444;
+    color: #aaa;
+  }
+}
