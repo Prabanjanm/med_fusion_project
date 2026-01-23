@@ -1,46 +1,43 @@
 /* ============================================
-   🎮 Gaming Status Indicators
+   Minimal Status Indicators
    ============================================ */
 
 .status-badge {
     display: inline-block;
-    padding: 6px 16px;
+    padding: 6px 14px;
     border-radius: var(--radius-sm);
     font-family: 'Orbitron', sans-serif;
-    font-size: 0.75rem;
+    font-size: 0.7rem;
     font-weight: 700;
     text-align: center;
     white-space: nowrap;
     letter-spacing: 1px;
     text-transform: uppercase;
     border: 1px solid transparent;
-    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
 }
 
 .status-success {
-    background: rgba(0, 255, 136, 0.1);
+    background: rgba(0, 255, 136, 0.08);
+    /* More subtle background */
     color: var(--neon-green);
-    border-color: var(--neon-green);
-    box-shadow: 0 0 10px rgba(0, 255, 136, 0.2);
+    border-color: rgba(0, 255, 136, 0.3);
+    /* Subtle border */
 }
 
 .status-warning {
-    background: rgba(255, 183, 0, 0.1);
+    background: rgba(255, 183, 0, 0.08);
     color: #ffb700;
-    border-color: #ffb700;
-    box-shadow: 0 0 10px rgba(255, 183, 0, 0.2);
+    border-color: rgba(255, 183, 0, 0.3);
 }
 
 .status-danger {
-    background: rgba(255, 68, 68, 0.1);
+    background: rgba(255, 68, 68, 0.08);
     color: #ff4444;
-    border-color: #ff4444;
-    box-shadow: 0 0 10px rgba(255, 68, 68, 0.2);
+    border-color: rgba(255, 68, 68, 0.3);
 }
 
 .status-info {
-    background: rgba(0, 212, 255, 0.1);
+    background: rgba(0, 212, 255, 0.08);
     color: var(--neon-cyan);
-    border-color: var(--neon-cyan);
-    box-shadow: 0 0 10px rgba(0, 212, 255, 0.2);
+    border-color: rgba(0, 212, 255, 0.3);
 }

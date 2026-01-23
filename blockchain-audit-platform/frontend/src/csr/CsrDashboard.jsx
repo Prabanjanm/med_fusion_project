@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Package, CheckCircle, Truck, Clock } from 'lucide-react';
+import Layout from '../components/Layout'; // New Layout wrapper
 import Table from '../components/Table';
 import SummaryCard from '../components/SummaryCard';
 import StatusBadge from '../components/StatusBadge';
-import '../styles/DashboardLayout.css';
+import '../styles/DashboardLayout.css'; // Ensure grid styles are avail
 
 const CsrDashboard = () => {
   const navigate = useNavigate();
@@ -35,87 +36,49 @@ const CsrDashboard = () => {
   ];
 
   return (
-    <div className="dashboard-container">
-      <div className="dashboard-header">
-        <h1>CSR Donor Dashboard</h1>
+    <Layout>
+      <div className="page-header">
+        <div>
+          <h1 className="page-title">CSR Dashboard</h1>
+          <p className="page-subtitle">Track and manage your philanthropic contributions</p>
+        </div>
         <button
-          className="btn btn-primary"
+          className="btn-submit" // Use new form styled button for consistency
           onClick={() => navigate('/csr/create-donation')}
         >
           ➕ Create Donation
         </button>
       </div>
 
-      <div className="summary-grid">
-        <SummaryCard label="Total Donations" value="45" color="#00d4ff" icon={Package} />
+      <div className="stats-grid">
+        <SummaryCard label="Total Donations" value="45" color="#00E5FF" icon={Package} />
         <SummaryCard label="Completed" value="32" color="#00ff88" icon={CheckCircle} />
         <SummaryCard label="In Transit" value="8" color="#ff9800" icon={Truck} />
         <SummaryCard label="Pending" value="5" color="#b400ff" icon={Clock} />
       </div>
 
-      <nav className="dashboard-nav">
-        <button
-          className={`nav-btn ${activeTab === 'overview' ? 'active' : ''}`}
-          onClick={() => setActiveTab('overview')}
-        >
-          Dashboard
-        </button>
-        <button
-          className={`nav-btn ${activeTab === 'history' ? 'active' : ''}`}
-          onClick={() => setActiveTab('history')}
-        >
-          Donation History
-        </button>
-      </nav>
-
-      <div className="dashboard-content">
-        {activeTab === 'overview' && (
-          <div className="card">
-            <h2>Recent Donations</h2>
-            <Table
-              columns={[
-                { key: 'id', label: 'Donation ID' },
-                { key: 'item_type', label: 'Item Type' },
-                { key: 'quantity', label: 'Quantity' },
-                { key: 'status', label: 'Status' },
-                { key: 'date', label: 'Date' },
-              ]}
-              data={donationHistory}
-              renderCell={(row, key) =>
-                key === 'status' ? (
-                  <StatusBadge status={row.status} />
-                ) : (
-                  row[key]
-                )
-              }
-            />
-          </div>
-        )}
-
-        {activeTab === 'history' && (
-          <div className="card">
-            <h2>Complete Donation History</h2>
-            <Table
-              columns={[
-                { key: 'id', label: 'Donation ID' },
-                { key: 'item_type', label: 'Item Type' },
-                { key: 'quantity', label: 'Quantity' },
-                { key: 'status', label: 'Status' },
-                { key: 'date', label: 'Date' },
-              ]}
-              data={donationHistory}
-              renderCell={(row, key) =>
-                key === 'status' ? (
-                  <StatusBadge status={row.status} />
-                ) : (
-                  row[key]
-                )
-              }
-            />
-          </div>
-        )}
+      {/* Tabs or Sections - keeping minimal for now */}
+      <div className="table-card">
+        <h2 className="table-header-title">Recent Donations</h2>
+        <Table
+          columns={[
+            { key: 'id', label: 'Donation ID' },
+            { key: 'item_type', label: 'Item Type' },
+            { key: 'quantity', label: 'Quantity' },
+            { key: 'status', label: 'Status' },
+            { key: 'date', label: 'Date' },
+          ]}
+          data={donationHistory}
+          renderCell={(row, key) =>
+            key === 'status' ? (
+              <StatusBadge status={row.status} />
+            ) : (
+              row[key]
+            )
+          }
+        />
       </div>
-    </div>
+    </Layout>
   );
 };
 

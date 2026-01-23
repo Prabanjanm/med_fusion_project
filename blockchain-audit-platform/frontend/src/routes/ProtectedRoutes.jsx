@@ -26,8 +26,8 @@ const ProtectedRoutes = ({ element, allowedRoles = [] }) => {
     return <Navigate to="/login" replace />;
   }
 
-  // Authenticated and authorized - render with layout
-  return <MainLayout>{element}</MainLayout>;
+  // Authenticated and authorized - render component directly (pages handle their own Layout)
+  return element;
 };
 
 export default ProtectedRoutes;

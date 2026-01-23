@@ -1,19 +1,14 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowDownCircle, CheckSquare, Truck, Clock } from 'lucide-react';
+import Layout from '../components/Layout';
 import Table from '../components/Table';
 import SummaryCard from '../components/SummaryCard';
 import StatusBadge from '../components/StatusBadge';
 import '../styles/DashboardLayout.css';
 
-/**
- * ClinicDashboard Component
- * Main dashboard for Clinic role
- * Displays incoming allocations and receipt management
- */
 const ClinicDashboard = () => {
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState('overview');
 
   // Mock data
   const incomingAllocations = [
@@ -44,71 +39,42 @@ const ClinicDashboard = () => {
   ];
 
   return (
-    <div className="dashboard-container">
-      <div className="dashboard-header">
-        <h1>Clinic Dashboard</h1>
-        <button className="btn btn-primary" onClick={() => navigate('/clinic/receipts')}>
+    <Layout>
+      <div className="page-header">
+        <div>
+          <h1 className="page-title">Clinic Dashboard</h1>
+          <p className="page-subtitle">Track incoming supplies and confirm receipts</p>
+        </div>
+        <button className="btn-submit" onClick={() => navigate('/clinic/receipts')}>
           ✅ Confirm Receipt
         </button>
       </div>
 
-      {/* Summary Cards */}
-      <div className="summary-grid">
-        <SummaryCard label="Incoming Allocations" value="12" color="#00d4ff" icon={ArrowDownCircle} />
+      <div className="stats-grid">
+        <SummaryCard label="Incoming Allocations" value="12" color="#00E5FF" icon={ArrowDownCircle} />
         <SummaryCard label="Received" value="8" color="#00ff88" icon={CheckSquare} />
         <SummaryCard label="In Transit" value="3" color="#ff9800" icon={Truck} />
         <SummaryCard label="Pending" value="1" color="#b400ff" icon={Clock} />
       </div>
 
-      {/* Navigation Tabs */}
-      <nav className="dashboard-nav">
-        <button
-          className={`nav-btn ${activeTab === 'overview' ? 'active' : ''}`}
-          onClick={() => setActiveTab('overview')}
-        >
-          Incoming Allocations
-        </button>
-        <button
-          className={`nav-btn ${activeTab === 'receipts' ? 'active' : ''}`}
-          onClick={() => setActiveTab('receipts')}
-        >
-          Confirmed Receipts
-        </button>
-      </nav>
-
-      {/* Tab Content */}
-      <div className="dashboard-content">
-        {activeTab === 'overview' && (
-          <div className="card">
-            <h2>Incoming Allocations</h2>
-            <Table
-              columns={[
-                { key: 'id', label: 'Allocation ID' },
-                { key: 'donation_id', label: 'Donation ID' },
-                { key: 'ngo_name', label: 'NGO' },
-                { key: 'resource_type', label: 'Resource Type' },
-                { key: 'quantity', label: 'Quantity' },
-                { key: 'status', label: 'Status' },
-              ]}
-              data={incomingAllocations}
-              renderCell={(row, key) => {
-                if (key === 'status') {
-                  return <StatusBadge status={row.status} />;
-                }
-                return row[key];
-              }}
-            />
-          </div>
-        )}
-
-        {activeTab === 'receipts' && (
-          <div className="card">
-            <h2>Confirmed Receipts</h2>
-            <p className="empty-state">No confirmed receipts yet. Confirm allocation receipts to see them here.</p>
-          </div>
-        )}
+      <div className="table-card">
+        <h2 className="table-header-title">Incoming Allocations</h2>
+        <Table
+          columns={[
+            { key: 'id', label: 'Allocation ID' },
+            { key: 'donation_id', label: 'Donation ID' },
+            { key: 'ngo_name', label: 'NGO' },
+            { key: 'resource_type', label: 'Resource Type' },
+            { key: 'quantity', label: 'Quantity' },
+            { key: 'status', label: 'Status' },
+          ]}
+          data={incomingAllocations}
+          renderCell={(row, key) =>
+            key === 'status' ? <StatusBadge status={row.status} /> : row[key]
+          }
+        />
       </div>
-    </div>
+    </Layout>
   );
 };
 

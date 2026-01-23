@@ -1,101 +1,68 @@
 /* ============================================
-   🎮 Gaming Summary Card Styles
+   Stat Card / Summary Styles
    ============================================ */
 
+.summary-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 1.5rem;
+  margin-bottom: 2.5rem;
+}
+
 .summary-card {
-  position: relative;
-  background: rgba(11, 15, 26, 0.6);
-  backdrop-filter: blur(10px);
-  border: 1px solid var(--border-neon);
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
   border-radius: var(--radius-md);
   padding: 1.5rem;
   display: flex;
   align-items: center;
-  gap: 1.5rem;
-  transition: var(--transition);
+  gap: 1.25rem;
+  transition: all 0.2s ease-out;
+  position: relative;
   overflow: hidden;
 }
 
-.summary-card::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 2px;
-  background: linear-gradient(90deg, transparent, var(--neon-blue), transparent);
-  transform: scaleX(0);
-  transition: transform 0.4s ease;
-  transform-origin: left;
-}
-
 .summary-card:hover {
-  transform: translateY(-5px);
-  background: rgba(11, 15, 26, 0.8);
-  border-color: var(--neon-blue);
-  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3),
-    0 0 15px rgba(0, 212, 255, 0.1);
-}
-
-.summary-card:hover::before {
-  transform: scaleX(1);
+  border-color: rgba(0, 229, 255, 0.3);
+  transform: translateY(-3px);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
 }
 
 .card-icon-wrapper {
-  width: 60px;
-  height: 60px;
-  border-radius: var(--radius-md);
+  width: 52px;
+  height: 52px;
+  border-radius: 12px;
+  background: rgba(0, 229, 255, 0.05);
+  /* very faint cyan bg */
+  border: 1px solid rgba(0, 229, 255, 0.1);
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(0, 0, 0, 0.3);
-  border: 1px solid currentColor;
-  box-shadow: 0 0 15px rgba(0, 212, 255, 0.2);
-  transition: var(--transition);
-  color: var(--card-color, var(--neon-blue));
+  color: var(--accent-cyan);
   flex-shrink: 0;
 }
 
-.summary-card:hover .card-icon-wrapper {
-  transform: scale(1.1) rotate(5deg);
-  box-shadow: 0 0 25px currentColor;
-  background: rgba(0, 0, 0, 0.5);
-}
-
 .card-content {
-  flex: 1;
+  display: flex;
+  flex-direction: column;
 }
 
 .card-label {
-  font-family: 'Orbitron', sans-serif;
-  font-size: 0.85rem;
-  color: var(--text-secondary);
-  margin-bottom: 0.5rem;
+  font-size: 0.75rem;
+  color: var(--text-muted);
   text-transform: uppercase;
-  letter-spacing: 1px;
+  letter-spacing: 0.5px;
+  font-weight: 600;
+  margin-bottom: 0.25rem;
+  font-family: 'Inter', sans-serif;
 }
 
 .card-value {
-  font-family: 'Orbitron', sans-serif;
-  font-size: 2rem;
-  font-weight: 700;
+  font-size: 1.75rem;
   color: #fff;
+  font-weight: 700;
+  font-family: 'Orbitron', sans-serif;
   line-height: 1;
-  text-shadow: 0 0 10px rgba(255, 255, 255, 0.3);
 }
 
-@media (max-width: 768px) {
-  .summary-card {
-    padding: 1rem;
-    gap: 1rem;
-  }
-
-  .card-icon-wrapper {
-    width: 50px;
-    height: 50px;
-  }
-
-  .card-value {
-    font-size: 1.75rem;
-  }
-}
+/* Optional: Different colors for specific metrics if passed via style/class */

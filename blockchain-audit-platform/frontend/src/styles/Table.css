@@ -1,90 +1,79 @@
 /* ============================================
-   🎮 Gaming Data Grid (Table) Styles
+   Data Table Styles
    ============================================ */
 
+.table-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-lg);
+    padding: 1.5rem;
+    box-shadow: var(--shadow-card);
+    overflow: hidden;
+}
+
+.table-header-title {
+    font-size: 1.1rem;
+    color: var(--accent-cyan);
+    margin-bottom: 1.5rem;
+    font-family: 'Orbitron', sans-serif;
+}
+
 .table-responsive {
+    width: 100%;
     overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
-    margin-top: 1rem;
-    border: 1px solid var(--border-neon);
-    border-radius: var(--radius-md);
-    background: rgba(0, 0, 0, 0.2);
 }
 
 table {
     width: 100%;
-    border-collapse: collapse;
+    border-collapse: separate;
+    border-spacing: 0 0.5rem;
+    /* Space between rows */
 }
 
-table thead {
-    background: rgba(0, 212, 255, 0.1);
-    border-bottom: 2px solid var(--neon-blue);
-}
-
-table th {
-    padding: 1.25rem 1rem;
+table thead th {
     text-align: left;
-    font-family: 'Orbitron', sans-serif;
-    font-weight: 700;
-    color: var(--neon-cyan);
-    font-size: 0.85rem;
+    padding: 0.75rem 1rem;
+    color: var(--text-muted);
+    font-size: 0.75rem;
     text-transform: uppercase;
     letter-spacing: 1px;
-    white-space: nowrap;
-    text-shadow: 0 0 5px rgba(0, 255, 255, 0.3);
+    font-weight: 600;
+    border-bottom: 1px solid var(--border-subtle);
+    padding-bottom: 1rem;
+}
+
+table tbody tr {
+    background: rgba(255, 255, 255, 0.02);
+    transition: all 0.2s ease;
+}
+
+table tbody tr:hover {
+    background: rgba(0, 229, 255, 0.04);
+    transform: translateX(2px);
+    box-shadow: -2px 0 0 var(--accent-cyan);
+    /* Left border highlight */
 }
 
 table td {
     padding: 1rem;
-    border-bottom: 1px solid rgba(0, 212, 255, 0.1);
-    color: var(--text-secondary);
-    font-family: 'Rajdhani', sans-serif;
-    font-size: 1rem;
+    color: var(--text-main);
+    font-size: 0.9rem;
+    vertical-align: middle;
 }
 
-table tbody tr {
-    transition: var(--transition-fast);
+table td:first-child {
+    border-top-left-radius: var(--radius-sm);
+    border-bottom-left-radius: var(--radius-sm);
 }
 
-table tbody tr:hover {
-    background: rgba(0, 212, 255, 0.05);
-    box-shadow: inset 0 0 10px rgba(0, 212, 255, 0.1);
+table td:last-child {
+    border-top-right-radius: var(--radius-sm);
+    border-bottom-right-radius: var(--radius-sm);
 }
 
-.id-badge {
-    background: rgba(0, 212, 255, 0.15);
-    color: var(--neon-cyan);
-    padding: 4px 10px;
-    border-radius: var(--radius-sm);
-    font-family: 'Orbitron', sans-serif;
-    font-weight: 600;
-    font-size: 0.75rem;
-    display: inline-block;
-    border: 1px solid rgba(0, 212, 255, 0.3);
-    box-shadow: 0 0 5px rgba(0, 212, 255, 0.2);
-}
-
-.hash-code {
-    background: rgba(180, 0, 255, 0.15);
-    color: var(--neon-purple);
-    font-family: 'Roboto Mono', monospace;
-    font-weight: 500;
-    padding: 4px 8px;
-    border-radius: 3px;
-    font-size: 0.8rem;
-    border: 1px solid rgba(180, 0, 255, 0.3);
-}
-
-.text-center {
+.empty-state {
     text-align: center;
+    padding: 3rem;
     color: var(--text-muted);
-}
-
-@media (max-width: 768px) {
-
-    table th,
-    table td {
-        padding: 0.75rem;
-        font-size: 0.9rem;
-    }
+    font-style: italic;
 }

@@ -1,15 +1,12 @@
 import React from 'react';
-import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { useNavigate } from 'react-router-dom';
+import { LogOut, User } from 'lucide-react';
 import '../styles/Navbar.css';
 
-/**
- * Navbar Component
- * Displays user information and provides logout functionality
- */
-const Navbar = ({ onMenuClick }) => {
-  const navigate = useNavigate();
+const Navbar = () => {
   const { user, logout } = useAuth();
+  const navigate = useNavigate();
 
   const handleLogout = () => {
     logout();
@@ -18,37 +15,42 @@ const Navbar = ({ onMenuClick }) => {
 
   const getRoleLabel = (role) => {
     const labels = {
-      csr: 'CSR Donor',
-      ngo: 'NGO',
-      clinic: 'Clinic',
-      auditor: 'Auditor',
+      csr: 'CSR Partner',
+      ngo: 'NGO Coordinator',
+      clinic: 'Clinic Admin',
+      auditor: 'Compliance Auditor',
     };
     return labels[role] || role;
   };
 
   return (
-    <nav className="navbar">
-      <div className="navbar-container">
-        {/* Brand */}
+    <header className="navbar">
+      <div className="navbar-content">
+        {/* Left Side: Global Brand Text */}
         <div className="navbar-brand">
-          <button className="menu-toggle" onClick={onMenuClick}>
-            ☰
-          </button>
-          <h1 className="brand-title">Healthcare Donations</h1>
+          <h1>Healthcare Donations</h1>
         </div>
 
-        {/* User Info */}
-        <div className="navbar-user">
-          <div className="user-info">
-            <span className="username">{user?.username}</span>
-            <span className="role-badge">{getRoleLabel(user?.role)}</span>
+        {/* Right Side: User Profile & Actions */}
+        <div className="navbar-actions">
+          <div className="user-profile">
+            <div className="user-info">
+              <span className="user-email">{user?.username || 'user@medichain.io'}</span>
+              <span className="user-role-badge">{getRoleLabel(user?.role)}</span>
+            </div>
+            <div className="user-avatar">
+              <User size={20} color="#fff" />
+            </div>
           </div>
-          <button className="btn btn-outline btn-small" onClick={handleLogout}>
-            Logout
+
+          <div className="divider-vertical"></div>
+
+          <button className="btn-logout" onClick={handleLogout} title="Logout">
+            <LogOut size={18} />
           </button>
         </div>
       </div>
-    </nav>
+    </header>
   );
 };
 

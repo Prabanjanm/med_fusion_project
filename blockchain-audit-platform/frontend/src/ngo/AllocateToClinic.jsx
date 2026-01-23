@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Send } from 'lucide-react';
+import Layout from '../components/Layout';
 import '../styles/FormStyles.css';
 
 /**
@@ -58,11 +59,11 @@ const AllocateToClinic = () => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    
+
     if (validateForm()) {
       console.log('Allocation submitted:', formData);
       setSubmitted(true);
-      
+
       setTimeout(() => {
         setFormData({
           donationId: '',
@@ -78,117 +79,127 @@ const AllocateToClinic = () => {
 
   if (submitted) {
     return (
-      <div className="form-container">
-        <div className="success-message">
-          <div className="success-icon">✓</div>
-          <h2>Allocation Recorded Successfully!</h2>
-          <p>The donation allocation has been recorded on the blockchain.</p>
-          <p className="donation-ref">Allocation ID: ALLOC-{Math.random().toString(36).substring(7).toUpperCase()}</p>
+      <Layout>
+        <div className="form-card">
+          <div className="form-success" style={{ textAlign: 'center', padding: '2rem' }}>
+            <div style={{ fontSize: '3rem', color: '#00ff88', marginBottom: '1rem' }}>✓</div>
+            <h2 className="text-cyan">Allocation Recorded Successfully!</h2>
+            <p className="text-muted">The donation allocation has been recorded on the blockchain.</p>
+            <p className="text-muted" style={{ marginTop: '1rem', fontFamily: 'monospace' }}>
+              Allocation ID: ALLOC-{Math.random().toString(36).substring(7).toUpperCase()}
+            </p>
+          </div>
         </div>
-      </div>
+      </Layout>
     );
   }
 
   return (
-    <div className="form-container">
-      <div className="form-header">
-        <h1>Allocate to Clinic</h1>
-        <p>Distribute donations to specific clinics with tracking</p>
+    <Layout>
+      <div className="page-header">
+        <div>
+          <h1 className="page-title">Allocate to Clinic</h1>
+          <p className="page-subtitle">Distribute donations to specific clinics with tracking</p>
+        </div>
       </div>
 
-      <form onSubmit={handleSubmit} className="allocation-form">
-        <div className="form-section">
-          <h3>Allocation Details</h3>
-          
-          <div className="form-group">
-            <label htmlFor="donationId">Select Donation *</label>
-            <select
-              id="donationId"
-              name="donationId"
-              value={formData.donationId}
-              onChange={handleChange}
-              className={errors.donationId ? 'input-error' : ''}
-            >
-              <option value="">Choose a donation</option>
-              {donationOptions.map(opt => (
-                <option key={opt.value} value={opt.value}>{opt.label}</option>
-              ))}
-            </select>
-            {errors.donationId && <span className="error-message">{errors.donationId}</span>}
-          </div>
+      <div className="form-card">
+        <form onSubmit={handleSubmit} className="allocation-form">
+          <div className="form-section">
+            <h3 className="form-section-title">Allocation Details</h3>
 
-          <div className="form-group">
-            <label htmlFor="clinicName">Clinic *</label>
-            <select
-              id="clinicName"
-              name="clinicName"
-              value={formData.clinicName}
-              onChange={handleChange}
-              className={errors.clinicName ? 'input-error' : ''}
-            >
-              <option value="">Select a clinic</option>
-              {clinicOptions.map(opt => (
-                <option key={opt.value} value={opt.value}>{opt.label}</option>
-              ))}
-            </select>
-            {errors.clinicName && <span className="error-message">{errors.clinicName}</span>}
-          </div>
-
-          <div className="form-row">
             <div className="form-group">
-              <label htmlFor="allocatedQuantity">Allocated Quantity *</label>
-              <input
-                type="number"
-                id="allocatedQuantity"
-                name="allocatedQuantity"
-                value={formData.allocatedQuantity}
+              <label className="form-label" htmlFor="donationId">Select Donation *</label>
+              <select
+                id="donationId"
+                name="donationId"
+                value={formData.donationId}
                 onChange={handleChange}
-                placeholder="Enter quantity to allocate"
-                min="1"
-                className={errors.allocatedQuantity ? 'input-error' : ''}
-              />
-              {errors.allocatedQuantity && (
-                <span className="error-message">{errors.allocatedQuantity}</span>
-              )}
+                className={`form-select ${errors.donationId ? 'input-error' : ''}`}
+              >
+                <option value="">Choose a donation</option>
+                {donationOptions.map(opt => (
+                  <option key={opt.value} value={opt.value}>{opt.label}</option>
+                ))}
+              </select>
+              {errors.donationId && <span className="form-error">{errors.donationId}</span>}
             </div>
 
             <div className="form-group">
-              <label htmlFor="expectedDeliveryDate">Expected Delivery Date</label>
-              <input
-                type="date"
-                id="expectedDeliveryDate"
-                name="expectedDeliveryDate"
-                value={formData.expectedDeliveryDate}
+              <label className="form-label" htmlFor="clinicName">Clinic *</label>
+              <select
+                id="clinicName"
+                name="clinicName"
+                value={formData.clinicName}
                 onChange={handleChange}
+                className={`form-select ${errors.clinicName ? 'input-error' : ''}`}
+              >
+                <option value="">Select a clinic</option>
+                {clinicOptions.map(opt => (
+                  <option key={opt.value} value={opt.value}>{opt.label}</option>
+                ))}
+              </select>
+              {errors.clinicName && <span className="form-error">{errors.clinicName}</span>}
+            </div>
+
+            <div className="form-grid">
+              <div className="form-group">
+                <label className="form-label" htmlFor="allocatedQuantity">Allocated Quantity *</label>
+                <input
+                  type="number"
+                  id="allocatedQuantity"
+                  name="allocatedQuantity"
+                  value={formData.allocatedQuantity}
+                  onChange={handleChange}
+                  placeholder="Enter quantity to allocate"
+                  min="1"
+                  className={`form-input ${errors.allocatedQuantity ? 'input-error' : ''}`}
+                />
+                {errors.allocatedQuantity && (
+                  <span className="form-error">{errors.allocatedQuantity}</span>
+                )}
+              </div>
+
+              <div className="form-group">
+                <label className="form-label" htmlFor="expectedDeliveryDate">Expected Delivery Date</label>
+                <input
+                  type="date"
+                  id="expectedDeliveryDate"
+                  name="expectedDeliveryDate"
+                  value={formData.expectedDeliveryDate}
+                  onChange={handleChange}
+                  className="form-input"
+                />
+              </div>
+            </div>
+          </div>
+
+          <div className="form-section">
+            <h3 className="form-section-title">Additional Information</h3>
+
+            <div className="form-group full-width">
+              <label className="form-label" htmlFor="remarks">Remarks (Optional)</label>
+              <textarea
+                id="remarks"
+                name="remarks"
+                value={formData.remarks}
+                onChange={handleChange}
+                placeholder="Add any special instructions or notes"
+                rows="4"
+                className="form-textarea"
               />
             </div>
           </div>
-        </div>
 
-        <div className="form-section">
-          <h3>Additional Information</h3>
-          
-          <div className="form-group">
-            <label htmlFor="remarks">Remarks (Optional)</label>
-            <textarea
-              id="remarks"
-              name="remarks"
-              value={formData.remarks}
-              onChange={handleChange}
-              placeholder="Add any special instructions or notes"
-              rows="4"
-            />
+          <div className="form-actions">
+            <button type="submit" className="btn-submit">
+              <Send size={18} />
+              Confirm Allocation
+            </button>
           </div>
-        </div>
-
-        <div className="form-actions">
-          <button type="submit" className="btn-primary">
-            <Send size={18} />
-            Confirm Allocation
-          </button>
-        </div>
-      </form>
-    </div>
+        </form>
+      </div>
+    </Layout>
   );
 };
 

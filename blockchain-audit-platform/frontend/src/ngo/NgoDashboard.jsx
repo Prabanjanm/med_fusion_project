@@ -1,19 +1,14 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Inbox, Send, FileSearch, Activity } from 'lucide-react';
+import Layout from '../components/Layout';
 import Table from '../components/Table';
 import SummaryCard from '../components/SummaryCard';
 import StatusBadge from '../components/StatusBadge';
 import '../styles/DashboardLayout.css';
 
-/**
- * NgoDashboard Component
- * Main dashboard for NGO role
- * Displays incoming donations and allocation management
- */
 const NgoDashboard = () => {
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState('overview');
 
   // Mock data
   const incomingDonations = [
@@ -40,103 +35,42 @@ const NgoDashboard = () => {
     },
   ];
 
-  const allocationHistory = [
-    {
-      id: 'ALL-2025-001',
-      donation_id: 'DON-2025-001',
-      clinic_name: 'City General Hospital',
-      quantity: '50 boxes',
-      status: 'confirmed',
-    },
-    {
-      id: 'ALL-2025-002',
-      donation_id: 'DON-2025-001',
-      clinic_name: 'Rural Health Center',
-      quantity: '50 boxes',
-      status: 'confirmed',
-    },
-  ];
-
   return (
-    <div className="dashboard-container">
-      <div className="dashboard-header">
-        <h1>NGO Dashboard</h1>
-        <button className="btn btn-primary" onClick={() => navigate('/ngo/allocate')}>
-          ➕ Allocate to Clinic
+    <Layout>
+      <div className="page-header">
+        <div>
+          <h1 className="page-title">NGO Dashboard</h1>
+          <p className="page-subtitle">Manage incoming resources and clinic allocations</p>
+        </div>
+        <button className="btn-submit" onClick={() => navigate('/ngo/allocate')}>
+          ➕ Allocate Items
         </button>
       </div>
 
-      {/* Summary Cards */}
-      <div className="summary-grid">
-        <SummaryCard label="Incoming Donations" value="24" color="#00d4ff" icon={Inbox} />
+      <div className="stats-grid">
+        <SummaryCard label="Incoming Resources" value="24" color="#00E5FF" icon={Inbox} />
         <SummaryCard label="Allocated" value="18" color="#00ff88" icon={Send} />
         <SummaryCard label="In Review" value="4" color="#ff9800" icon={FileSearch} />
-        <SummaryCard label="Clinics" value="12" color="#b400ff" icon={Activity} />
+        <SummaryCard label="Active Clinics" value="12" color="#b400ff" icon={Activity} />
       </div>
 
-      {/* Navigation Tabs */}
-      <nav className="dashboard-nav">
-        <button
-          className={`nav-btn ${activeTab === 'overview' ? 'active' : ''}`}
-          onClick={() => setActiveTab('overview')}
-        >
-          Dashboard
-        </button>
-        <button
-          className={`nav-btn ${activeTab === 'history' ? 'active' : ''}`}
-          onClick={() => setActiveTab('history')}
-        >
-          Allocation History
-        </button>
-      </nav>
-
-      {/* Tab Content */}
-      <div className="dashboard-content">
-        {activeTab === 'overview' && (
-          <div className="card">
-            <h2>Incoming Donations</h2>
-            <Table
-              columns={[
-                { key: 'id', label: 'Donation ID' },
-                { key: 'donor_name', label: 'Donor' },
-                { key: 'resource_type', label: 'Resource Type' },
-                { key: 'quantity', label: 'Quantity' },
-                { key: 'status', label: 'Status' },
-              ]}
-              data={incomingDonations}
-              renderCell={(row, key) => {
-                if (key === 'status') {
-                  return <StatusBadge status={row.status} />;
-                }
-                return row[key];
-              }}
-            />
-          </div>
-        )}
-
-        {activeTab === 'history' && (
-          <div className="card">
-            <h2>Allocation History</h2>
-            <Table
-              columns={[
-                { key: 'id', label: 'Allocation ID' },
-                { key: 'donation_id', label: 'Donation ID' },
-                { key: 'clinic_name', label: 'Clinic' },
-                { key: 'quantity', label: 'Quantity' },
-                { key: 'status', label: 'Status' },
-              ]}
-              data={allocationHistory}
-              renderCell={(row, key) => {
-                if (key === 'status') {
-                  return <StatusBadge status={row.status} />;
-                }
-                return row[key];
-              }}
-            />
-          </div>
-        )}
+      <div className="table-card">
+        <h2 className="table-header-title">Incoming Donations</h2>
+        <Table
+          columns={[
+            { key: 'id', label: 'Donation ID' },
+            { key: 'donor_name', label: 'Donor' },
+            { key: 'resource_type', label: 'Resource Type' },
+            { key: 'quantity', label: 'Quantity' },
+            { key: 'status', label: 'Status' },
+          ]}
+          data={incomingDonations}
+          renderCell={(row, key) =>
+            key === 'status' ? <StatusBadge status={row.status} /> : row[key]
+          }
+        />
       </div>
-    </div>
+    </Layout>
   );
 };
 
