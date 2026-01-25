@@ -6,6 +6,7 @@ import ProtectedRoutes from './routes/ProtectedRoutes';
 import Login from './auth/Login';
 import SetPassword from './auth/SetPassword';
 import RegisterCompany from './auth/RegisterCompany';
+import Welcome from './auth/Welcome';
 
 // ...
 
@@ -42,10 +43,11 @@ function App() {
       <AuthProvider>
         <Routes>
           {/* Public Routes - Premium Auth Page */}
+          <Route path="/welcome" element={<Welcome />} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<RegisterCompany />} />
           <Route path="/auth/set-password" element={<SetPassword />} />
-          <Route path="/" element={<Navigate to="/login" replace />} />
+          <Route path="/" element={<Navigate to="/welcome" replace />} />
 
           {/* CSR Routes */}
           <Route
