@@ -1,28 +1,32 @@
-/* History Container Styles */
+/* History Container Styles - Midnight Neon Theme */
 .history-container {
   max-width: 1200px;
   margin: 0 auto;
   padding: 30px;
-  background: white;
-  border-radius: 12px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  background: var(--bg-card);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-card);
+  border: 1px solid var(--border-subtle);
+  backdrop-filter: blur(12px);
 }
 
 .history-header {
   margin-bottom: 30px;
   padding-bottom: 20px;
-  border-bottom: 2px solid #e0e0e0;
+  border-bottom: 1px solid var(--border-subtle);
 }
 
 .history-header h1 {
   font-size: 28px;
-  color: #2c3e50;
+  color: #fff;
   margin: 0 0 8px 0;
+  font-family: 'Orbitron', sans-serif;
+  text-shadow: 0 0 10px rgba(0, 242, 255, 0.3);
 }
 
 .history-header p {
   font-size: 14px;
-  color: #7f8c8d;
+  color: var(--text-muted);
   margin: 0;
 }
 
@@ -40,9 +44,15 @@
   align-items: center;
   gap: 12px;
   padding: 12px 16px;
-  border: 1px solid #ddd;
-  border-radius: 6px;
-  background: white;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  background: var(--bg-input);
+  transition: all 0.3s ease;
+}
+
+.search-box:focus-within {
+  border-color: var(--accent-cyan);
+  box-shadow: 0 0 10px rgba(0, 242, 255, 0.1);
 }
 
 .search-box input {
@@ -50,10 +60,17 @@
   outline: none;
   flex: 1;
   font-size: 14px;
+  background: transparent;
+  color: var(--text-main);
+  font-family: 'Inter', sans-serif;
+}
+
+.search-box input::placeholder {
+  color: var(--text-muted);
 }
 
 .search-box svg {
-  color: #95a5a6;
+  color: var(--text-muted);
 }
 
 .filter-controls {
@@ -64,20 +81,21 @@
 
 .filter-select {
   padding: 10px 12px;
-  border: 1px solid #ddd;
-  border-radius: 6px;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
   font-size: 14px;
-  background: white;
+  background: var(--bg-input);
+  color: var(--text-main);
   cursor: pointer;
   display: flex;
   align-items: center;
   gap: 8px;
+  outline: none;
 }
 
 .filter-select:focus {
-  outline: none;
-  border-color: #3498db;
-  box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+  border-color: var(--accent-cyan);
+  box-shadow: 0 0 10px rgba(0, 242, 255, 0.1);
 }
 
 /* Export Button */
@@ -86,37 +104,38 @@
   align-items: center;
   gap: 8px;
   padding: 10px 16px;
-  background: #27ae60;
-  color: white;
+  background: linear-gradient(135deg, var(--accent-emerald) 0%, #00C853 100%);
+  color: #000;
   border: none;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   cursor: pointer;
   font-size: 14px;
-  font-weight: 500;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
   transition: all 0.3s ease;
 }
 
 .btn-export:hover {
-  background: #229954;
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(39, 174, 96, 0.3);
+  box-shadow: 0 4px 15px rgba(0, 255, 148, 0.3);
 }
 
 /* Table Wrapper */
 .table-wrapper {
   margin-bottom: 24px;
   overflow-x: auto;
-  border-radius: 8px;
-  border: 1px solid #e0e0e0;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-subtle);
 }
 
 /* Empty State */
 .empty-state {
   text-align: center;
   padding: 60px 20px;
-  color: #7f8c8d;
-  background: #f8f9fa;
-  border-radius: 8px;
+  color: var(--text-muted);
+  background: rgba(255, 255, 255, 0.02);
+  border-radius: var(--radius-md);
 }
 
 .empty-state p {
@@ -127,23 +146,28 @@
 /* Blockchain Info Section */
 .blockchain-info {
   padding: 20px;
-  background: #ecf0f1;
-  border-radius: 8px;
-  border-left: 4px solid #3498db;
+  background: rgba(0, 242, 255, 0.03);
+  border-radius: var(--radius-md);
+  border-left: 4px solid var(--accent-cyan);
+  border: 1px solid var(--border-subtle);
+  border-left-width: 4px;
 }
 
 .blockchain-info h3 {
   font-size: 16px;
-  color: #2c3e50;
+  color: var(--accent-cyan);
   margin: 0 0 12px 0;
   font-weight: 600;
+  font-family: 'Orbitron', sans-serif;
+  letter-spacing: 1px;
 }
 
 .blockchain-info p {
   font-size: 14px;
-  color: #34495e;
+  color: var(--text-main);
   margin: 0;
   line-height: 1.6;
+  opacity: 0.8;
 }
 
 /* Responsive Design */

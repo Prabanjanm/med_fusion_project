@@ -24,6 +24,8 @@ import ConfirmReceipt from './clinic/ConfirmReceipt';
 // Auditor Components
 import AuditDashboard from './auditor/AuditDashboard';
 import AuditTrail from './auditor/AuditTrail';
+import Settings from './components/Settings';
+import BlockchainVerify from './components/BlockchainVerify';
 
 import './styles/global.css';
 import './App.css';
@@ -87,6 +89,16 @@ function App() {
           <Route
             path="/auditor/trail"
             element={<ProtectedRoutes element={<AuditTrail />} allowedRoles={['auditor']} />}
+          />
+
+          {/* Universal Shared Routes (But protected) */}
+          <Route
+            path="/settings"
+            element={<ProtectedRoutes element={<Settings />} allowedRoles={['csr', 'ngo', 'clinic', 'auditor']} />}
+          />
+          <Route
+            path="/verify"
+            element={<ProtectedRoutes element={<BlockchainVerify />} allowedRoles={['csr', 'ngo', 'clinic', 'auditor']} />}
           />
 
           {/* 404 - Catch all */}

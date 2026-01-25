@@ -1,5 +1,5 @@
 /* ============================================
-   Data Table Styles
+   Data Table Styles - Midnight Glass
    ============================================ */
 
 .table-card {
@@ -9,13 +9,20 @@
     padding: 1.5rem;
     box-shadow: var(--shadow-card);
     overflow: hidden;
+    backdrop-filter: blur(12px);
+    margin-bottom: 2rem;
 }
 
 .table-header-title {
-    font-size: 1.1rem;
-    color: var(--accent-cyan);
+    font-size: 1.25rem;
+    color: #fff;
     margin-bottom: 1.5rem;
     font-family: 'Orbitron', sans-serif;
+    letter-spacing: 1px;
+    text-shadow: 0 0 10px rgba(0, 242, 255, 0.3);
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
 }
 
 .table-responsive {
@@ -32,35 +39,38 @@ table {
 
 table thead th {
     text-align: left;
-    padding: 0.75rem 1rem;
+    padding: 1rem 1.5rem;
     color: var(--text-muted);
     font-size: 0.75rem;
     text-transform: uppercase;
     letter-spacing: 1px;
     font-weight: 600;
     border-bottom: 1px solid var(--border-subtle);
-    padding-bottom: 1rem;
 }
 
 table tbody tr {
     background: rgba(255, 255, 255, 0.02);
     transition: all 0.2s ease;
+    cursor: pointer;
 }
 
 table tbody tr:hover {
-    background: rgba(0, 229, 255, 0.04);
-    transform: translateX(2px);
+    background: rgba(0, 242, 255, 0.05);
+    /* Neon Cyan Tint */
+    transform: translateX(4px);
     box-shadow: -2px 0 0 var(--accent-cyan);
-    /* Left border highlight */
 }
 
 table td {
-    padding: 1rem;
+    padding: 1.25rem 1.5rem;
     color: var(--text-main);
     font-size: 0.9rem;
     vertical-align: middle;
+    border-top: 1px solid transparent;
+    border-bottom: 1px solid transparent;
 }
 
+/* Rounded corners for rows */
 table td:first-child {
     border-top-left-radius: var(--radius-sm);
     border-bottom-left-radius: var(--radius-sm);
@@ -73,7 +83,23 @@ table td:last-child {
 
 .empty-state {
     text-align: center;
-    padding: 3rem;
+    padding: 4rem 2rem;
     color: var(--text-muted);
     font-style: italic;
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: var(--radius-md);
+    border: 1px dashed var(--border-subtle);
+}
+
+.empty-state p {
+    font-size: 1rem;
+    opacity: 0.7;
+}
+
+/* Pagination / Footer if needed */
+.table-footer {
+    margin-top: 1rem;
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.5rem;
 }

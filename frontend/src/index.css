@@ -1,29 +1,43 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Orbitron:wght@400;500;600;700;800;900&family=Rajdhani:wght@300;400;500;600;700&display=swap');
 
 :root {
-  /* 🏥 Healthcare Tech Palette - Professional Deep Navy */
-  --bg-primary: #070B14;
-  /* Deep Navy / Near Black */
-  --bg-card: #0E1625;
-  /* Dark Blue-Gray Surface */
-  --bg-input: #131c2e;
-  /* Form Input Background */
+  /* 🌌 Midnight Blockchain Palette */
+  --bg-primary: #050B14;
+  /* Deep Midnight Blue */
+  --bg-gradient: linear-gradient(135deg, #050B14 0%, #0A0F20 50%, #1A1025 100%);
+  /* Midnight to Violet hint */
 
-  --accent-cyan: #00E5FF;
-  /* Medical Cyan / Teal Glow */
-  --accent-blue: #2979ff;
-  /* Safety Blue */
+  --bg-card: rgba(16, 23, 41, 0.7);
+  /* Glassmorphic Dark Indigo */
+  --bg-input: rgba(19, 28, 46, 0.8);
 
-  --text-main: #E2E8F0;
-  /* Soft White (Slate-200) */
+  /* Neon Accents */
+  --accent-cyan: #00F2FF;
+  /* Neon Cyan */
+  --accent-blue: #4361EE;
+  /* Electric Blue */
+  --accent-violet: #7209B7;
+  /* Deep Violet */
+  --accent-emerald: #00FF94;
+  /* Neon Emerald */
+
+  --text-main: #F8FAFC;
+  /* High Contrast Off-White */
   --text-muted: #94A3B8;
-  /* Slate-400 */
+  /* Light Gray */
 
-  --border-subtle: rgba(0, 229, 255, 0.1);
-  --border-focus: rgba(0, 229, 255, 0.5);
+  --border-subtle: rgba(114, 9, 183, 0.2);
+  --border-focus: rgba(0, 242, 255, 0.5);
 
-  --shadow-card: 0 4px 20px rgba(0, 0, 0, 0.4);
-  --shadow-glow: 0 0 15px rgba(0, 229, 255, 0.15);
+  --shadow-card: 0 8px 32px rgba(0, 0, 0, 0.6);
+  --shadow-glow: 0 0 20px rgba(0, 242, 255, 0.15);
+  --shadow-neon: 0 0 15px rgba(114, 9, 183, 0.4);
+
+  /* Aliases for legacy/component support */
+  --neon-cyan: var(--accent-cyan);
+  --neon-blue: var(--accent-blue);
+  --neon-green: var(--accent-emerald);
+  --neon-purple: var(--accent-violet);
 
   --radius-sm: 6px;
   --radius-md: 10px;
@@ -45,6 +59,8 @@ body {
   font-family: 'Inter', sans-serif;
   /* Clean, readable, medical-safe */
   background-color: var(--bg-primary);
+  background-image: var(--bg-gradient);
+  background-attachment: fixed;
   color: var(--text-main);
   line-height: 1.6;
   min-height: 100vh;

@@ -4,7 +4,7 @@
 
 .navbar {
     height: var(--header-height);
-    background: rgba(14, 22, 37, 0.85);
+    background: var(--bg-card);
     /* Glass dark */
     backdrop-filter: blur(12px);
     border-bottom: 1px solid var(--border-subtle);

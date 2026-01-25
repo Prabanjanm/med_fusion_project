@@ -1,11 +1,12 @@
 /* ============================================
-   Sidebar Navigation Styles
+   Sidebar Navigation Styles - Deep Midnight
    ============================================ */
 
 .sidebar {
     width: var(--sidebar-width);
     height: 100vh;
-    background: var(--bg-card);
+    background: #050B14;
+    /* Deepest Midnight */
     border-right: 1px solid var(--border-subtle);
     position: fixed;
     top: 0;
@@ -14,20 +15,22 @@
     display: flex;
     flex-direction: column;
     padding: 1.5rem 1rem;
+    box-shadow: 4px 0 20px rgba(0, 0, 0, 0.4);
 }
 
 .sidebar-header {
     display: flex;
     align-items: center;
     gap: 12px;
-    margin-bottom: 2.5rem;
-    padding-left: 0.5rem;
+    margin-bottom: 3rem;
+    padding-left: 0.75rem;
 }
 
 .logo-icon {
     width: 32px;
     height: 32px;
     color: var(--accent-cyan);
+    filter: drop-shadow(0 0 8px rgba(0, 242, 255, 0.4));
 }
 
 .brand-name {
@@ -36,6 +39,7 @@
     font-weight: 700;
     color: #fff;
     letter-spacing: 1px;
+    text-shadow: 0 0 10px rgba(0, 242, 255, 0.2);
 }
 
 .sidebar-nav {
@@ -49,50 +53,62 @@
     display: flex;
     align-items: center;
     gap: 12px;
-    padding: 12px 16px;
+    padding: 14px 16px;
     color: var(--text-muted);
     text-decoration: none;
     border-radius: var(--radius-sm);
     transition: all 0.2s ease;
     font-weight: 500;
     font-size: 0.95rem;
+    position: relative;
+    overflow: hidden;
 }
 
 .nav-item:hover {
     background: rgba(255, 255, 255, 0.03);
     color: #fff;
+    transform: translateX(4px);
 }
 
 .nav-item.active {
-    background: linear-gradient(90deg, rgba(0, 229, 255, 0.1), transparent);
-    color: var(--accent-cyan);
-    border-left: 3px solid var(--accent-cyan);
-}
-
-.nav-icon {
-    opacity: 0.8;
+    background: linear-gradient(90deg, rgba(67, 97, 238, 0.15), transparent);
+    /* Electric Blue Tint */
+    color: #fff;
+    border-left: 3px solid var(--accent-blue);
 }
 
 .nav-item.active .nav-icon {
-    opacity: 1;
+    color: var(--accent-cyan);
     filter: drop-shadow(0 0 5px var(--accent-cyan));
+}
+
+.nav-icon {
+    opacity: 0.7;
+    transition: all 0.2s;
+}
+
+.nav-item:hover .nav-icon {
+    opacity: 1;
+    color: var(--accent-cyan);
 }
 
 .nav-divider {
     height: 1px;
     background: var(--border-subtle);
     margin: 1rem 0;
+    opacity: 0.5;
 }
 
 .sidebar-footer {
     margin-top: auto;
-    padding-top: 1rem;
+    padding-top: 1.5rem;
     border-top: 1px solid var(--border-subtle);
     text-align: center;
 }
 
 .sidebar-footer p {
-    font-size: 0.75rem;
+    font-size: 0.7rem;
     color: var(--text-muted);
-    opacity: 0.6;
+    opacity: 0.5;
+    letter-spacing: 1px;
 }

@@ -1,0 +1,368 @@
+/* ============================================
+   WIZARD MODAL STYLES
+   Theme: Enterprise Trust / Deep Blue & White
+   ============================================ */
+
+/* Overlay */
+.wizard-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(5, 11, 20, 0.85);
+    /* Deep midnight overlay */
+    backdrop-filter: blur(8px);
+    z-index: 2000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    animation: fadeIn 0.3s ease-out;
+}
+
+/* Modal Container */
+.wizard-modal {
+    background: #0F172A;
+    /* Deep Blue Slate */
+    width: 100%;
+    max-width: 600px;
+    border-radius: 12px;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    display: flex;
+    flex-direction: column;
+    max-height: 90vh;
+    position: relative;
+    overflow: hidden;
+    animation: slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Header */
+.wizard-header {
+    background: #1E293B;
+    padding: 1.5rem 2rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.wizard-title h2 {
+    font-family: 'Inter', sans-serif;
+    /* Clean sans-serif as requested */
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: #fff;
+    margin: 0;
+    letter-spacing: 0.5px;
+}
+
+.wizard-close-btn {
+    background: transparent;
+    border: none;
+    color: #94A3B8;
+    cursor: pointer;
+    padding: 0.5rem;
+    border-radius: 50%;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.wizard-close-btn:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: #fff;
+}
+
+/* Progress Steps */
+.wizard-progress {
+    background: #0F172A;
+    padding: 1rem 3rem;
+    display: flex;
+    justify-content: space-between;
+    position: relative;
+}
+
+.wizard-progress::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 3rem;
+    right: 3rem;
+    height: 2px;
+    background: #334155;
+    z-index: 0;
+    transform: translateY(-50%);
+}
+
+.step-indicator {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.step-number {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: #334155;
+    color: #94A3B8;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+    font-size: 0.85rem;
+    border: 2px solid #0F172A;
+    transition: all 0.3s ease;
+}
+
+.step-indicator.active .step-number {
+    background: var(--accent-blue);
+    /* Trust Blue */
+    color: white;
+    box-shadow: 0 0 0 4px rgba(67, 97, 238, 0.2);
+}
+
+.step-indicator.completed .step-number {
+    background: var(--accent-emerald);
+    /* Success Green */
+    color: #000;
+}
+
+.step-label {
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: #94A3B8;
+    background: #0F172A;
+    /* Mask line */
+    padding: 0 0.5rem;
+}
+
+.step-indicator.active .step-label {
+    color: #fff;
+}
+
+/* Body */
+.wizard-body {
+    padding: 2rem;
+    overflow-y: auto;
+    flex: 1;
+}
+
+.wizard-question {
+    font-size: 1.1rem;
+    color: #E2E8F0;
+    margin-bottom: 1.5rem;
+    font-weight: 500;
+}
+
+/* Inputs - White Fields Override */
+.wizard-field-group {
+    margin-bottom: 1.5rem;
+}
+
+.wizard-label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-size: 0.9rem;
+    color: #CBD5E1;
+    font-weight: 500;
+}
+
+.wizard-input,
+.wizard-select,
+.wizard-textarea {
+    width: 100%;
+    padding: 0.85rem 1rem;
+    border-radius: 8px;
+    /* Rounded inputs */
+    border: 1px solid #CBD5E1;
+    background: #FFFFFF;
+    /* Explicit White */
+    color: #1E293B;
+    /* Dark Text */
+    font-family: 'Inter', sans-serif;
+    font-size: 0.95rem;
+    transition: all 0.2s;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+    /* Soft shadow */
+}
+
+.wizard-input:focus,
+.wizard-select:focus,
+.wizard-textarea:focus {
+    outline: none;
+    border-color: var(--accent-blue);
+    box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.2);
+}
+
+.wizard-input::placeholder {
+    color: #94A3B8;
+}
+
+/* Footer */
+.wizard-footer {
+    padding: 1.5rem 2rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
+    display: flex;
+    justify-content: space-between;
+    background: #0F172A;
+}
+
+.btn-wizard-back {
+    background: transparent;
+    border: 1px solid #334155;
+    color: #CBD5E1;
+    padding: 0.75rem 1.5rem;
+    border-radius: 6px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.btn-wizard-back:hover {
+    background: rgba(255, 255, 255, 0.05);
+    color: #fff;
+}
+
+.btn-wizard-next {
+    background: var(--accent-blue);
+    color: #fff;
+    border: none;
+    padding: 0.75rem 2rem;
+    border-radius: 6px;
+    font-weight: 600;
+    cursor: pointer;
+    box-shadow: 0 4px 6px rgba(67, 97, 238, 0.2);
+    /* Soft shadow */
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.btn-wizard-next:hover {
+    background: #3651d4;
+    /* Slightly darker shift */
+    transform: translateY(-1px);
+    box-shadow: 0 6px 12px rgba(67, 97, 238, 0.3);
+}
+
+.btn-wizard-confirm {
+    background: var(--accent-emerald);
+    color: #000;
+    font-weight: 700;
+}
+
+.btn-wizard-confirm:hover {
+    background: #00d676;
+    box-shadow: 0 6px 12px rgba(0, 255, 148, 0.3);
+}
+
+/* Blockchain Review Step */
+.review-card {
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    padding: 1rem;
+    margin-bottom: 0.5rem;
+}
+
+.review-label {
+    font-size: 0.8rem;
+    color: #94A3B8;
+    margin-bottom: 0.25rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.review-value {
+    color: #fff;
+    font-weight: 500;
+    font-size: 1rem;
+}
+
+.blockchain-summary {
+    background: #020617;
+    /* Very dark for terminal feel */
+    border: 1px solid #1E293B;
+    border-radius: 8px;
+    padding: 1.5rem;
+    margin-top: 1.5rem;
+    position: relative;
+    overflow: hidden;
+}
+
+.hash-display {
+    font-family: 'JetBrains Mono', 'Courier New', monospace;
+    font-size: 1.1rem;
+    /* Large as requested */
+    color: var(--accent-emerald);
+    word-break: break-all;
+    margin: 1rem 0;
+    line-height: 1.4;
+    text-align: center;
+    background: rgba(0, 255, 148, 0.05);
+    padding: 1rem;
+    border-radius: 6px;
+    border: 1px dashed rgba(0, 255, 148, 0.3);
+}
+
+.trust-badge {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    color: var(--accent-emerald);
+    font-size: 0.9rem;
+    font-weight: 600;
+    margin-top: 1rem;
+}
+
+.lock-animation {
+    animation: pulse 2s infinite;
+}
+
+@keyframes slideUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
+}
+
+@keyframes pulse {
+    0% {
+        transform: scale(1);
+        opacity: 1;
+    }
+
+    50% {
+        transform: scale(1.1);
+        opacity: 0.8;
+    }
+
+    100% {
+        transform: scale(1);
+        opacity: 1;
+    }
+}

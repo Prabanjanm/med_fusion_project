@@ -1,50 +1,11 @@
 import React from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
-import { LayoutDashboard, PlusCircle, History, Send, Link, Settings, FileText } from 'lucide-react';
+import { LayoutDashboard, PlusCircle, History, Send, Link, Settings, FileText, CheckCircle, Truck, ClipboardCheck, ShieldCheck } from 'lucide-react';
 import '../styles/Sidebar.css';
 
 const Sidebar = ({ role }) => {
   const location = useLocation();
-
-  // Define menu items based on role
-  const getMenuItems = (role) => {
-    const common = [
-      { label: 'Settings', path: '/settings', icon: Settings },
-    ];
-
-    switch (role) {
-      case 'csr':
-        return [
-          { label: 'Dashboard', path: '/csr', icon: LayoutDashboard, exact: true },
-          { label: 'Create Donation', path: '/csr/create-donation', icon: PlusCircle },
-          { label: 'Donation History', path: '/csr/history', icon: History },
-          ...common
-        ];
-      case 'ngo':
-        return [
-          { label: 'Dashboard', path: '/ngo', icon: LayoutDashboard, exact: true },
-          { label: 'Allocate to Clinic', path: '/ngo/allocate', icon: Send },
-          { label: 'Allocation History', path: '/ngo/history', icon: History },
-          ...common
-        ];
-      case 'clinic':
-        return [
-          { label: 'Dashboard', path: '/clinic', icon: LayoutDashboard, exact: true },
-          { label: 'Confirm Receipts', path: '/clinic/receipts', icon: FileText },
-          ...common
-        ];
-      case 'auditor':
-        return [
-          { label: 'Dashboard', path: '/auditor', icon: LayoutDashboard, exact: true },
-          { label: 'Audit Trail', path: '/auditor/trail', icon: Link },
-          ...common
-        ];
-      default:
-        return common;
-    }
-  };
-
-  const menuItems = getMenuItems(role);
+  const isActive = (path) => location.pathname === path;
 
   return (
     <aside className="sidebar">
@@ -60,23 +21,75 @@ const Sidebar = ({ role }) => {
       </div>
 
       <nav className="sidebar-nav">
-        {menuItems.map((item) => (
-          <NavLink
-            key={item.path}
-            to={item.path}
-            end={item.exact}
-            className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
-          >
-            <item.icon className="nav-icon" size={20} />
-            <span className="nav-label">{item.label}</span>
-          </NavLink>
-        ))}
+        {role === 'csr' && (
+          <>
+            <NavLink to="/csr" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`} end>
+              <LayoutDashboard size={20} className="nav-icon" />
+              <span className="nav-label">Dashboard</span>
+            </NavLink>
+            <NavLink to="/csr/create-donation" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
+              <PlusCircle size={20} className="nav-icon" />
+              <span className="nav-label">New Donation</span>
+            </NavLink>
+            <NavLink to="/csr/history" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
+              <History size={20} className="nav-icon" />
+              <span className="nav-label">History</span>
+            </NavLink>
+          </>
+        )}
 
-        {/* Blockchain Verification Link (Global) */}
+        {role === 'ngo' && (
+          <>
+            <NavLink to="/ngo" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`} end>
+              <LayoutDashboard size={20} className="nav-icon" />
+              <span className="nav-label">Dashboard</span>
+            </NavLink>
+            <NavLink to="/ngo/allocate" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
+              <Truck size={20} className="nav-icon" />
+              <span className="nav-label">Allocate</span>
+            </NavLink>
+            <NavLink to="/ngo/history" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
+              <History size={20} className="nav-icon" />
+              <span className="nav-label">History</span>
+            </NavLink>
+          </>
+        )}
+
+        {role === 'clinic' && (
+          <>
+            <NavLink to="/clinic" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`} end>
+              <LayoutDashboard size={20} className="nav-icon" />
+              <span className="nav-label">Dashboard</span>
+            </NavLink>
+            <NavLink to="/clinic/receipts" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
+              <ClipboardCheck size={20} className="nav-icon" />
+              <span className="nav-label">Confirm Receipt</span>
+            </NavLink>
+          </>
+        )}
+
+        {role === 'auditor' && (
+          <>
+            <NavLink to="/auditor" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`} end>
+              <LayoutDashboard size={20} className="nav-icon" />
+              <span className="nav-label">Dashboard</span>
+            </NavLink>
+            <NavLink to="/auditor/trail" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
+              <FileText size={20} className="nav-icon" />
+              <span className="nav-label">Audit Trail</span>
+            </NavLink>
+          </>
+        )}
+
         <div className="nav-divider"></div>
-        <NavLink to="/blockchain" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
-          <Link className="nav-icon" size={20} />
-          <span className="nav-label">Blockchain Verify</span>
+
+        <NavLink to="/verify" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
+          <ShieldCheck size={20} className="nav-icon" />
+          <span className="nav-label">Verify Record</span>
+        </NavLink>
+        <NavLink to="/settings" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
+          <Settings size={20} className="nav-icon" />
+          <span className="nav-label">Settings</span>
         </NavLink>
       </nav>
 
