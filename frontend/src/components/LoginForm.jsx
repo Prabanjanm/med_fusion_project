@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
+import { useNavigate } from 'react-router-dom';
 import '../styles/LoginForm.css';
 import AnimatedButton from './AnimatedButton';
 
@@ -25,8 +26,10 @@ const LoginForm = ({
   onPasswordChange,
   onInputFocus,
   onInputBlur,
+  onInputBlur,
   onSubmit,
 }) => {
+  const navigate = useNavigate();
   // STATE MANAGEMENT FOR AUTH: Form state
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -356,12 +359,12 @@ const LoginForm = ({
         {isSignIn ? (
           <>
             Don't have an account?{' '}
-            <span className="footer-link">Create one</span>
+            <span className="footer-link" onClick={() => navigate('/register')} style={{ cursor: 'pointer' }}>Create one</span>
           </>
         ) : (
           <>
             Already have an account?{' '}
-            <span className="footer-link">Sign in</span>
+            <span className="footer-link" onClick={() => onSubmit({ isSignIn: true })} style={{ cursor: 'pointer' }}>Sign in</span>
           </>
         )}
       </motion.p>

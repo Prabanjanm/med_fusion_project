@@ -236,9 +236,36 @@ const Login = () => {
         </form>
 
         <div className="login-footer-modern">
-          <p>AUTHORIZED PERSONNEL ONLY // V.3.1.0</p>
+          <div style={{ marginTop: '1rem', marginBottom: '1rem' }}>
+            <span
+              onClick={() => navigate('/register')}
+              style={{
+                color: '#64748b',
+                cursor: 'pointer',
+                fontSize: '0.85rem',
+                fontWeight: '500',
+                textDecoration: 'none',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '8px',
+                transition: 'all 0.3s ease'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.color = '#00d4ff';
+                e.currentTarget.style.transform = 'translateY(-1px)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.color = '#64748b';
+                e.currentTarget.style.transform = 'translateY(0)';
+              }}
+            >
+              <span>REGISTER NEW ORGANIZATION</span>
+              <span style={{ fontSize: '1.2em' }}>→</span>
+            </span>
+          </div>
 
-          <div style={{ marginTop: '1.5rem', padding: '1rem', borderTop: '1px solid rgba(255,255,255,0.1)' }}>
+          <div style={{ marginTop: '1.5rem', padding: '1rem', borderTop: '1px solid rgba(255,255,255,0.05)' }}>
             <p style={{ fontSize: '0.7rem', color: '#64748b', marginBottom: '0.5rem', letterSpacing: '1px' }}>DEMO ACCESS CREDENTIALS</p>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.8rem', justifyContent: 'center' }}>
               <button onClick={() => setFormData({ email: 'admin@csr.com', password: 'demo' })} style={{ background: 'none', border: '1px solid #2979ff', color: '#2979ff', fontSize: '0.7rem', padding: '2px 8px', borderRadius: '4px', cursor: 'pointer' }}>CSR</button>

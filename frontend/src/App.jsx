@@ -4,6 +4,8 @@ import { AuthProvider } from './context/AuthContext';
 import ProtectedRoutes from './routes/ProtectedRoutes';
 // PREMIUM AUTH PAGE: New animated authentication component replacing LampLogin
 import Login from './auth/Login';
+import SetPassword from './auth/SetPassword';
+import RegisterCompany from './auth/RegisterCompany';
 
 // ...
 
@@ -41,6 +43,8 @@ function App() {
         <Routes>
           {/* Public Routes - Premium Auth Page */}
           <Route path="/login" element={<Login />} />
+          <Route path="/register" element={<RegisterCompany />} />
+          <Route path="/auth/set-password" element={<SetPassword />} />
           <Route path="/" element={<Navigate to="/login" replace />} />
 
           {/* CSR Routes */}
