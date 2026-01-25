@@ -1,10 +1,15 @@
-from dataclasses import dataclass
+from sqlalchemy import Column, Integer, String, Boolean, ForeignKey
+from app.db.base import Base
 
-@dataclass
-class User:
-    def __init__(self, id: int, username: str, password_hash: str, role: str):
-        self.id = id
-        self.username = username
-        self.password_hash = password_hash
-        self.role = role
 
+class User(Base):
+    __tablename__ = "users"
+
+    id = Column(Integer, primary_key=True)
+    email = Column(String, unique=True, nullable=False)
+
+    password_hash = Column(String, nullable=True)  # initially NULL
+    password_set = Column(Boolean, default=False)
+
+    role = Column(String, default="CSR")
+    company_id = Column(Integer, ForeignKey("companies.id"))

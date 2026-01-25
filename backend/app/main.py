@@ -1,23 +1,24 @@
 from fastapi import FastAPI
 from app.auth.router import router as auth_router
-from fastapi import Depends
-from app.core.security import require_role
+from app.companies.router import router as company_router
 from app.donations.router import router as donation_router
+from app.db.database import engine
+from app.db.base import Base
 
 app = FastAPI(title="CSR HealthTrace")
+from app.db.database import engine, AsyncSessionLocal
+from app.db.base import Base
+from app.db.startup import seed_trusted_companies
+
+@app.on_event("startup")
+async def startup():
+    async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.create_all)
+
+    async with AsyncSessionLocal() as db:
+        await seed_trusted_companies(db)
+
 
 app.include_router(auth_router)
-
-@app.get("/health")
-def health():
-    return {"status": "ok"}
-
-
-@app.get("/secure-test")
-def secure_test(_: dict = Depends(require_role("CSR"))):
-    return {"message": "Authorized access"}
-
-
-
+app.include_router(company_router)
 app.include_router(donation_router)
-

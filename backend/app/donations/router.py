@@ -1,26 +1,27 @@
 from fastapi import APIRouter, Depends
-from app.donations.schema import DonationCreate, DonationResponse
-from app.donations.controller import create_donation, get_all_donations
+from sqlalchemy.ext.asyncio import AsyncSession
+from app.db.deps import get_db
+from app.donations.schema import DonationCreate
+from app.donations.service import create_donation
 from app.core.security import require_role
 
-router = APIRouter(
-    prefix="/donations",
-    tags=["Donations"]
-)
+router = APIRouter(prefix="/donations", tags=["Donations"])
 
-@router.post(
-    "/",
-    response_model=DonationResponse
-)
-def donate(
+
+@router.post("/")
+async def create_csr_donation(
     data: DonationCreate,
-    _: dict = Depends(require_role("CSR"))
+    payload=Depends(require_role("CSR")),
+    db: AsyncSession = Depends(get_db)
 ):
-    return create_donation(data)
-
-
-@router.get("/")
-def list_donations(
-    _: dict = Depends(require_role("CSR"))
-):
-    return get_all_donations()
+    """
+    CSR can create donation ONLY after:
+    - login
+    - password set
+    - company verified
+    """
+    return await create_donation(
+        db,
+        data,
+        company_id=payload["company_id"]
+    )

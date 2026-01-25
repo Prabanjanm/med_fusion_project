@@ -1,20 +1,17 @@
-class DonationService:
-    _donations = []
-    _counter = 1
+from sqlalchemy.ext.asyncio import AsyncSession
+from app.models.donation import Donation
 
-    @classmethod
-    def create_donation(cls, data):
-        donation = {
-            "donation_id": cls._counter,
-            "item_name": data.item_name,
-            "quantity": data.quantity,
-            "purpose": data.purpose,
-            "status": "RECORDED"
-        }
-        cls._donations.append(donation)
-        cls._counter += 1
-        return donation
 
-    @classmethod
-    def list_donations(cls):
-        return cls._donations
+async def create_donation(db: AsyncSession, data, company_id: int):
+    """
+    Create CSR donation record.
+    """
+    donation = Donation(
+        item_name=data.item_name,
+        quantity=data.quantity,
+        company_id=company_id
+    )
+    db.add(donation)
+    await db.commit()
+    await db.refresh(donation)
+    return donation

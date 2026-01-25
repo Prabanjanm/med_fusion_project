@@ -3,3 +3,13 @@
 2. To check the product quality check we using the ISO certify and EXPIRE date entry and feedback analysis
 
 
+ next I’ll:
+
+🔗 Lock donation strictly to company_id
+
+🔄 Add donation state machine (CREATED → ALLOCATED → RECEIVED)
+
+⛓️ Connect blockchain tx hash
+
+
+
