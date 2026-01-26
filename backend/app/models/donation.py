@@ -1,12 +1,23 @@
-from sqlalchemy import Column, Integer, String, ForeignKey
+from sqlalchemy import Column, Integer, String, Boolean, DateTime, ForeignKey
+from sqlalchemy.sql import func
 from app.db.base import Base
 
 
 class Donation(Base):
     __tablename__ = "donations"
 
-    id = Column(Integer, primary_key=True)
+    id = Column(Integer, primary_key=True, index=True)
+
+    company_id = Column(Integer, ForeignKey("companies.id"), nullable=False)
+
     item_name = Column(String, nullable=False)
     quantity = Column(Integer, nullable=False)
-    status = Column(String, default="CREATED")
-    company_id = Column(Integer, ForeignKey("companies.id"))
+    purpose = Column(String, nullable=False)
+
+    board_resolution_ref = Column(String, nullable=False)
+    csr_policy_declared = Column(Boolean, nullable=False)
+
+    status = Column(String, nullable=False, default="AUTHORIZED")
+
+    authorized_at = Column(DateTime(timezone=True))
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
