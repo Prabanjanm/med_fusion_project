@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Building2, Handshake, Stethoscope, FileCheck, ArrowRight, ShieldCheck, Info } from 'lucide-react';
+import WelcomeCharacter from '../components/WelcomeCharacter';
 import '../styles/Auth.css';
 
 /**

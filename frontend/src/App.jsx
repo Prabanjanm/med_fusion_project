@@ -7,6 +7,7 @@ import Login from './auth/Login';
 import SetPassword from './auth/SetPassword';
 import RegisterCompany from './auth/RegisterCompany';
 import Welcome from './auth/Welcome';
+import Home from './pages/Home';
 
 // ...
 
@@ -42,12 +43,12 @@ function App() {
     <BrowserRouter>
       <AuthProvider>
         <Routes>
-          {/* Public Routes - Premium Auth Page */}
+          {/* Public Routes */}
+          <Route path="/" element={<Home />} />
           <Route path="/welcome" element={<Welcome />} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<RegisterCompany />} />
           <Route path="/auth/set-password" element={<SetPassword />} />
-          <Route path="/" element={<Navigate to="/welcome" replace />} />
 
           {/* CSR Routes */}
           <Route
