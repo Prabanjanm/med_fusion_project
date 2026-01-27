@@ -7,7 +7,7 @@ import * as THREE from 'three';
  * Procedural 3D Cartoon Character - "Welcome" Style
  * Matches reference: Navy suit, cyan shirt, waving "Hi", friendly face.
  */
-const CharacterModel = ({ animation = 'idle', lookAtCursor = false }) => {
+const CharacterModel = ({ animation = 'idle', lookAtCursor = false, roleColor = "#22d3ee" }) => {
     const group = useRef();
     const headRef = useRef();
     const rightArmRef = useRef();
@@ -50,11 +50,10 @@ const CharacterModel = ({ animation = 'idle', lookAtCursor = false }) => {
         }
     });
 
-    // Materials
-    const skinMaterial = new THREE.MeshStandardMaterial({ color: "#ffdbac", roughness: 0.3 }); // Lighter skin
-    const hairMaterial = new THREE.MeshStandardMaterial({ color: "#5D4037", roughness: 0.6 }); // Brown hair
-    const suitMaterial = new THREE.MeshStandardMaterial({ color: "#1e3a8a", roughness: 0.5 }); // Navy Blue Suit
-    const shirtMaterial = new THREE.MeshStandardMaterial({ color: "#22d3ee", roughness: 0.4 }); // Cyan Shirt
+    // Shared Colors
+    const skinColor = "#ffdbac";
+    const hairColor = "#5D4037";
+    const suitColor = "#1e3a8a";
 
     return (
         <group ref={group} onPointerOver={() => setHover(true)} onPointerOut={() => setHover(false)}>
@@ -64,28 +63,28 @@ const CharacterModel = ({ animation = 'idle', lookAtCursor = false }) => {
             {/* Shirt (Inner) */}
             <mesh position={[0, 0.7, 0]}>
                 <capsuleGeometry args={[0.42, 0.75, 4, 16]} />
-                <primitive object={shirtMaterial} />
+                <meshStandardMaterial color={roleColor} roughness={0.4} />
             </mesh>
 
             {/* Shirt Collar (Cyan) */}
             <mesh position={[0, 1.1, 0]}>
                 <cylinderGeometry args={[0.22, 0.38, 0.2, 16]} />
-                <primitive object={shirtMaterial} />
+                <meshStandardMaterial color={roleColor} roughness={0.4} />
             </mesh>
 
             {/* Suit Jacket (Open) */}
             <mesh position={[0, 0.6, 0.05]}>
                 <cylinderGeometry args={[0.48, 0.48, 0.9, 16, 1, true, 0, Math.PI * 1.3]} rotation={[0, Math.PI * 1.35, 0]} />
-                <primitive object={suitMaterial} side={THREE.DoubleSide} />
+                <meshStandardMaterial color={suitColor} roughness={0.5} side={THREE.DoubleSide} />
             </mesh>
             {/* Jacket Lapels */}
             <mesh position={[-0.15, 0.9, 0.2]} rotation={[0, 0, -0.4]}>
                 <boxGeometry args={[0.1, 0.4, 0.02]} />
-                <primitive object={suitMaterial} />
+                <meshStandardMaterial color={suitColor} roughness={0.5} />
             </mesh>
             <mesh position={[0.15, 0.9, 0.2]} rotation={[0, 0, 0.4]}>
                 <boxGeometry args={[0.1, 0.4, 0.02]} />
-                <primitive object={suitMaterial} />
+                <meshStandardMaterial color={suitColor} roughness={0.5} />
             </mesh>
 
             {/* Buttons on suit */}
@@ -104,35 +103,35 @@ const CharacterModel = ({ animation = 'idle', lookAtCursor = false }) => {
                 {/* Face */}
                 <mesh>
                     <sphereGeometry args={[0.36, 32, 32]} />
-                    <primitive object={skinMaterial} />
+                    <meshStandardMaterial color={skinColor} roughness={0.3} />
                 </mesh>
 
                 {/* Hair - Swept Back Style */}
                 <mesh position={[0, 0.15, -0.05]}>
                     <sphereGeometry args={[0.38, 32, 32, 0, Math.PI * 2, 0, Math.PI * 0.7]} />
-                    <primitive object={hairMaterial} />
+                    <meshStandardMaterial color={hairColor} roughness={0.6} />
                 </mesh>
                 {/* Hair Puff on top */}
                 <mesh position={[0, 0.4, 0.1]} rotation={[-0.2, 0, 0]}>
                     <sphereGeometry args={[0.18, 16, 16]} />
-                    <primitive object={hairMaterial} />
+                    <meshStandardMaterial color={hairColor} roughness={0.6} />
                 </mesh>
                 {/* Hair Sideburns */}
                 <mesh position={[-0.32, 0.1, 0.1]}>
                     <sphereGeometry args={[0.08]} />
-                    <primitive object={hairMaterial} />
+                    <meshStandardMaterial color={hairColor} roughness={0.6} />
                 </mesh>
                 <mesh position={[0.32, 0.1, 0.1]}>
                     <sphereGeometry args={[0.08]} />
-                    <primitive object={hairMaterial} />
+                    <meshStandardMaterial color={hairColor} roughness={0.6} />
                 </mesh>
                 <mesh position={[-0.35, 0.1, 0]}>
                     <sphereGeometry args={[0.1]} /> {/* Ears */}
-                    <primitive object={skinMaterial} />
+                    <meshStandardMaterial color={skinColor} roughness={0.3} />
                 </mesh>
                 <mesh position={[0.35, 0.1, 0]}>
                     <sphereGeometry args={[0.1]} /> {/* Ears */}
-                    <primitive object={skinMaterial} />
+                    <meshStandardMaterial color={skinColor} roughness={0.3} />
                 </mesh>
 
 
@@ -158,23 +157,23 @@ const CharacterModel = ({ animation = 'idle', lookAtCursor = false }) => {
                 {/* Eyebrows */}
                 <mesh position={[-0.11, 0.22, 0.3]} rotation={[0, 0, 0.1]}>
                     <capsuleGeometry args={[0.02, 0.12, 4]} rotation={[0, 0, Math.PI / 2]} />
-                    <primitive object={hairMaterial} />
+                    <meshStandardMaterial color={hairColor} roughness={0.6} />
                 </mesh>
                 <mesh position={[0.11, 0.22, 0.3]} rotation={[0, 0, -0.1]}>
                     <capsuleGeometry args={[0.02, 0.12, 4]} rotation={[0, 0, Math.PI / 2]} />
-                    <primitive object={hairMaterial} />
+                    <meshStandardMaterial color={hairColor} roughness={0.6} />
                 </mesh>
 
                 {/* Nose - Rounded Button */}
                 <mesh position={[0, 0, 0.36]}>
                     <sphereGeometry args={[0.05, 16, 16]} />
-                    <primitive object={skinMaterial} />
+                    <meshStandardMaterial color={skinColor} roughness={0.3} />
                 </mesh>
 
                 {/* Smile - Open & Friendly */}
                 <mesh position={[0, -0.12, 0.34]} rotation={[0.1, 0, 0]}>
-                    {/* Using a ring segment for 3D smile */}
-                    <torusGeometry args={[0.08, 0.015, 8, 16, Math.PI]} rotation={[0, 0, Math.PI]} />
+                    {/* Adjusted rotation to make it a smile (U shape) instead of a frown */}
+                    <torusGeometry args={[0.08, 0.015, 8, 16, Math.PI]} rotation={[0, 0, 0]} />
                     <meshStandardMaterial color="#a1665e" />
                 </mesh>
             </group>
@@ -198,10 +197,10 @@ const CharacterModel = ({ animation = 'idle', lookAtCursor = false }) => {
                         {/* Could use a texture here, but just a white plane implies it for now */}
                     </meshBasicMaterial>
                 </mesh>
-                {/* Blue Header on Badge */}
+                {/* Blue Header on Badge - Matches Outfit */}
                 <mesh position={[0, 0.04, 0.006]}>
                     <boxGeometry args={[0.14, 0.03, 0.001]} />
-                    <meshStandardMaterial color="#22d3ee" />
+                    <meshStandardMaterial color={roleColor} />
                 </mesh>
             </group>
 
@@ -211,26 +210,26 @@ const CharacterModel = ({ animation = 'idle', lookAtCursor = false }) => {
                 {/* Shoulder/Upper Arm */}
                 <mesh position={[0, -0.35, 0]}>
                     <capsuleGeometry args={[0.13, 0.7, 4, 16]} />
-                    <primitive object={suitMaterial} />
+                    <meshStandardMaterial color={suitColor} roughness={0.5} />
                 </mesh>
-                {/* Cyan Cuff */}
+                {/* Custom Shirt Cuff */}
                 <mesh position={[0, -0.7, 0]}>
                     <cylinderGeometry args={[0.135, 0.135, 0.1]} />
-                    <primitive object={shirtMaterial} />
+                    <meshStandardMaterial color={roleColor} roughness={0.4} />
                 </mesh>
                 {/* Hand - Palm open */}
                 <group position={[0, -0.9, 0]} rotation={[0, 0, 0]}>
                     <mesh>
                         <boxGeometry args={[0.14, 0.16, 0.06]} /> {/* Palm */}
-                        <primitive object={skinMaterial} />
+                        <meshStandardMaterial color={skinColor} roughness={0.3} />
                     </mesh>
                     {/* Fingers */}
-                    <mesh position={[-0.05, 0.12, 0]}> <capsuleGeometry args={[0.03, 0.12]} /> <primitive object={skinMaterial} /> </mesh>
-                    <mesh position={[-0.02, 0.14, 0]}> <capsuleGeometry args={[0.03, 0.14]} /> <primitive object={skinMaterial} /> </mesh>
-                    <mesh position={[0.02, 0.13, 0]}> <capsuleGeometry args={[0.03, 0.13]} /> <primitive object={skinMaterial} /> </mesh>
-                    <mesh position={[0.05, 0.11, 0]}> <capsuleGeometry args={[0.03, 0.11]} /> <primitive object={skinMaterial} /> </mesh>
+                    <mesh position={[-0.05, 0.12, 0]}> <capsuleGeometry args={[0.03, 0.12]} /> <meshStandardMaterial color={skinColor} roughness={0.3} /> </mesh>
+                    <mesh position={[-0.02, 0.14, 0]}> <capsuleGeometry args={[0.03, 0.14]} /> <meshStandardMaterial color={skinColor} roughness={0.3} /> </mesh>
+                    <mesh position={[0.02, 0.13, 0]}> <capsuleGeometry args={[0.03, 0.13]} /> <meshStandardMaterial color={skinColor} roughness={0.3} /> </mesh>
+                    <mesh position={[0.05, 0.11, 0]}> <capsuleGeometry args={[0.03, 0.11]} /> <meshStandardMaterial color={skinColor} roughness={0.3} /> </mesh>
                     {/* Thumb */}
-                    <mesh position={[0.08, -0.05, 0]} rotation={[0, 0, -0.5]}> <capsuleGeometry args={[0.035, 0.1]} /> <primitive object={skinMaterial} /> </mesh>
+                    <mesh position={[0.08, -0.05, 0]} rotation={[0, 0, -0.5]}> <capsuleGeometry args={[0.035, 0.1]} /> <meshStandardMaterial color={skinColor} roughness={0.3} /> </mesh>
                 </group>
             </group>
 
@@ -238,15 +237,15 @@ const CharacterModel = ({ animation = 'idle', lookAtCursor = false }) => {
             <group position={[-0.55, 1.1, 0]} rotation={[0, 0, 0.15]}>
                 <mesh position={[0, -0.35, 0]}>
                     <capsuleGeometry args={[0.13, 0.75, 4, 16]} />
-                    <primitive object={suitMaterial} />
+                    <meshStandardMaterial color={suitColor} roughness={0.5} />
                 </mesh>
                 <mesh position={[0, -0.75, 0]}>
                     <cylinderGeometry args={[0.135, 0.135, 0.1]} />
-                    <primitive object={shirtMaterial} />
+                    <meshStandardMaterial color={roleColor} roughness={0.4} />
                 </mesh>
                 <mesh position={[0, -0.9, 0]}>
                     <sphereGeometry args={[0.13]} />
-                    <primitive object={skinMaterial} />
+                    <meshStandardMaterial color={skinColor} roughness={0.3} />
                 </mesh>
             </group>
 
@@ -254,7 +253,7 @@ const CharacterModel = ({ animation = 'idle', lookAtCursor = false }) => {
     );
 };
 
-const WelcomeCharacter = ({ animation = 'idle' }) => {
+const WelcomeCharacter = ({ animation = 'idle', roleColor = "#22d3ee" }) => {
     return (
         <div style={{ width: '100%', height: '100%', minHeight: '300px' }}>
             <Canvas camera={{ position: [0, 0.8, 3.5], fov: 35 }} dpr={[1, 2]}>
@@ -262,7 +261,7 @@ const WelcomeCharacter = ({ animation = 'idle' }) => {
                 <spotLight position={[5, 10, 5]} angle={0.2} penumbra={1} intensity={1} castShadow />
                 <pointLight position={[-5, 2, 5]} intensity={0.5} color="#e0f2fe" />
 
-                <CharacterModel animation={animation} lookAtCursor={true} />
+                <CharacterModel animation={animation} lookAtCursor={true} roleColor={roleColor} />
             </Canvas>
         </div>
     );

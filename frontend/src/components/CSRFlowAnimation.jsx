@@ -124,10 +124,28 @@ const RoleNode = ({ position, color, label, roleId, type, onRoleClick, isSelecte
 
 /**
  * Camera Controller
- * Handles the "Zoom to Role" animation
+ * Handles the "Zoom to Role" animation and Scene Alignment
  */
 const CameraController = ({ selectedRole, rolePositions }) => {
     const { camera } = useThree();
+
+    // We use a ref to track where the camera should look. 
+    // Initially looking at center (0,0,0)
+    const lookAtTarget = useRef(new THREE.Vector3(0, 0, 0));
+
+    useEffect(() => {
+        // If no role is selected, ensure we start at a good vantage point
+        if (!selectedRole) {
+            // No need to set position here if passed as prop to PerspectiveCamera,
+            // but we can ensure the lookAt target is reset if we ever navigate back.
+            gsap.to(lookAtTarget.current, {
+                x: 0, y: 0, z: 0,
+                duration: 1.5,
+                ease: "power3.inOut"
+            });
+            // We can also animate return to center position here if needed in future
+        }
+    }, [selectedRole]);
 
     useEffect(() => {
         if (selectedRole && rolePositions[selectedRole]) {
@@ -142,12 +160,21 @@ const CameraController = ({ selectedRole, rolePositions }) => {
                 ease: "power3.inOut"
             });
 
-            // Look at the role
-            // We can't interpolate 'lookAt' directly easily with gsap alone usually, 
-            // but moving position gets us most of the way. 
-            // For a simpler effect, we just move the camera close.
+            // Animate focus to the role itself
+            gsap.to(lookAtTarget.current, {
+                x: targetPos[0],
+                y: targetPos[1],
+                z: targetPos[2],
+                duration: 1.5,
+                ease: "power3.inOut"
+            });
         }
     }, [selectedRole, rolePositions, camera]);
+
+    // Constant loop to keep camera focused on the moving target
+    useFrame(() => {
+        camera.lookAt(lookAtTarget.current);
+    });
 
     return null;
 };
@@ -177,7 +204,8 @@ const SceneContent = ({ onRoleClick, selectedRole }) => {
 
     return (
         <>
-            <PerspectiveCamera makeDefault position={[0, 4, 10]} fov={50} />
+            {/* Adjusted position to [0, 2, 9] to center the view vertically */}
+            <PerspectiveCamera makeDefault position={[0, 2, 9]} fov={50} />
             <CameraController selectedRole={selectedRole} rolePositions={rolePositions} />
 
             <ambientLight intensity={0.2} color="#001e36" />
