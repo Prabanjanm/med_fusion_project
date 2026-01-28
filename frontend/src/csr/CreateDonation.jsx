@@ -275,13 +275,18 @@ const CreateDonation = () => {
 
       <div style={{
         minHeight: '60vh',
+        width: '100%',
+        maxWidth: '800px',
+        margin: '0 auto',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        background: 'rgba(255,255,255,0.02)',
-        borderRadius: '16px',
-        border: '1px solid rgba(255,255,255,0.05)',
-        padding: '2rem'
+        background: 'rgba(15, 23, 42, 0.70)', /* Glass Theme */
+        backdropFilter: 'blur(24px)',
+        borderRadius: '24px',
+        border: '1px solid rgba(255, 255, 255, 0.08)',
+        boxShadow: '0 20px 40px -12px rgba(0, 0, 0, 0.6)',
+        padding: '3rem'
       }}>
         <div style={{ textAlign: 'center', maxWidth: '500px' }}>
           <div style={{ background: 'linear-gradient(135deg, #4361EE 0%, #7209B7 100%)', width: '80px', height: '80px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1.5rem', boxShadow: '0 10px 25px rgba(67, 97, 238, 0.5)' }}>

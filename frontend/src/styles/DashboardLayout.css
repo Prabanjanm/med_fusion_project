@@ -19,7 +19,8 @@
 
 /* Specific Page Content Container */
 .page-container {
-  padding: 1.5rem;
+  padding: 3rem 2rem;
+  /* Increased top/side padding for breathing room */
   max-width: 1400px;
   margin: 0 auto;
   width: 100%;
@@ -48,13 +49,15 @@
 
 /* Page Header */
 .page-header {
-  margin-bottom: 2rem;
+  margin-bottom: 3rem;
+  /* Increased separation from content */
   display: flex;
   justify-content: space-between;
   align-items: flex-end;
   border-bottom: 1px solid rgba(0, 229, 255, 0.2);
   /* Separator line */
-  padding-bottom: 1rem;
+  padding-bottom: 1.5rem;
+  /* More space inside the header border */
 }
 
 .page-title {

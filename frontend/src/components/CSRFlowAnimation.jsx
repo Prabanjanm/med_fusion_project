@@ -1,71 +1,108 @@
 import React, { useRef, useState, useEffect } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
-import { PerspectiveCamera, Stars, Html, Float, Icosahedron, Ring } from '@react-three/drei';
+import { PerspectiveCamera, Html, Float, Icosahedron, Ring, Line } from '@react-three/drei';
 import * as THREE from 'three';
 import gsap from 'gsap';
 
 /**
- * Geometric Crystal Heart - The Core
+ * Connection Line - Subtle interactions
  */
-const GeometricHeart = () => {
+const ConnectionLine = ({ start, end, color }) => {
+    return (
+        <Line
+            points={[start, end]}
+            color={color}
+            lineWidth={1}
+            transparent
+            opacity={0.15}
+        />
+    );
+};
+
+/**
+ * Central Hub - "Core Ecosystem"
+ * Dominant, stable, slow breathing motion.
+ */
+const CentralHub = ({ onClick }) => {
     const meshRef = useRef();
-    const glowRef = useRef();
+    const [hovered, setHovered] = useState(false);
 
     useFrame((state) => {
         const t = state.clock.getElapsedTime();
-        meshRef.current.rotation.y = Math.sin(t * 0.5) * 0.2;
-        meshRef.current.scale.setScalar(1 + Math.sin(t * 2) * 0.05); // Heartbeat
-
-        if (glowRef.current) {
-            glowRef.current.scale.setScalar(1.2 + Math.sin(t * 2) * 0.1);
-        }
+        // Very slow, stable rotation
+        meshRef.current.rotation.y = Math.sin(t * 0.1) * 0.05;
+        meshRef.current.rotation.z = Math.cos(t * 0.1) * 0.02;
     });
 
     return (
-        <group>
-            {/* Core Crystal */}
-            <Icosahedron args={[1, 1]} ref={meshRef}>
+        <group
+            onClick={(e) => { e.stopPropagation(); onClick('ecosystem'); }}
+            onPointerOver={() => { document.body.style.cursor = 'pointer'; setHovered(true); }}
+            onPointerOut={() => { document.body.style.cursor = 'auto'; setHovered(false); }}
+        >
+            {/* Increased scale for hierarchy */}
+            <Icosahedron args={[1.6, 0]} ref={meshRef}>
                 <meshPhysicalMaterial
-                    color="#00d4ff"
-                    emissive="#00d4ff"
-                    emissiveIntensity={0.5}
-                    roughness={0}
-                    metalness={0.9}
-                    transmission={0.2}
-                    wireframe={true}
+                    color={hovered ? "#60a5fa" : "#f1f5f9"} // White/Slate
+                    roughness={0.1}
+                    metalness={0.1}
+                    transmission={0.4}
+                    thickness={2}
+                    clearcoat={1}
+                    emissive={hovered ? "#3b82f6" : "#000000"}
+                    emissiveIntensity={hovered ? 0.2 : 0}
                 />
             </Icosahedron>
-            {/* Core Glow */}
-            <mesh ref={glowRef}>
-                <sphereGeometry args={[0.8, 32, 32]} />
-                <meshBasicMaterial color="#00d4ff" transparent opacity={0.2} />
+            {/* Inner stable core */}
+            <mesh scale={[0.8, 0.8, 0.8]}>
+                <dodecahedronGeometry args={[1, 0]} />
+                <meshStandardMaterial color="#3b82f6" roughness={0.5} />
             </mesh>
+
+            <Html position={[0, -2.2, 0]} center style={{ pointerEvents: 'none', userSelect: 'none' }}>
+                <div style={{
+                    color: '#f8fafc',
+                    fontFamily: 'Inter, sans-serif',
+                    fontSize: '13px',
+                    fontWeight: '600',
+                    letterSpacing: '0.5px',
+                    background: 'rgba(15, 23, 42, 0.85)',
+                    padding: '8px 16px',
+                    borderRadius: '20px',
+                    border: '1px solid rgba(148, 163, 184, 0.3)',
+                    backdropFilter: 'blur(6px)',
+                    whiteSpace: 'nowrap',
+                    boxShadow: '0 4px 6px rgba(0,0,0,0.1)'
+                }}>
+                    ECOSYSTEM CORE
+                </div>
+            </Html>
         </group>
     );
 };
 
 /**
- * Interactive Role Node
+ * Side Concept Nodes
+ * Smaller, clearly labeled, interactive.
  */
-const RoleNode = ({ position, color, label, roleId, type, onRoleClick, isSelected }) => {
+const ConceptNode = ({ position, color, label, id, type, onClick }) => {
     const groupRef = useRef();
     const [hovered, setHovered] = useState(false);
 
     useFrame((state) => {
-        if (!isSelected) {
-            groupRef.current.rotation.y += 0.01; // Idle rotation
-        } else {
-            groupRef.current.rotation.y += 0.05; // Fast spin on selection
-        }
+        const t = state.clock.getElapsedTime();
+        // Extremely gentle "floating" - almost static stability
+        groupRef.current.position.y = position[1] + Math.sin(t * 0.3 + position[0]) * 0.05;
+        // Very slow rotation
+        groupRef.current.rotation.y += 0.002;
     });
 
     const renderGeometry = () => {
         switch (type) {
-            case 'csr': return <boxGeometry args={[0.7, 0.7, 0.7]} />;
-            case 'ngo': return <octahedronGeometry args={[0.6, 0]} />;
-            case 'clinic': return <dodecahedronGeometry args={[0.6, 0]} />;
-            case 'auditor': return <coneGeometry args={[0.5, 0.8, 4]} />;
-            default: return <sphereGeometry args={[0.5]} />;
+            case 'contribution': return <boxGeometry args={[0.9, 0.9, 0.9]} />;
+            case 'impact': return <octahedronGeometry args={[0.8, 0]} />;
+            case 'verify': return <coneGeometry args={[0.7, 1, 4]} />;
+            default: return <sphereGeometry args={[0.7]} />;
         }
     };
 
@@ -75,45 +112,42 @@ const RoleNode = ({ position, color, label, roleId, type, onRoleClick, isSelecte
             position={position}
             onClick={(e) => {
                 e.stopPropagation();
-                onRoleClick(roleId);
+                onClick(id);
             }}
-            onPointerOver={() => setHovered(true)}
-            onPointerOut={() => setHovered(false)}
-            scale={hovered ? 1.2 : 1}
+            onPointerOver={() => { document.body.style.cursor = 'pointer'; setHovered(true); }}
+            onPointerOut={() => { document.body.style.cursor = 'auto'; setHovered(false); }}
+            scale={hovered ? 1.1 : 1}
         >
             <mesh>
                 {renderGeometry()}
-                <meshStandardMaterial
+                <meshPhysicalMaterial
                     color={color}
+                    roughness={0.2}
+                    metalness={0.2}
+                    transmission={0.3}
+                    opacity={0.95}
+                    transparent={true}
                     emissive={color}
-                    emissiveIntensity={hovered ? 2 : 0.5}
-                    wireframe={true}
+                    emissiveIntensity={hovered ? 0.5 : 0.15}
                 />
             </mesh>
 
-            {/* Inner Solid */}
-            <mesh scale={[0.8, 0.8, 0.8]}>
-                {renderGeometry()}
-                <meshBasicMaterial color={color} transparent opacity={0.1} />
-            </mesh>
-
-            {/* Label */}
-            <Html position={[0, -1, 0]} center style={{ pointerEvents: 'none' }}>
+            <Html position={[0, -1.4, 0]} center style={{ pointerEvents: 'none', userSelect: 'none' }}>
                 <div style={{
-                    color: hovered || isSelected ? '#ffffff' : color,
+                    color: '#f1f5f9',
                     fontFamily: 'Inter, sans-serif',
-                    fontSize: '10px',
-                    fontWeight: '700',
-                    letterSpacing: '1px',
-                    textTransform: 'uppercase',
+                    fontSize: '11px',
+                    fontWeight: '600',
+                    letterSpacing: '0.3px',
                     textAlign: 'center',
-                    background: 'rgba(0,0,0,0.8)',
-                    padding: '4px 8px',
-                    borderRadius: '4px',
-                    border: `1px solid ${color}`,
-                    opacity: hovered || isSelected ? 1 : 0.6,
+                    background: 'rgba(30, 41, 59, 0.8)',
+                    padding: '6px 12px',
+                    borderRadius: '8px',
+                    border: `1px solid ${hovered ? color : 'rgba(148, 163, 184, 0.2)'}`,
+                    opacity: hovered ? 1 : 0.8,
                     transition: 'all 0.3s ease',
-                    whiteSpace: 'nowrap'
+                    whiteSpace: 'nowrap',
+                    backdropFilter: 'blur(4px)'
                 }}>
                     {label}
                 </div>
@@ -123,100 +157,71 @@ const RoleNode = ({ position, color, label, roleId, type, onRoleClick, isSelecte
 };
 
 /**
- * Camera Controller
- * Handles the "Zoom to Role" animation
+ * Scene Content
  */
-const CameraController = ({ selectedRole, rolePositions }) => {
-    const { camera } = useThree();
-
-    useEffect(() => {
-        if (selectedRole && rolePositions[selectedRole]) {
-            const targetPos = rolePositions[selectedRole];
-
-            // Animate Camera to zoom in on the selected role
-            gsap.to(camera.position, {
-                x: targetPos[0] * 0.8, // Move closer but keep some distance
-                y: targetPos[1] + 1,       // Slightly above
-                z: targetPos[2] + 2,       // Back a bit
-                duration: 1.5,
-                ease: "power3.inOut"
-            });
-
-            // Look at the role
-            // We can't interpolate 'lookAt' directly easily with gsap alone usually, 
-            // but moving position gets us most of the way. 
-            // For a simpler effect, we just move the camera close.
-        }
-    }, [selectedRole, rolePositions, camera]);
-
-    return null;
-};
-
-/**
- * Main Scene
- */
-const SceneContent = ({ onRoleClick, selectedRole }) => {
-    const radius = 3.5;
-
-    // Define positions explicitly for camera targeting
-    const roles = [
-        { id: 'csr', label: 'CORPORATE', color: '#00d4ff', angle: 0 },
-        { id: 'ngo', label: 'NGO', color: '#d946ef', angle: Math.PI / 2 },
-        { id: 'clinic', label: 'CLINIC', color: '#00d4ff', angle: Math.PI },
-        { id: 'auditor', label: 'AUDITOR', color: '#d946ef', angle: 3 * Math.PI / 2 },
+const SceneContent = ({ onNodeClick }) => {
+    // Concepts: Updated Labels
+    const concepts = [
+        { id: 'contribution', label: 'CSR Contribution', color: '#14b8a6', type: 'contribution', angle: 0 },       // Teal
+        { id: 'impact', label: 'Impact Tracking', color: '#3b82f6', type: 'impact', angle: (2 * Math.PI) / 3 },   // Blue
+        { id: 'verify', label: 'Verification', color: '#6366f1', type: 'verify', angle: (4 * Math.PI) / 3 }, // Indigo
     ];
 
-    const rolePositions = {};
-    roles.forEach(r => {
-        rolePositions[r.id] = [
-            Math.cos(r.angle) * radius,
-            0,
-            Math.sin(r.angle) * radius
+    const radius = 3.5;
+    const positions = {};
+
+    concepts.forEach(c => {
+        positions[c.id] = [
+            Math.cos(c.angle) * radius,
+            -0.5, // Slightly lower to center visually with camera angle
+            Math.sin(c.angle) * radius
         ];
     });
 
     return (
         <>
-            <PerspectiveCamera makeDefault position={[0, 4, 10]} fov={50} />
-            <CameraController selectedRole={selectedRole} rolePositions={rolePositions} />
+            {/* Adjusted Camera: Lower and closer for tighter framing */}
+            <PerspectiveCamera makeDefault position={[0, 1.5, 8.5]} fov={45} />
 
-            <ambientLight intensity={0.2} color="#001e36" />
-            <pointLight position={[10, 5, 5]} intensity={1} color="#00d4ff" />
+            {/* Soft Studio Lighting */}
+            <ambientLight intensity={0.6} color="#ffffff" />
+            <directionalLight position={[5, 10, 5]} intensity={1.2} color="#f8fafc" />
+            <spotLight position={[-10, 5, -5]} intensity={0.6} color="#e0f2fe" />
 
-            <Stars radius={100} depth={50} count={3000} factor={4} saturation={0} fade speed={1} />
-
-            {/* Center */}
-            <Float speed={2} rotationIntensity={0.2} floatIntensity={0.5}>
-                <GeometricHeart />
+            {/* Central Hub */}
+            <Float speed={1} rotationIntensity={0} floatIntensity={0.1}>
+                {/* Visual center adjusted */}
+                <group position={[0, 0, 0]}>
+                    <CentralHub onClick={onNodeClick} />
+                </group>
             </Float>
 
-            {/* Ring System */}
-            <group rotation={[0.2, 0, 0]}>
-                <Ring args={[radius - 0.05, radius + 0.05, 64]} rotation={[-Math.PI / 2, 0, 0]}>
-                    <meshBasicMaterial color="#ffffff" transparent opacity={0.1} side={THREE.DoubleSide} />
+            {/* Surrounding Ring & Nodes */}
+            <group rotation={[0.15, 0, 0]}>
+                <Ring args={[radius - 0.03, radius + 0.03, 128]} rotation={[-Math.PI / 2, 0, 0]}>
+                    <meshBasicMaterial color="#94a3b8" transparent opacity={0.08} side={THREE.DoubleSide} />
                 </Ring>
 
-                {roles.map((r) => (
-                    <RoleNode
-                        key={r.id}
-                        {...r}
-                        type={r.id}
-                        roleId={r.id}
-                        position={rolePositions[r.id]}
-                        onRoleClick={onRoleClick}
-                        isSelected={selectedRole === r.id}
-                    />
+                {concepts.map((c) => (
+                    <React.Fragment key={c.id}>
+                        <ConceptNode
+                            {...c}
+                            position={positions[c.id]}
+                            onClick={onNodeClick}
+                        />
+                        <ConnectionLine start={[0, 0, 0]} end={positions[c.id]} color={c.color} />
+                    </React.Fragment>
                 ))}
             </group>
         </>
     );
 };
 
-const CSRFlowAnimation = ({ onRoleClick, selectedRole }) => {
+const CSRFlowAnimation = ({ onNodeClick }) => {
     return (
-        <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%' }}>
-            <Canvas dpr={[1, 2]} gl={{ antialias: true }} style={{ background: 'transparent' }}>
-                <SceneContent onRoleClick={onRoleClick} selectedRole={selectedRole} />
+        <div style={{ width: '100%', height: '100%' }}>
+            <Canvas dpr={[1, 2]} gl={{ antialias: true, toneMapping: THREE.ACESFilmicToneMapping }} style={{ background: 'transparent' }}>
+                <SceneContent onNodeClick={onNodeClick} />
             </Canvas>
         </div>
     );

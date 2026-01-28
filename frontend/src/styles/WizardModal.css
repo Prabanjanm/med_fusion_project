@@ -23,13 +23,15 @@
 
 /* Modal Container */
 .wizard-modal {
-    background: #0F172A;
-    /* Deep Blue Slate */
+    background: rgba(15, 23, 42, 0.70);
+    /* Glass Effect */
+    backdrop-filter: blur(24px);
     width: 100%;
     max-width: 600px;
-    border-radius: 12px;
-    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 24px;
+    /* Increased radius */
+    box-shadow: 0 20px 40px -12px rgba(0, 0, 0, 0.6);
+    border: 1px solid rgba(255, 255, 255, 0.08);
     display: flex;
     flex-direction: column;
     max-height: 90vh;
@@ -40,9 +42,9 @@
 
 /* Header */
 .wizard-header {
-    background: #1E293B;
+    background: transparent;
     padding: 1.5rem 2rem;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -50,7 +52,6 @@
 
 .wizard-title h2 {
     font-family: 'Inter', sans-serif;
-    /* Clean sans-serif as requested */
     font-size: 1.25rem;
     font-weight: 600;
     color: #fff;
@@ -78,7 +79,7 @@
 
 /* Progress Steps */
 .wizard-progress {
-    background: #0F172A;
+    background: transparent;
     padding: 1rem 3rem;
     display: flex;
     justify-content: space-between;
@@ -92,7 +93,7 @@
     left: 3rem;
     right: 3rem;
     height: 2px;
-    background: #334155;
+    background: rgba(255, 255, 255, 0.1);
     z-index: 0;
     transform: translateY(-50%);
 }
@@ -110,37 +111,40 @@
     width: 32px;
     height: 32px;
     border-radius: 50%;
-    background: #334155;
+    background: #1e293b;
+    /* Slightly lighter than bg */
     color: #94A3B8;
     display: flex;
     align-items: center;
     justify-content: center;
     font-weight: 600;
     font-size: 0.85rem;
-    border: 2px solid #0F172A;
+    border: 2px solid rgba(255, 255, 255, 0.05);
     transition: all 0.3s ease;
 }
 
 .step-indicator.active .step-number {
     background: var(--accent-blue);
-    /* Trust Blue */
     color: white;
     box-shadow: 0 0 0 4px rgba(67, 97, 238, 0.2);
+    border-color: transparent;
 }
 
 .step-indicator.completed .step-number {
     background: var(--accent-emerald);
-    /* Success Green */
     color: #000;
+    border-color: transparent;
 }
 
 .step-label {
     font-size: 0.75rem;
     font-weight: 500;
     color: #94A3B8;
-    background: #0F172A;
-    /* Mask line */
+    background: transparent;
+    /* Removed mask */
     padding: 0 0.5rem;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+    /* better readability */
 }
 
 .step-indicator.active .step-label {
@@ -161,7 +165,7 @@
     font-weight: 500;
 }
 
-/* Inputs - White Fields Override */
+/* Inputs - Glass Dark Override */
 .wizard-field-group {
     margin-bottom: 1.5rem;
 }
@@ -180,17 +184,16 @@
     width: 100%;
     padding: 0.85rem 1rem;
     border-radius: 8px;
-    /* Rounded inputs */
-    border: 1px solid #CBD5E1;
-    background: #FFFFFF;
-    /* Explicit White */
-    color: #1E293B;
-    /* Dark Text */
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    /* Glass border */
+    background: rgba(0, 0, 0, 0.25);
+    /* Dark translucent */
+    color: #f8fafc;
+    /* White text */
     font-family: 'Inter', sans-serif;
     font-size: 0.95rem;
     transition: all 0.2s;
-    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
-    /* Soft shadow */
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .wizard-input:focus,
@@ -198,20 +201,21 @@
 .wizard-textarea:focus {
     outline: none;
     border-color: var(--accent-blue);
+    background: rgba(0, 0, 0, 0.4);
     box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.2);
 }
 
 .wizard-input::placeholder {
-    color: #94A3B8;
+    color: #64748b;
 }
 
 /* Footer */
 .wizard-footer {
     padding: 1.5rem 2rem;
-    border-top: 1px solid rgba(255, 255, 255, 0.05);
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
     display: flex;
     justify-content: space-between;
-    background: #0F172A;
+    background: transparent;
 }
 
 .btn-wizard-back {

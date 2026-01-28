@@ -73,11 +73,11 @@ const Login = () => {
           width: '100%',
           maxWidth: '900px',
           height: '550px', // Fixed nice cinematic height
-          background: 'rgba(15, 23, 42, 0.8)',
-          backdropFilter: 'blur(20px)',
+          background: 'rgba(15, 23, 42, 0.70)', // Matches RegisterCompany
+          backdropFilter: 'blur(24px)', // Matches RegisterCompany
           borderRadius: '24px',
-          border: '1px solid rgba(255, 255, 255, 0.1)',
-          boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)',
+          border: '1px solid rgba(255, 255, 255, 0.08)', // Matches RegisterCompany
+          boxShadow: '0 20px 40px -12px rgba(0, 0, 0, 0.6)', // Matches RegisterCompany
           overflow: 'hidden',
           flexDirection: 'row' // Default horizontal
         }}

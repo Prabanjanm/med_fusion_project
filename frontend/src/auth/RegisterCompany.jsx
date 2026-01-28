@@ -26,6 +26,9 @@ const RegisterCompany = () => {
 
     const [selectedRole, setSelectedRole] = useState(getInitialRole());
     const [currentStep, setCurrentStep] = useState(1);
+    const [activeField, setActiveField] = useState('none'); // 'none', 'general', 'password'
+    const [hasGreeted, setHasGreeted] = useState(false); // Track initial greeting
+
     const totalSteps = 3;
 
     const [formData, setFormData] = useState({
@@ -111,6 +114,30 @@ const RegisterCompany = () => {
         }, 2000);
     };
 
+    // Initial Greeting Timer
+    React.useEffect(() => {
+        const timer = setTimeout(() => {
+            setHasGreeted(true);
+        }, 2000); // Match wave animation duration
+        return () => clearTimeout(timer);
+    }, []);
+
+    const handleInputFocus = (type) => setActiveField(type);
+    const handleInputBlur = () => setActiveField('none');
+
+    // Determine Mascot Animation
+    let mascotAnimation = 'idle';
+
+    if (!hasGreeted) {
+        mascotAnimation = 'wave';
+    } else if (activeField === 'password') {
+        mascotAnimation = 'shy';
+    } else if (activeField === 'general') {
+        mascotAnimation = 'invite'; // Look at form
+    } else {
+        mascotAnimation = 'idle';
+    }
+
     return (
         <div className="login-wrapper" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', padding: '1rem' }}>
             <motion.div
@@ -120,26 +147,26 @@ const RegisterCompany = () => {
                 style={{
                     width: '100%', maxWidth: '1000px', // Wider formatting for split view
                     height: '650px',
-                    background: 'rgba(15, 23, 42, 0.9)', backdropFilter: 'blur(20px)',
-                    borderRadius: '24px', border: '1px solid rgba(255,255,255,0.1)',
+                    background: 'rgba(15, 23, 42, 0.70)', backdropFilter: 'blur(24px)', // Glass effect
+                    borderRadius: '24px', border: '1px solid rgba(255,255,255,0.08)',
                     overflow: 'hidden', display: 'flex', flexDirection: 'row',
-                    boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)'
+                    boxShadow: '0 20px 40px -12px rgba(0, 0, 0, 0.6)'
                 }}
             >
                 {/* --- LEFT PANEL: CHARACTER --- */}
                 <div style={{
                     flex: '0 0 40%',
-                    background: 'radial-gradient(circle at center, #1e3a8a30 0%, #0f172a 100%)',
+                    background: 'radial-gradient(circle at center, rgba(30, 58, 138, 0.2) 0%, rgba(15, 23, 42, 0.6) 100%)', // Semi-transparent
                     borderRight: '1px solid rgba(255,255,255,0.05)',
                     display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
                     padding: '2rem', position: 'relative'
                 }}>
                     {/* Character Container */}
                     <div style={{ width: '100%', height: '400px', position: 'relative' }}>
-                        <WelcomeCharacter animation="greeting" />
+                        <WelcomeCharacter animation={mascotAnimation} />
                     </div>
 
-                    <div style={{ textAlign: 'center', marginTop: '-20px', zIndex: 10 }}>
+                    <div style={{ textAlign: 'center', marginTop: '10px', zIndex: 10, paddingBottom: '20px' }}>
                         <h2 style={{ color: '#fff', fontSize: '1.5rem', fontWeight: '700', margin: 0 }}>Join the Network</h2>
                         <p style={{ color: '#94a3b8', fontSize: '0.9rem', marginTop: '0.5rem' }}>Secure, Transparent CSR Compliance</p>
                     </div>
@@ -205,11 +232,31 @@ const RegisterCompany = () => {
 
                                     <div className="input-group-modern">
                                         <label className="input-label" style={{ display: 'block', fontSize: '0.75rem', color: '#94a3b8', marginBottom: '0.5rem' }}>{config.fields.name.label}</label>
-                                        <input type="text" name="name" className="form-input" placeholder={config.fields.name.placeholder} value={formData.name} onChange={handleChange} style={{ background: 'rgba(0,0,0,0.3)', borderColor: 'rgba(255,255,255,0.1)' }} />
+                                        <input
+                                            type="text"
+                                            name="name"
+                                            className="form-input"
+                                            placeholder={config.fields.name.placeholder}
+                                            value={formData.name}
+                                            onChange={handleChange}
+                                            onFocus={() => handleInputFocus('general')}
+                                            onBlur={handleInputBlur}
+                                            style={{ background: 'rgba(0,0,0,0.3)', borderColor: 'rgba(255,255,255,0.1)' }}
+                                        />
                                     </div>
                                     <div className="input-group-modern" style={{ marginTop: '1.2rem' }}>
                                         <label className="input-label" style={{ display: 'block', fontSize: '0.75rem', color: '#94a3b8', marginBottom: '0.5rem' }}>OFFICIAL EMAIL</label>
-                                        <input type="email" name="email" className="form-input" placeholder="admin@org.com" value={formData.email} onChange={handleChange} style={{ background: 'rgba(0,0,0,0.3)', borderColor: 'rgba(255,255,255,0.1)' }} />
+                                        <input
+                                            type="email"
+                                            name="email"
+                                            className="form-input"
+                                            placeholder="admin@org.com"
+                                            value={formData.email}
+                                            onChange={handleChange}
+                                            onFocus={() => handleInputFocus('general')}
+                                            onBlur={handleInputBlur}
+                                            style={{ background: 'rgba(0,0,0,0.3)', borderColor: 'rgba(255,255,255,0.1)' }}
+                                        />
                                     </div>
                                 </motion.div>
                             )}
@@ -223,12 +270,32 @@ const RegisterCompany = () => {
                                     </div>
                                     <div className="input-group-modern">
                                         <label className="input-label" style={{ display: 'block', fontSize: '0.75rem', color: '#94a3b8', marginBottom: '0.5rem' }}>{config.fields.id.label}</label>
-                                        <input type="text" name="id_number" className="form-input" placeholder={config.fields.id.placeholder} value={formData.id_number} onChange={handleChange} style={{ background: 'rgba(0,0,0,0.3)' }} />
+                                        <input
+                                            type="text"
+                                            name="id_number"
+                                            className="form-input"
+                                            placeholder={config.fields.id.placeholder}
+                                            value={formData.id_number}
+                                            onChange={handleChange}
+                                            onFocus={() => handleInputFocus('general')}
+                                            onBlur={handleInputBlur}
+                                            style={{ background: 'rgba(0,0,0,0.3)' }}
+                                        />
                                     </div>
                                     {!config.hideSecondary && (
                                         <div className="input-group-modern" style={{ marginTop: '1.2rem' }}>
                                             <label className="input-label" style={{ display: 'block', fontSize: '0.75rem', color: '#94a3b8', marginBottom: '0.5rem' }}>{config.fields.sec_id.label}</label>
-                                            <input type="text" name="secondary_id" className="form-input" placeholder={config.fields.sec_id.placeholder} value={formData.secondary_id} onChange={handleChange} style={{ background: 'rgba(0,0,0,0.3)' }} />
+                                            <input
+                                                type="text"
+                                                name="secondary_id"
+                                                className="form-input"
+                                                placeholder={config.fields.sec_id.placeholder}
+                                                value={formData.secondary_id}
+                                                onChange={handleChange}
+                                                onFocus={() => handleInputFocus('general')}
+                                                onBlur={handleInputBlur}
+                                                style={{ background: 'rgba(0,0,0,0.3)' }}
+                                            />
                                         </div>
                                     )}
                                 </motion.div>
@@ -240,7 +307,18 @@ const RegisterCompany = () => {
                                     <h3 style={{ fontSize: '1rem', color: '#fff', marginBottom: '1rem' }}>Account Security</h3>
                                     <div className="input-group-modern">
                                         <label className="input-label" style={{ display: 'block', fontSize: '0.75rem', color: '#94a3b8', marginBottom: '0.5rem' }}>CREATE PASSWORD</label>
-                                        <input type="password" name="password" className="form-input" placeholder="••••••••" value={formData.password} onChange={handleChange} style={{ background: 'rgba(0,0,0,0.3)' }} />
+                                        <input
+                                            type="password"
+                                            name="password"
+                                            className="form-input"
+                                            placeholder="••••••••"
+                                            value={formData.password}
+                                            onChange={handleChange}
+                                            onFocus={() => handleInputFocus('password')}
+                                            onBlur={handleInputBlur}
+                                            style={{ background: 'rgba(0,0,0,0.3)' }}
+                                        />
+
                                     </div>
                                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginTop: '1rem' }}>
                                         <div style={{ fontSize: '0.75rem', color: '#64748b', display: 'flex', alignItems: 'center', gap: '5px' }}>

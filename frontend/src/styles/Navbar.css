@@ -2,7 +2,7 @@
    Top Sticky Navbar Styles
    ============================================ */
 
-.navbar {
+.dashboard-navbar {
     height: var(--header-height);
     background: var(--bg-card);
     /* Glass dark */
