@@ -163,11 +163,7 @@ const RegisterCompany = () => {
                 }}>
                     {/* Character Container */}
                     <div style={{ width: '100%', height: '400px', position: 'relative' }}>
-<<<<<<< HEAD
                         <WelcomeCharacter animation={mascotAnimation} />
-=======
-                        <WelcomeCharacter animation="greeting" roleColor={activeColor} />
->>>>>>> b659109380fa022a9de50b04be840f4d1ccc1008
                     </div>
 
                     <div style={{ textAlign: 'center', marginTop: '10px', zIndex: 10, paddingBottom: '20px' }}>
