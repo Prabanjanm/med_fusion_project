@@ -4,7 +4,12 @@ from app.db.base import Base
 
 # Import models so SQLAlchemy knows them
 from app.models.company import Company
+from app.models.clinic import Clinic  
+from app.models.ngo import NGO
+from app.models.user import User
 from app.models.trusted_company import TrustedCompany
+from app.models.trusted_ngo import TrustedNGO
+from app.models.donation import Donation
 
 
 async def init_db() -> None:

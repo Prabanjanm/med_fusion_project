@@ -1,0 +1,21 @@
+from pydantic import BaseModel, Field
+
+
+class NGORegister(BaseModel):
+    ngo_name: str = Field(..., example="Health Reach Foundation")
+    csr_1_number: str = Field(..., example="CSR00012345")
+    has_80g: bool = Field(..., example=True)
+    official_email: str = Field(..., example="ngo@healthreach.org")
+
+
+class ClinicCreate(BaseModel):
+    """Schema for creating a new clinic"""
+    clinic_name: str
+    facility_id: str
+    facility_id_type: str  # ABHA / CEA
+    doctor_registration_number: str | None = None
+    pincode: str
+    official_email: str
+
+    class Config:
+        from_attributes = True

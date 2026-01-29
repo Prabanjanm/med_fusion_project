@@ -7,9 +7,11 @@ class User(Base):
 
     id = Column(Integer, primary_key=True)
     email = Column(String, unique=True, nullable=False)
-
-    password_hash = Column(String, nullable=True)  # initially NULL
+    password_hash = Column(String, nullable=True)
     password_set = Column(Boolean, default=False)
+    role = Column(String, nullable=False)
 
-    role = Column(String, default="CSR")
-    company_id = Column(Integer, ForeignKey("companies.id"))
+    company_id = Column(Integer, ForeignKey("companies.id"), nullable=True)
+    ngo_id = Column(Integer, ForeignKey("ngos.id"), nullable=True)
+    clinic_id = Column(Integer, ForeignKey("clinics.id"), nullable=True)
+

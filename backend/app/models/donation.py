@@ -9,6 +9,8 @@ class Donation(Base):
     id = Column(Integer, primary_key=True, index=True)
 
     company_id = Column(Integer, ForeignKey("companies.id"), nullable=False)
+    ngo_id = Column(Integer, ForeignKey("ngos.id"),nullable=False)
+
 
     item_name = Column(String, nullable=False)
     quantity = Column(Integer, nullable=False)

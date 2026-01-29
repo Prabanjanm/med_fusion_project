@@ -1,84 +1,28 @@
-# from app.models.user import User
-# from app.auth.utils import verify_password, create_access_token
-
-# USERS = {
-#     "csr_user": User(
-#         1,
-#         "csr_user",
-#         "$2b$12$89KpaoTciB4/fbkOSNTaMOvFbw88bfREi9INicvusV4AOEfxSyFGu", #eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJjc3JfdXNlciIsInJvbGUiOiJjc3IxMjMiLCJleHAiOjE3NjkxNTA0MzF9.wezvtk5ojHCfG7ukjDkTMwJnyTLjcd8RAOegBVvvY80
-#         "CSR"
-#     ),
-#     "ngo_user": User(
-#         2,
-#         "ngo_user",
-#         "$2b$12$ugzbEdsU7ZXNUnEBUkC7r./I3dqWgptFpn2XTCSWEX5V6D2OSor/G",
-#         "NGO"
-#     ),
-#     "clinic_user": User(
-#         3,
-#         "clinic_user",
-#         "$2b$12$68fe7E6mvGi/N5DaHdhN7.v1kMP4.9IW4DUrmOEZHdeDSPGb0.Yqa",
-#         "CLINIC"
-#     ),
-#     "auditor_user": User(
-#         4,
-#         "auditor_user",
-#         "$2b$12$p2mcxz.0/qoM1dCpClvMT.rRJWDrkNjm3occn8DZe5.doj/teAcAm",
-#         "AUDITOR"
-#     ),
-#     "admin_user": User(
-#         4,
-#         "admin_user",
-#         "$2b$12$7t/O6J/2pA0kAshFU7vJlOegVBrySTdmbt9Nwl0PVxkXhoUIXVfwK",
-#         "ADMIN"
-#     ),
-# }
-
-# def authenticate(username: str, password: str):
-#     user = USERS.get(username)
-#     if not user:
-#         return None
-
-#     if not verify_password(password, user.password_hash):
-#         return None
-
-#     return create_access_token({
-#         "sub": user.username,
-#         "role": user.role
-#     })
-
-from sqlalchemy import select
+from sqlalchemy import select, or_
 from app.models.user import User
 from app.models.company import Company
-from app.auth.utils import verify_password, create_access_token
+from app.models.ngo import NGO
+from app.models.clinic import Clinic
+from app.auth.utils import verify_password, create_access_token, hash_password
 
 
 async def login_user(db, email: str, password: str):
     """
-    Allow login ONLY if:
-    - company is verified
+    Allow login for Company, NGO, or Clinic users if:
+    - Organization (company/ngo/clinic) is verified
     - password is set
     """
 
-    result = await db.execute(
-        select(User, Company)
-        .join(Company, User.company_id == Company.id)
-        .where(User.email == email)
-    )
-    row = result.first()
+    # Get user
+    result = await db.execute(select(User).where(User.email == email))
+    user = result.scalar_one_or_none()
 
-    if not row:
+    if not user:
         raise ValueError("Invalid email or password")
 
-    user, company = row
-
-    # Debug logs (good for now)
     print("LOGIN ATTEMPT:", email)
     print("PASSWORD SET:", user.password_set)
-    print("COMPANY VERIFIED:", company.is_verified)
-
-    if not company.is_verified:
-        raise ValueError("Company not verified")
+    print("USER ROLE:", user.role)
 
     if not user.password_set:
         raise ValueError("Password not set. Please set password first.")
@@ -86,10 +30,39 @@ async def login_user(db, email: str, password: str):
     if not verify_password(password, user.password_hash):
         raise ValueError("Invalid email or password")
 
+    # Verify organization based on role
+    organization_verified = False
+
+    if user.role == "CSR" and user.company_id:
+        result = await db.execute(select(Company).where(Company.id == user.company_id))
+        company = result.scalar_one_or_none()
+        if company:
+            organization_verified = company.is_verified
+            print("COMPANY VERIFIED:", organization_verified)
+
+    elif user.role == "NGO" and user.ngo_id:
+        result = await db.execute(select(NGO).where(NGO.id == user.ngo_id))
+        ngo = result.scalar_one_or_none()
+        if ngo:
+            organization_verified = ngo.is_verified
+            print("NGO VERIFIED:", organization_verified)
+
+    elif user.role == "CLINIC" and user.clinic_id:
+        result = await db.execute(select(Clinic).where(Clinic.id == user.clinic_id))
+        clinic = result.scalar_one_or_none()
+        if clinic:
+            organization_verified = clinic.is_active
+            print("CLINIC ACTIVE:", organization_verified)
+
+    if not organization_verified:
+        raise ValueError(f"{user.role} not verified or not active")
+
     token = create_access_token({
         "sub": user.email,
         "role": user.role,
-        "company_id": user.company_id
+        "company_id": user.company_id,
+        "ngo_id": user.ngo_id,
+        "clinic_id": user.clinic_id,
     })
 
     return {
@@ -98,16 +71,9 @@ async def login_user(db, email: str, password: str):
     }
 
 
-
-
-from sqlalchemy import select
-from app.models.user import User
-from app.auth.utils import hash_password
-
-
 async def set_password(db, email: str, password: str):
     """
-    Set password for a verified company's user.
+    Set password for a verified organization's user (Company, NGO, or Clinic).
     """
 
     result = await db.execute(select(User).where(User.email == email))
@@ -119,10 +85,33 @@ async def set_password(db, email: str, password: str):
     if user.password_set:
         raise ValueError("Password already set")
 
+    # Verify organization exists based on role
+    organization_exists = False
+
+    if user.role == "CSR" and user.company_id:
+        result = await db.execute(select(Company).where(Company.id == user.company_id))
+        organization_exists = result.scalar_one_or_none() is not None
+
+    elif user.role == "NGO" and user.ngo_id:
+        result = await db.execute(select(NGO).where(NGO.id == user.ngo_id))
+        organization_exists = result.scalar_one_or_none() is not None
+
+    elif user.role == "CLINIC" and user.clinic_id:
+        result = await db.execute(select(Clinic).where(Clinic.id == user.clinic_id))
+        organization_exists = result.scalar_one_or_none() is not None
+
+    if not organization_exists:
+        raise ValueError(f"Organization not found for {user.role}")
+
     user.password_hash = hash_password(password)
     user.password_set = True
 
     await db.commit()
 
     return {"message": "Password set successfully. You can now login."}
+
+
+
+
+
 
