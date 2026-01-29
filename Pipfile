@@ -7,7 +7,6 @@ verify_ssl = true
 fastapi = "*"
 uvicorn = {extras = ["standard"], version = "*"}
 python-dotenv = "*"
-pydantic = "*"
 sqlalchemy = "*"
 psycopg2-binary = "*"
 web3 = "*"
@@ -17,6 +16,10 @@ bcrypt = "==4.0.1"
 alembic = "*"
 pydantic-settings = "*"
 python-multipart = "*"
+pydantic = {extras = ["email"], version = "*"}
+supabase = "*"
+asyncpg = "*"
+resend = "*"
 
 [dev-packages]
 pytest = "*"
