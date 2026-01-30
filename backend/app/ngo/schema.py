@@ -19,3 +19,9 @@ class ClinicCreate(BaseModel):
 
     class Config:
         from_attributes = True
+
+class ClinicNeedCreate(BaseModel):
+    clinic_id: int
+    item_name: str
+    quantity: int
+    purpose: str

@@ -6,6 +6,7 @@ from app.db.database import engine, AsyncSessionLocal
 from app.db.base import Base
 from app.db.startup import seed_trusted_companies, seed_trusted_ngos
 
+
 # Import all models so SQLAlchemy knows about them for table creation
 from app.models.company import Company
 from app.models.clinic import Clinic
@@ -32,6 +33,7 @@ async def startup():
         await seed_trusted_ngos(db)
 
 
+
 app.include_router(auth_router)
 app.include_router(company_router)
 app.include_router(donation_router)
@@ -39,3 +41,7 @@ app.include_router(donation_router)
 from app.ngo.router import router as ngo_router
 
 app.include_router(ngo_router)
+
+from fastapi.staticfiles import StaticFiles
+
+app.mount("/static", StaticFiles(directory="app/static"), name="static")

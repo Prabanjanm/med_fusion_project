@@ -149,12 +149,39 @@ async def register_clinic(
     db: AsyncSession,
     ngo,
     clinic_email: str,
-    clinic_name: str
+    clinic_name: str,
+    facility_id: str,
+    facility_id_type: str,
+    doctor_registration_number: str,
+    pincode: str
 ):
     """
     Register clinic and send secure invitation email.
     NGO must be verified.
     """
+    existing = await db.execute(
+        select(Clinic).where(Clinic.official_email == clinic_email)
+    )
+    # if existing.scalar_one_or_none():
+    #     raise HTTPException(
+    #         status_code=400,
+    #         detail="Clinic already registered"
+    #     )
+
+    # 2️⃣ CREATE clinic row (THIS WAS MISSING)
+    clinic = Clinic(
+        clinic_name=clinic_name,
+        official_email=clinic_email,
+        ngo_id=ngo.id,
+        facility_id=facility_id,
+        facility_id_type=facility_id_type,
+        doctor_registration_number=doctor_registration_number,
+        pincode=pincode,
+        is_active=False
+    )
+    db.add(clinic)
+    await db.commit()
+    await db.refresh(clinic)
 
     reference_id = f"INV-CLINIC-{datetime.utcnow().year}-{uuid.uuid4().hex[:6].upper()}"
 
@@ -174,18 +201,105 @@ async def register_clinic(
     db.add(invitation)
     await db.commit()
 
-    invite_link = f"{settings.FRONTEND_URL}/clinic/onboard?token={token}"
+    if clinic.ngo_id != ngo.id:
+     raise HTTPException(
+        status_code=403,
+        detail="Clinic does not belong to this NGO"
+    )
+
+    print("TOken:", token)
+    invite_link = f"{settings.FRONTEND_URL}/static/set-clinic-password.html?token={token}"
 
     await send_clinic_invitation_email(
         to_email=clinic_email,
         clinic_name=clinic_name,
-        ngo_name=ngo.name,
-        csr1_number=ngo.csr1_number,
+        ngo_name=ngo.ngo_name,
+        csr1_number=ngo.csr_1_number,
         invite_link=invite_link,
         reference_id=reference_id
     )
+    
 
     return {
         "message": "Clinic invitation sent successfully",
         "invitation_reference": reference_id
     }
+
+from sqlalchemy import select
+from fastapi import HTTPException, status
+
+from app.models.clinic import Clinic
+from app.models.user import User
+from app.models.clinic_requirment import ClinicRequirement
+
+
+async def create_clinic_need(db, ngo, data):
+    """
+    Create a clinic need ONLY if:
+    - clinic exists
+    - clinic has completed onboarding (password set)
+    """
+  
+    # 1️⃣ Check clinic exists
+    clinic = await db.get(Clinic, data.clinic_id)
+    if not clinic:
+        raise HTTPException(
+            status_code=404,
+            detail="Clinic not found"
+        )
+
+    # 2️⃣ Check clinic user & password status
+    result = await db.execute(
+        select(User)
+        .where(User.clinic_id == clinic.id)
+        .where(User.password_set == True)
+    )
+    clinic_user = result.scalar_one_or_none()
+
+    if not clinic_user:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Clinic has not completed onboarding (password not set)"
+        )
+
+    # 3️⃣ Create clinic need
+    need = ClinicRequirement(
+        ngo_id=ngo.id,
+        clinic_id=clinic.id,
+        item_name=data.item_name,
+        quantity=data.quantity,
+        purpose=data.purpose
+    )
+
+    db.add(need)
+    await db.commit()
+    await db.refresh(need)
+
+    return need
+
+from fastapi import Depends, HTTPException
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select
+from app.db.deps import get_db
+from app.core.security import require_role
+from app.models.ngo import NGO
+
+
+async def get_current_ngo(
+    db: AsyncSession = Depends(get_db),
+    payload: dict = Depends(require_role("NGO"))
+) -> NGO:
+    """
+    Dependency to get the current NGO object for the authenticated NGO user.
+    """
+    ngo_id = payload.get("ngo_id")
+    if not ngo_id:
+        raise HTTPException(status_code=400, detail="NGO ID not found in token")
+    
+    result = await db.execute(select(NGO).where(NGO.id == ngo_id))
+    ngo = result.scalar_one_or_none()
+    if not ngo:
+        raise HTTPException(status_code=404, detail="NGO not found")
+    
+    return ngo
+

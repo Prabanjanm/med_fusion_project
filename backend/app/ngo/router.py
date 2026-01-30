@@ -10,6 +10,10 @@ from app.ngo.accept_service import accept_donation_safely
 from app.ngo.service import register_clinic
 from app.models.clinic_requirment import ClinicRequirement
 from app.models.ngo import NGO
+from app.core.security import require_role
+from app.ngo.schema import ClinicNeedCreate
+from app.ngo.service import create_clinic_need , get_current_ngo
+from app.db.deps import get_db
 
 router = APIRouter(
     prefix="/ngo",
@@ -81,30 +85,21 @@ async def register_clinic_endpoint(
     if not ngo_obj:
         raise HTTPException(status_code=404, detail="NGO not found")
     
-    return await register_clinic(db, ngo_obj, data.official_email, data.clinic_name)
+    return await register_clinic(db, ngo_obj, data.official_email, data.clinic_name,data.facility_id, data.facility_id_type, data.doctor_registration_number, data.pincode)
 
 
 
-@router.post("/clinics/{clinic_id}/requirements")
-async def add_clinic_requirement(
-    clinic_id: int,
-    item_name: str,
-    quantity: int,
-    notes: str | None = None,
+@router.post("/clinic-needs")
+async def create_need(
+    data: ClinicNeedCreate,
     db=Depends(get_db),
-    ngo=Depends(require_role("NGO"))
+    ngo=Depends(get_current_ngo),
+    _: dict = Depends(require_role("NGO"))
 ):
-  
+    """
+    NGO records a clinic requirement after physical audit.
+    Clinic must be onboarded before allocation.
+    """
+    return await create_clinic_need(db, ngo, data)
 
-    req = ClinicRequirement(
-        clinic_id=clinic_id,
-        ngo_id=ngo["ngo_id"],
-        item_name=item_name,
-        quantity=quantity,
-        notes=notes
-    )
 
-    db.add(req)
-    await db.commit()
-
-    return {"message": "Clinic requirement recorded"}

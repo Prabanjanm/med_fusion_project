@@ -32,6 +32,8 @@ from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.db.deps import get_db
 from app.auth.service import login_user, set_password # Import both services
+from app.clinic.schema import SetPasswordRequest
+from app.clinic.service import accept_clinic_invitation, set_clinic_password
 
 # 1. Define the router ONCE
 router = APIRouter(
@@ -65,3 +67,11 @@ async def set_password_endpoint(
         return await set_password(db, email, password)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
+
+
+@router.post("/clinic/set-password")
+async def set_clinic_password_endpoint(
+    data: SetPasswordRequest,
+    db: AsyncSession = Depends(get_db)
+):
+    return await set_clinic_password(db, data.token, data.password)
