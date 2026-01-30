@@ -18,6 +18,7 @@ from app.models.donation import Donation
 from app.models.clinic_invitation import ClinicInvitation
 from app.models.clinic_requirment import ClinicRequirement
 from app.models.password_set_jwt import PasswordSetupToken
+from app.admin.router import router as admin_router
 
 app = FastAPI(title="CSR HealthTrace")
 
@@ -34,6 +35,7 @@ async def startup():
 
 
 
+app.include_router(admin_router)
 app.include_router(auth_router)
 app.include_router(company_router)
 app.include_router(donation_router)
