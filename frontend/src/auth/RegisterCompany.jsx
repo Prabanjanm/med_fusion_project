@@ -49,10 +49,10 @@ const RegisterCompany = () => {
 
     // Roles allowed for registration
     const roles = [
-        { id: 'csr', label: 'Corporate', icon: <Building2 size={18} />, color: '#00d4ff', desc: 'Donor' },
-        { id: 'ngo', label: 'NGO', icon: <Handshake size={18} />, color: '#00ff9d', desc: 'Partner' },
-        { id: 'clinic', label: 'Clinic', icon: <Stethoscope size={18} />, color: '#f97316', desc: 'Provider' },
-        { id: 'auditor', label: 'Auditor', icon: <FileCheck size={18} />, color: '#94a3b8', desc: 'Verifier' },
+        { id: 'csr', label: 'Corporate', icon: <Building2 size={18} />, color: '#06b6d4', desc: 'Donor' },
+        { id: 'ngo', label: 'NGO', icon: <Handshake size={18} />, color: '#14b8a6', desc: 'Partner' },
+        { id: 'clinic', label: 'Clinic', icon: <Stethoscope size={18} />, color: '#94a3b8', desc: 'Provider' },
+        { id: 'auditor', label: 'Auditor', icon: <FileCheck size={18} />, color: '#818cf8', desc: 'Verifier' },
     ];
 
     // Dynamic Config
@@ -101,7 +101,7 @@ const RegisterCompany = () => {
 
     const config = getRoleConfig(selectedRole);
     const activeRoleObj = roles.find(r => r.id === selectedRole);
-    const activeColor = activeRoleObj ? activeRoleObj.color : '#00d4ff';
+    const activeColor = activeRoleObj ? activeRoleObj.color : '#06b6d4';
 
     const handleChange = (e) => {
         setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -191,16 +191,16 @@ const RegisterCompany = () => {
                 style={{
                     width: '100%', maxWidth: '1000px', // Wider formatting for split view
                     height: '650px',
-                    background: 'rgba(15, 23, 42, 0.70)', backdropFilter: 'blur(24px)', // Glass effect
+                    background: 'rgba(5, 5, 5, 0.7)', backdropFilter: 'blur(24px)', // Glass effect
                     borderRadius: '24px', border: '1px solid rgba(255,255,255,0.08)',
                     overflow: 'hidden', display: 'flex', flexDirection: 'row',
-                    boxShadow: '0 20px 40px -12px rgba(0, 0, 0, 0.6)'
+                    boxShadow: '0 20px 40px -12px rgba(0, 0, 0, 0.8)'
                 }}
             >
                 {/* --- LEFT PANEL: CHARACTER --- */}
                 <div style={{
                     flex: '0 0 40%',
-                    background: 'radial-gradient(circle at center, rgba(30, 58, 138, 0.2) 0%, rgba(15, 23, 42, 0.6) 100%)', // Semi-transparent
+                    background: 'radial-gradient(circle at center, rgba(6, 182, 212, 0.1) 0%, rgba(5, 5, 5, 0.6) 100%)', // Semi-transparent
                     borderRight: '1px solid rgba(255,255,255,0.05)',
                     display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
                     padding: '2rem', position: 'relative'

@@ -1,62 +1,27 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Search, Filter, Download } from 'lucide-react';
 import Layout from '../components/Layout';
 import StatusBadge from '../components/StatusBadge';
 import Table from '../components/Table';
-import { donationAPI } from '../services/api';
-import { useAuth } from '../context/AuthContext';
 import '../styles/DashboardLayout.css';
 
 /**
  * DonationHistory Component
- * Displays real donation history from the backend.
+ * Displays donation history (empty until real data is integrated)
  */
 const DonationHistory = () => {
-  const { user } = useAuth();
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
-  const [donations, setDonations] = useState([]);
-  const [loading, setLoading] = useState(true);
 
-  // Fetch real data from backend
-  useEffect(() => {
-    const fetchHistory = async () => {
-      try {
-        setLoading(true);
-        const data = await donationAPI.getHistory();
-
-        // Map backend data to UI format
-        const formattedData = data.map(d => ({
-          id: d.donation_id || d.id,
-          itemType: d.item_name,
-          quantity: d.quantity,
-          status: d.status,
-          date: new Date(d.created_at).toLocaleDateString(),
-          timestamp: new Date(d.created_at).getTime(), // for sorting
-          // Derive NGO from purpose if needed
-          ngoName: d.purpose && d.purpose.includes('Donation to ') ? d.purpose.replace('Donation to ', '') : 'N/A',
-          donorName: user?.company_name || 'My Company'
-        }));
-
-        // Sort by latest first
-        formattedData.sort((a, b) => b.timestamp - a.timestamp);
-
-        setDonations(formattedData);
-      } catch (error) {
-        console.error("Failed to load donation history", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchHistory();
-  }, [user]);
+  // 🚫 NO MOCK DATA
+  // This will later be replaced with real API data
+  const donations = [];
 
   const filteredDonations = donations.filter(donation => {
     const matchesSearch =
-      String(donation.id || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-      String(donation.donorName || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-      String(donation.itemType || '').toLowerCase().includes(searchTerm.toLowerCase());
+      donation.id?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      donation.donorName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      donation.itemType?.toLowerCase().includes(searchTerm.toLowerCase());
 
     const matchesStatus =
       filterStatus === 'all' || donation.status === filterStatus;
@@ -65,7 +30,7 @@ const DonationHistory = () => {
   });
 
   const handleExport = () => {
-    alert('Export functionality coming soon (requires backend support).');
+    alert('Export will be available once real data is connected.');
   };
 
   const columns = [
@@ -88,7 +53,7 @@ const DonationHistory = () => {
         <div>
           <h1 className="page-title">Donation History</h1>
           <p className="page-subtitle">
-            View and track all your contributions
+            Donation records will appear here once activity begins
           </p>
         </div>
       </div>
@@ -120,13 +85,16 @@ const DonationHistory = () => {
               placeholder="Search history..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
+              disabled
               style={{
                 width: '100%',
                 padding: '10px 10px 10px 40px',
                 background: 'var(--bg-input)',
                 border: '1px solid var(--border-subtle)',
                 borderRadius: '6px',
-                color: '#fff'
+                color: '#fff',
+                opacity: 0.5,
+                cursor: 'not-allowed'
               }}
             />
           </div>
@@ -144,25 +112,24 @@ const DonationHistory = () => {
               />
               <select
                 value={filterStatus}
-                onChange={(e) => setFilterStatus(e.target.value)}
+                disabled
                 style={{
                   padding: '10px 10px 10px 40px',
                   background: 'var(--bg-input)',
                   border: '1px solid var(--border-subtle)',
                   borderRadius: '6px',
                   color: '#fff',
-                  cursor: 'pointer'
+                  opacity: 0.5,
+                  cursor: 'not-allowed'
                 }}
               >
                 <option value="all">All Status</option>
-                <option value="PENDING">Pending</option>
-                <option value="IN_TRANSIT">In Transit</option>
-                <option value="RECEIVED">Received</option>
               </select>
             </div>
 
             <button
               onClick={handleExport}
+              disabled
               style={{
                 display: 'flex',
                 alignItems: 'center',
@@ -172,7 +139,7 @@ const DonationHistory = () => {
                 border: '1px solid var(--border-subtle)',
                 color: 'var(--text-muted)',
                 borderRadius: '6px',
-                cursor: 'pointer'
+                cursor: 'not-allowed'
               }}
             >
               <Download size={18} />
@@ -181,30 +148,15 @@ const DonationHistory = () => {
           </div>
         </div>
 
-        {/* Content */}
-        {loading ? (
-          <div style={{ padding: '3rem', textAlign: 'center', color: '#64748b' }}>Loading history...</div>
-        ) : filteredDonations.length === 0 ? (
-          <div className="empty-state" style={{ padding: '3rem', textAlign: 'center' }}>
-            <p style={{ fontSize: '1rem', color: 'var(--text-muted)' }}>
-              No donation records found.
-            </p>
-            {searchTerm || filterStatus !== 'all' ? (
-              <p style={{ fontSize: '0.9rem', color: 'var(--text-muted)', marginTop: '0.5rem' }}>
-                Try adjusting your filters.
-              </p>
-            ) : (
-              <p style={{ fontSize: '0.9rem', color: 'var(--text-muted)', marginTop: '0.5rem' }}>
-                Your contributions will appear here once you make a donation.
-              </p>
-            )}
-          </div>
-        ) : (
-          <Table
-            columns={columns}
-            data={filteredDonations}
-          />
-        )}
+        {/* EMPTY STATE */}
+        <div className="empty-state" style={{ padding: '3rem', textAlign: 'center' }}>
+          <p style={{ fontSize: '1rem', color: 'var(--text-muted)' }}>
+            No donation history available yet.
+          </p>
+          <p style={{ fontSize: '0.9rem', color: 'var(--text-muted)', marginTop: '0.5rem' }}>
+            Once donations are made, they will appear here with blockchain verification.
+          </p>
+        </div>
       </div>
 
       {/* Blockchain Info Card */}
@@ -245,7 +197,7 @@ const DonationHistory = () => {
             Blockchain Verification
           </h3>
           <p style={{ fontSize: '0.9rem', color: 'var(--text-muted)' }}>
-            All donation records above are immutably stored and verified on the blockchain.
+            Donation records will be immutably stored on the blockchain once activity begins.
           </p>
         </div>
       </div>

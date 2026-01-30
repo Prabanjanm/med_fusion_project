@@ -1,52 +1,55 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Orbitron:wght@400;500;600;700;800;900&family=Rajdhani:wght@300;400;500;600;700&display=swap');
 
 :root {
-  /* 🌌 Midnight Blockchain Palette */
-  --bg-primary: #050B14;
-  /* Deep Midnight Blue */
-  --bg-gradient: linear-gradient(135deg, #050B14 0%, #0A0F20 50%, #1A1025 100%);
-  /* Midnight to Violet hint */
+  /* 🏥⛓️ Option C: Obsidian × Aqua × Silver */
 
-  --bg-card: rgba(16, 23, 41, 0.7);
-  /* Glassmorphic Dark Indigo */
-  --bg-input: rgba(19, 28, 46, 0.8);
+  /* Backgrounds: Deep, Clinical, Secure */
+  --bg-primary: #050505;
+  /* True Obsidian */
+  --bg-secondary: #0a0a0a;
+  /* Slightly lighter */
+  --bg-card: rgba(20, 20, 20, 0.6);
+  /* Glassmorphic Obsidian */
+  --bg-input: rgba(255, 255, 255, 0.03);
 
-  /* Neon Accents */
-  --accent-cyan: #00F2FF;
-  /* Neon Cyan */
-  --accent-blue: #4361EE;
-  /* Electric Blue */
-  --accent-violet: #7209B7;
-  /* Deep Violet */
-  --accent-emerald: #00FF94;
-  /* Neon Emerald */
+  /* Accents: Blockchain Trust + Healthcare Safety */
+  --accent-cyan: #06b6d4;
+  /* Clinical Aqua */
+  --accent-teal: #14b8a6;
+  /* Surgical Green/Teal */
+  --accent-silver: #e2e8f0;
+  /* Surgical Steel */
+  --accent-slate: #64748b;
+  /* Technical Grey */
 
-  --text-main: #F8FAFC;
-  /* High Contrast Off-White */
-  --text-muted: #94A3B8;
-  /* Light Gray */
+  /* Text Colors */
+  --text-main: #f8fafc;
+  /* Anti-septic White */
+  --text-muted: #94a3b8;
+  /* Cool Grey */
+  --text-dim: #64748b;
+  /* Darker Grey */
 
-  --border-subtle: rgba(114, 9, 183, 0.2);
-  --border-focus: rgba(0, 242, 255, 0.5);
+  /* Borders & Glows */
+  --border-subtle: rgba(255, 255, 255, 0.08);
+  --border-focus: rgba(6, 182, 212, 0.5);
+  /* Cyan Focus */
 
-  --shadow-card: 0 8px 32px rgba(0, 0, 0, 0.6);
-  --shadow-glow: 0 0 20px rgba(0, 242, 255, 0.15);
-  --shadow-neon: 0 0 15px rgba(114, 9, 183, 0.4);
+  /* Shadows */
+  --shadow-card: 0 10px 40px -10px rgba(0, 0, 0, 0.8);
+  --shadow-glow: 0 0 20px rgba(6, 182, 212, 0.15);
+  /* Cyan Glow */
 
-  /* Aliases for legacy/component support */
-  --neon-cyan: var(--accent-cyan);
-  --neon-blue: var(--accent-blue);
-  --neon-green: var(--accent-emerald);
-  --neon-purple: var(--accent-violet);
-
-  --radius-sm: 6px;
-  --radius-md: 10px;
-  --radius-lg: 16px;
-
+  /* Spacing */
   --sidebar-width: 260px;
   --header-height: 70px;
+  --radius-sm: 4px;
+  /* Sharper, more technical corners */
+  --radius-md: 8px;
+  --radius-lg: 16px;
 
-  --transition: all 0.2s ease-out;
+  --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  /* Slower, smoother 'Enterprise' feel */
 }
 
 * {
@@ -57,14 +60,16 @@
 
 body {
   font-family: 'Inter', sans-serif;
-  /* Clean, readable, medical-safe */
   background-color: var(--bg-primary);
-  background-image: var(--bg-gradient);
-  background-attachment: fixed;
+  /* Subtle mesh gradient background */
+  background-image:
+    radial-gradient(circle at 15% 50%, rgba(6, 182, 212, 0.05) 0%, transparent 25%),
+    radial-gradient(circle at 85% 30%, rgba(20, 184, 166, 0.05) 0%, transparent 25%);
   color: var(--text-main);
   line-height: 1.6;
   min-height: 100vh;
   overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
 }
 
 h1,
@@ -73,10 +78,11 @@ h3,
 h4,
 h5,
 h6 {
-  font-family: 'Orbitron', sans-serif;
-  /* Tech feel for headers */
-  color: #fff;
-  letter-spacing: 0.5px;
+  font-family: 'Inter', sans-serif;
+  /* Switch to Inter for cleaner Enterprise look, Orbitron only for specific hero numbers if needed */
+  font-weight: 600;
+  color: var(--text-main);
+  letter-spacing: -0.02em;
   margin-bottom: 1rem;
 }
 
@@ -85,13 +91,17 @@ h6 {
   color: var(--accent-cyan);
 }
 
+.text-teal {
+  color: var(--accent-teal);
+}
+
 .text-muted {
   color: var(--text-muted);
 }
 
 /* Global Scrollbar */
 ::-webkit-scrollbar {
-  width: 8px;
+  width: 6px;
 }
 
 ::-webkit-scrollbar-track {
@@ -99,21 +109,20 @@ h6 {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #1e293b;
-  border-radius: 4px;
+  background: #334155;
+  border-radius: 3px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
   background: var(--accent-cyan);
 }
 
-/* Dark Theme Input Autofill Fix */
+/* Input Autofill Override */
 input:-webkit-autofill,
 input:-webkit-autofill:hover,
 input:-webkit-autofill:focus,
 input:-webkit-autofill:active {
-  -webkit-box-shadow: 0 0 0 30px #131c2e inset !important;
+  -webkit-box-shadow: 0 0 0 30px #0a0a0a inset !important;
   -webkit-text-fill-color: white !important;
-  transition: background-color 5000s ease-in-out 0s;
   caret-color: white;
 }

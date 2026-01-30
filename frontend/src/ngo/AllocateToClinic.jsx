@@ -23,9 +23,18 @@ const AllocateToClinic = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submittedHash, setSubmittedHash] = useState(null);
 
-  // Options will be populated from backend someday
-  const donationOptions = [];
-  const clinicOptions = [];
+  const donationOptions = [
+    { value: 'DON-2025-001', label: 'DON-2025-001 - PPE Kits (100 boxes)' },
+    { value: 'DON-2025-002', label: 'DON-2025-002 - Medical Gloves (500 boxes)' },
+    { value: 'DON-2025-003', label: 'DON-2025-003 - Syringes (1000 units)' },
+  ];
+
+  const clinicOptions = [
+    { value: 'clinic1', label: 'City General Hospital' },
+    { value: 'clinic2', label: 'Community Clinic West' },
+    { value: 'clinic3', label: 'Rural Health Center' },
+    { value: 'clinic4', label: 'Emergency Care Clinic' },
+  ];
 
   const handleChange = (e) => {
     const { name, value } = e.target;

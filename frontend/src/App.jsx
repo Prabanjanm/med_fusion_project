@@ -15,15 +15,19 @@ import Home from './pages/Home';
 import CsrDashboard from './csr/CsrDashboard';
 import CreateDonation from './csr/CreateDonation';
 import DonationHistory from './csr/DonationHistory';
+import ProductDeclaration from './csr/ProductDeclaration';
 
 // NGO Components
 import NgoDashboard from './ngo/NgoDashboard';
 import AllocateToClinic from './ngo/AllocateToClinic';
 import AllocationHistory from './ngo/AllocationHistory';
+import ProductVerification from './ngo/ProductVerification';
+import RequestValidation from './ngo/RequestValidation';
 
 // Clinic Components
 import ClinicDashboard from './clinic/ClinicDashboard';
 import ConfirmReceipt from './clinic/ConfirmReceipt';
+import ProductCatalog from './clinic/ProductCatalog';
 
 // Auditor Components
 import AuditDashboard from './auditor/AuditDashboard';
@@ -76,6 +80,10 @@ function App() {
             path="/csr/history"
             element={<ProtectedRoutes element={<DonationHistory />} allowedRoles={['csr']} />}
           />
+          <Route
+            path="/csr/declare-product"
+            element={<ProtectedRoutes element={<ProductDeclaration />} allowedRoles={['csr']} />}
+          />
 
           {/* NGO Routes */}
           <Route
@@ -90,6 +98,14 @@ function App() {
             path="/ngo/history"
             element={<ProtectedRoutes element={<AllocationHistory />} allowedRoles={['ngo']} />}
           />
+          <Route
+            path="/ngo/verify-products"
+            element={<ProtectedRoutes element={<ProductVerification />} allowedRoles={['ngo']} />}
+          />
+          <Route
+            path="/ngo/validate-requests"
+            element={<ProtectedRoutes element={<RequestValidation />} allowedRoles={['ngo']} />}
+          />
 
           {/* Clinic Routes */}
           <Route
@@ -99,6 +115,10 @@ function App() {
           <Route
             path="/clinic/receipts"
             element={<ProtectedRoutes element={<ConfirmReceipt />} allowedRoles={['clinic']} />}
+          />
+          <Route
+            path="/clinic/catalog"
+            element={<ProtectedRoutes element={<ProductCatalog />} allowedRoles={['clinic']} />}
           />
 
           {/* Auditor Routes */}

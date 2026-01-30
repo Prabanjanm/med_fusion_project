@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { donationAPI } from '../services/api';
 import { Upload, Plus, FileText, CheckCircle } from 'lucide-react';
 import Layout from '../components/Layout';
@@ -11,7 +10,6 @@ import '../styles/FormStyles.css';
  * Uses the WizardModal to guide users through the donation process.
  */
 const CreateDonation = () => {
-  const navigate = useNavigate();
   const [isWizardOpen, setIsWizardOpen] = useState(false);
 
   const [formData, setFormData] = useState({
@@ -28,7 +26,7 @@ const CreateDonation = () => {
 
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
-
+  const [submittedHash, setSubmittedHash] = useState(null);
 
   const resourceOptions = [
     { value: 'ppe', label: 'PPE Kits' },
@@ -100,10 +98,9 @@ const CreateDonation = () => {
       const hash = response.tx_hash || response.donation_id || "0xHASH...";
 
       console.log('Donation submitted:', response);
-      // Removed local success screen logic - redirect immediately
+      setSubmittedHash(String(hash));
       setIsSubmitting(false);
       setIsWizardOpen(false); // Close wizard
-      navigate('/csr/history'); // Redirect as per requirements
     } catch (error) {
       console.error("Donation creation failed", error);
       alert("Failed to create donation: " + error.message);
@@ -247,7 +244,46 @@ const CreateDonation = () => {
     }
   ];
 
+  if (submittedHash) {
+    return (
+      <Layout>
+        <div style={{ height: '80vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center' }}>
+          <div style={{ fontSize: '4rem', color: '#00ff94', marginBottom: '1rem', animation: 'bounce 1s' }}>
+            <CheckCircle size={80} />
+          </div>
+          <h1 style={{ fontSize: '2.5rem', marginBottom: '0.5rem' }}>Transaction Recorded</h1>
+          <p style={{ color: 'var(--text-muted)', maxWidth: '500px', margin: '0 auto 2rem' }}>
+            The donation has been successfully written to the blockchain ledger.
+            Immutable hash generated.
+          </p>
 
+          <div style={{ background: 'rgba(0,0,0,0.3)', padding: '1rem 2rem', borderRadius: '8px', border: '1px dashed #334155', fontFamily: 'monospace', color: '#00ff94', marginBottom: '2rem' }}>
+            {submittedHash}
+          </div>
+
+          <button
+            className="btn-primary"
+            onClick={() => {
+              setSubmittedHash(null);
+              setFormData({
+                donorName: '', donorOrgName: '', resourceType: 'ppe', quantity: '', unit: 'pieces',
+                donationDate: new Date().toISOString().split('T')[0], ngoName: '', purpose: '', supportingDocument: null
+              });
+            }}
+          >
+            Make Another Donation
+          </button>
+        </div>
+        <style>{`
+             @keyframes bounce {
+               0%, 20%, 50%, 80%, 100% {transform: translateY(0);}
+               40% {transform: translateY(-20px);}
+               60% {transform: translateY(-10px);}
+             }
+           `}</style>
+      </Layout>
+    )
+  }
 
   return (
     <Layout>

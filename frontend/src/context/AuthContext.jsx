@@ -53,31 +53,6 @@ export const AuthProvider = ({ children }) => {
 
   const login = useCallback(async (email, password) => {
     try {
-      // --- MOCK LOGIN FOR DEMO / MISSING BACKEND ROLES ---
-      // Since backend for NGO, Clinic, Auditor is not fully ready/seeded
-      if (password === 'auditor' && email.includes('auditor')) {
-        const mockUser = { username: email, role: 'auditor', token: 'mock_token_auditor' };
-        setUser(mockUser);
-        localStorage.setItem('authToken', mockUser.token);
-        localStorage.setItem('authUser', JSON.stringify(mockUser));
-        return mockUser;
-      }
-      if (password === 'ngo' && email.includes('ngo')) {
-        const mockUser = { username: email, role: 'ngo', token: 'mock_token_ngo' };
-        setUser(mockUser);
-        localStorage.setItem('authToken', mockUser.token);
-        localStorage.setItem('authUser', JSON.stringify(mockUser));
-        return mockUser;
-      }
-      if (password === 'clinic' && email.includes('clinic')) {
-        const mockUser = { username: email, role: 'clinic', token: 'mock_token_clinic' };
-        setUser(mockUser);
-        localStorage.setItem('authToken', mockUser.token);
-        localStorage.setItem('authUser', JSON.stringify(mockUser));
-        return mockUser;
-      }
-      // ----------------------------------------------------
-
       const response = await authAPI.login(email, password);
       const { access_token, role } = response;
 
