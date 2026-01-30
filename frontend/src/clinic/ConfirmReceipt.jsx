@@ -23,11 +23,8 @@ const ConfirmReceipt = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submittedHash, setSubmittedHash] = useState(null);
 
-  const allocationOptions = [
-    { value: 'ALLOC-2025-001', label: 'ALLOC-2025-001 - PPE Kits' },
-    { value: 'ALLOC-2025-002', label: 'ALLOC-2025-002 - Medical Gloves' },
-    { value: 'ALLOC-2025-003', label: 'ALLOC-2025-003 - Syringes' },
-  ];
+  // Waiting for backend
+  const allocationOptions = [];
 
   const conditionOptions = [
     { value: 'good', label: 'Good Condition' },

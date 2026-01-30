@@ -7,6 +7,9 @@ const Sidebar = ({ role }) => {
   const location = useLocation();
   const isActive = (path) => location.pathname === path;
 
+  // Normalize role to lowercase for consistent comparison
+  const normalizedRole = role ? String(role).toLowerCase().trim() : '';
+
   return (
     <aside className="sidebar">
       <div className="sidebar-header">
@@ -21,7 +24,7 @@ const Sidebar = ({ role }) => {
       </div>
 
       <nav className="sidebar-nav">
-        {role === 'csr' && (
+        {normalizedRole === 'csr' && (
           <>
             <NavLink to="/csr" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`} end>
               <LayoutDashboard size={20} className="nav-icon" />
@@ -38,7 +41,7 @@ const Sidebar = ({ role }) => {
           </>
         )}
 
-        {role === 'ngo' && (
+        {normalizedRole === 'ngo' && (
           <>
             <NavLink to="/ngo" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`} end>
               <LayoutDashboard size={20} className="nav-icon" />
@@ -55,7 +58,7 @@ const Sidebar = ({ role }) => {
           </>
         )}
 
-        {role === 'clinic' && (
+        {normalizedRole === 'clinic' && (
           <>
             <NavLink to="/clinic" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`} end>
               <LayoutDashboard size={20} className="nav-icon" />
@@ -68,7 +71,7 @@ const Sidebar = ({ role }) => {
           </>
         )}
 
-        {role === 'auditor' && (
+        {normalizedRole === 'auditor' && (
           <>
             <NavLink to="/auditor" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`} end>
               <LayoutDashboard size={20} className="nav-icon" />

@@ -7,7 +7,7 @@
     background-color: #0f172a;
     /* Slate 900 */
     color: #f8fafc;
-    overflow-x: hidden;
+    /* REMOVED overflow-x: hidden to allow animations to flow */
     font-family: 'Inter', sans-serif;
 }
 
@@ -82,23 +82,26 @@
     transform: translateY(-1px);
 }
 
-/* Hero Section */
+/* Hero Section - FULL BLEED BACKGROUND */
 .hero-section {
+    /* Full viewport dimensions */
+    width: 100vw;
     min-height: 90vh;
-    /* Restore some height constraint for balance */
     display: flex;
     flex-direction: column;
     justify-content: flex-start;
-    /* Start from top + padding */
     align-items: center;
     text-align: center;
     padding-top: 22rem;
-    /* Significantly increased for breathing room */
     padding-bottom: 6rem;
     position: relative;
-    overflow: hidden;
+    /* CRITICAL: Remove overflow:hidden to allow animations to flow freely */
+    overflow: visible;
     /* Deep calm background with subtle movement */
     background: radial-gradient(circle at 50% 30%, #1e293b 0%, #0f172a 60%);
+    /* Negative margin to break out of any parent constraints */
+    margin-left: calc(-50vw + 50%);
+    margin-right: calc(-50vw + 50%);
 }
 
 /* Subtle background noise/mesh effect */
@@ -135,6 +138,8 @@
     flex-direction: column;
     align-items: center;
     margin-top: 0rem;
+    /* Add padding for mobile */
+    padding: 0 2rem;
 }
 
 .hero-title {
@@ -247,13 +252,20 @@
     border: 1px solid rgba(255, 255, 255, 0.02);
 }
 
-/* Sections */
+/* Sections - Content Constrained, Background Full Width */
 .section {
     position: relative;
     z-index: 10;
     padding: 6rem 2rem;
+    /* Content wrapper - constrained */
+    width: 100%;
+}
+
+/* Inner content wrapper for max-width constraint */
+.section>* {
     max-width: 1200px;
-    margin: 0 auto;
+    margin-left: auto;
+    margin-right: auto;
 }
 
 .bg-dim {
@@ -298,6 +310,11 @@
     border-radius: 12px;
     backdrop-filter: blur(10px);
     transition: all 0.2s ease;
+    position: relative;
+    /* CRITICAL: Allow ripple animations to overflow */
+    overflow: visible;
+    /* Create stacking context for ripples */
+    isolation: isolate;
 }
 
 .feature-card:hover {
@@ -387,16 +404,15 @@
 /* Ambient Hover Ripple */
 .ambient-ripple-container {
     position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    overflow: hidden;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    /* CRITICAL: Allow ripples to flow beyond card boundaries */
+    overflow: visible;
     pointer-events: none;
     z-index: 1;
-    /* Low z-index to be behind text if possible, or adjust parent to have text higher */
-    border-radius: inherit;
-    /* Match parent radius */
+    /* Low z-index to be behind text */
 }
 
 .ambient-ripple {

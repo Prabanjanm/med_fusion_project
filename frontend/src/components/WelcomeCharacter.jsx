@@ -24,6 +24,9 @@ const Mascot = ({ pose }) => {
         rightArm: null,
         rightForeArm: null,
         rightHand: null,
+        leftArm: null,
+        leftForeArm: null,
+        leftHand: null,
         neck: null,
         head: null,
         spine: null
@@ -70,6 +73,9 @@ const Mascot = ({ pose }) => {
         bones.current.rightArm = find([['Right', 'Arm'], ['Right', 'Shoulder'], ['Arm', 'R'], 'mixamorigRightArm', 'mixamorig_RightArm']);
         bones.current.rightForeArm = find([['Right', 'Fore'], ['Right', 'Elbow'], ['ForeArm', 'R'], 'mixamorigRightForeArm', 'mixamorig_RightForeArm']);
         bones.current.rightHand = find([['Right', 'Hand'], ['Hand', 'R'], 'mixamorigRightHand', 'mixamorig_RightHand']);
+        bones.current.leftArm = find([['Left', 'Arm'], ['Left', 'Shoulder'], ['Arm', 'L'], 'mixamorigLeftArm', 'mixamorig_LeftArm']);
+        bones.current.leftForeArm = find([['Left', 'Fore'], ['Left', 'Elbow'], ['ForeArm', 'L'], 'mixamorigLeftForeArm', 'mixamorig_LeftForeArm']);
+        bones.current.leftHand = find([['Left', 'Hand'], ['Hand', 'L'], 'mixamorigLeftHand', 'mixamorig_LeftHand']);
         bones.current.neck = find([['Neck'], ['Head'], 'mixamorigNeck', 'mixamorig_Neck']);
         bones.current.head = find([['Head'], ['Top'], 'mixamorigHead', 'mixamorig_Head']);
         bones.current.spine = find([['Spine'], ['Torso'], ['Hips'], 'mixamorigSpine', 'mixamorig_Spine']);
@@ -166,64 +172,54 @@ const Mascot = ({ pose }) => {
         group.current.rotation.z = 0; // Keep root Z locked
 
         // B. PROCEDURAL OVERRIDES BASED ON activeAction
-        if (activeAction === 'wave') {
-            // Right arm wave (palm out)
+        // 1. WELCOME HANDSHAKE (Warm Welcome Gesture)
+        if (activeAction === 'welcome_handshake' || activeAction === 'wave') {
+            // Right Arm Open
             if (bones.current.rightArm && restPose.current.rightArm) {
-                bones.current.rightArm.rotation.z = THREE.MathUtils.lerp(bones.current.rightArm.rotation.z, restPose.current.rightArm.z + 2.0, lerpFactor); // Arm up
-                bones.current.rightArm.rotation.x = THREE.MathUtils.lerp(bones.current.rightArm.rotation.x, restPose.current.rightArm.x + 0.5, lerpFactor);
-            }
-            if (bones.current.rightForeArm && restPose.current.rightForeArm) {
-                bones.current.rightForeArm.rotation.z = THREE.MathUtils.lerp(bones.current.rightForeArm.rotation.z, restPose.current.rightForeArm.z + 0.5, lerpFactor); // Forearm bend
-            }
-            if (bones.current.rightHand && restPose.current.rightHand) {
-                bones.current.rightHand.rotation.y = THREE.MathUtils.lerp(bones.current.rightHand.rotation.y, restPose.current.rightHand.y + Math.sin(t * 10) * 0.5, lerpFactor); // Waving motion
-                bones.current.rightHand.rotation.z = THREE.MathUtils.lerp(bones.current.rightHand.rotation.z, restPose.current.rightHand.z + 0.5, lerpFactor); // Palm out
-            }
-            // Head look at camera
-            if (bones.current.neck && restPose.current.neck) {
-                bones.current.neck.rotation.y = THREE.MathUtils.lerp(bones.current.neck.rotation.y, restPose.current.neck.y, lerpFactor);
-                bones.current.neck.rotation.x = THREE.MathUtils.lerp(bones.current.neck.rotation.x, restPose.current.neck.x, lerpFactor);
-            }
-            if (bones.current.head && restPose.current.head) {
-                bones.current.head.rotation.y = THREE.MathUtils.lerp(bones.current.head.rotation.y, restPose.current.head.y, lerpFactor);
-            }
-        }
-
-        // --- INVITE (Look Down at Form) ---
-        else if (activeAction === 'invite' || activeAction === 'filling') {
-            // Head Look Down & Right (towards form)
-            if (bones.current.neck && restPose.current.neck) {
-                bones.current.neck.rotation.y = THREE.MathUtils.lerp(bones.current.neck.rotation.y, restPose.current.neck.y - 0.6, lerpFactor);
-                bones.current.neck.rotation.x = THREE.MathUtils.lerp(bones.current.neck.rotation.x, restPose.current.neck.x + 0.5, lerpFactor); // Look down
-            }
-            if (bones.current.head && restPose.current.head) {
-                bones.current.head.rotation.x = THREE.MathUtils.lerp(bones.current.head.rotation.x, restPose.current.head.x + 0.3, lerpFactor);
-            }
-            // Arm Pointing Low
-            if (bones.current.rightArm && restPose.current.rightArm) {
-                bones.current.rightArm.rotation.z = THREE.MathUtils.lerp(bones.current.rightArm.rotation.z, restPose.current.rightArm.z + 0.6, lerpFactor); // Low Lift
-                bones.current.rightArm.rotation.x = THREE.MathUtils.lerp(bones.current.rightArm.rotation.x, restPose.current.rightArm.x + 0.8, lerpFactor); // Point Forward
+                bones.current.rightArm.rotation.z = THREE.MathUtils.lerp(bones.current.rightArm.rotation.z, restPose.current.rightArm.z + 1.2, lerpFactor);
+                bones.current.rightArm.rotation.x = THREE.MathUtils.lerp(bones.current.rightArm.rotation.x, restPose.current.rightArm.x + 0.3, lerpFactor);
             }
             if (bones.current.rightForeArm && restPose.current.rightForeArm) {
                 bones.current.rightForeArm.rotation.z = THREE.MathUtils.lerp(bones.current.rightForeArm.rotation.z, restPose.current.rightForeArm.z + 0.5, lerpFactor);
             }
+            // Left Arm Open (Symmetrical Welcome)
+            if (bones.current.leftArm && restPose.current.leftArm) {
+                bones.current.leftArm.rotation.z = THREE.MathUtils.lerp(bones.current.leftArm.rotation.z, restPose.current.leftArm.z - 1.2, lerpFactor);
+                bones.current.leftArm.rotation.x = THREE.MathUtils.lerp(bones.current.leftArm.rotation.x, restPose.current.leftArm.x + 0.3, lerpFactor);
+            }
+            if (bones.current.leftForeArm && restPose.current.leftForeArm) {
+                bones.current.leftForeArm.rotation.z = THREE.MathUtils.lerp(bones.current.leftForeArm.rotation.z, restPose.current.leftForeArm.z - 0.5, lerpFactor);
+            }
+            // Head Up & Friendly
+            if (bones.current.neck && restPose.current.neck) {
+                bones.current.neck.rotation.x = THREE.MathUtils.lerp(bones.current.neck.rotation.x, restPose.current.neck.x - 0.2, lerpFactor);
+            }
         }
 
-        // --- SHY (Password - Look Away) ---
-        else if (activeAction === 'shy') {
-            // Head Look Away (Up & Left)
+        // 2. LOOK INPUT (Focus on Form)
+        else if (activeAction === 'look_input' || activeAction === 'filling') {
+            const lookDownIntensity = 0.5;
+            // Head Tilts Down
             if (bones.current.neck && restPose.current.neck) {
-                bones.current.neck.rotation.y = THREE.MathUtils.lerp(bones.current.neck.rotation.y, restPose.current.neck.y + 0.8, lerpFactor); // Turn Left
-                bones.current.neck.rotation.x = THREE.MathUtils.lerp(bones.current.neck.rotation.x, restPose.current.neck.x - 0.3, lerpFactor); // Look Up
+                bones.current.neck.rotation.x = THREE.MathUtils.lerp(bones.current.neck.rotation.x, restPose.current.neck.x + lookDownIntensity, lerpFactor);
             }
-            // Arm Cover Eyes
+            if (bones.current.head && restPose.current.head) {
+                bones.current.head.rotation.x = THREE.MathUtils.lerp(bones.current.head.rotation.x, restPose.current.head.x + 0.2, lerpFactor);
+            }
+            // Arms Relaxed but slightly forward (ready to type concept)
             if (bones.current.rightArm && restPose.current.rightArm) {
-                bones.current.rightArm.rotation.z = THREE.MathUtils.lerp(bones.current.rightArm.rotation.z, restPose.current.rightArm.z + 2.2, lerpFactor); // High Lift
-                bones.current.rightArm.rotation.x = THREE.MathUtils.lerp(bones.current.rightArm.rotation.x, restPose.current.rightArm.x + 0.5, lerpFactor); // In front of face
+                bones.current.rightArm.rotation.x = THREE.MathUtils.lerp(bones.current.rightArm.rotation.x, restPose.current.rightArm.x + 0.2, lerpFactor);
             }
-            if (bones.current.rightForeArm && restPose.current.rightForeArm) {
-                bones.current.rightForeArm.rotation.z = THREE.MathUtils.lerp(bones.current.rightForeArm.rotation.z, restPose.current.rightForeArm.z + 2.5, lerpFactor); // Curl tight
+        }
+
+        // 3. CLOSE EYES / PRIVACY (Shy/Cover)
+        else if (activeAction === 'close_eyes' || activeAction === 'shy') {
+            // Head Turns Away (Privacy)
+            if (bones.current.neck && restPose.current.neck) {
+                bones.current.neck.rotation.y = THREE.MathUtils.lerp(bones.current.neck.rotation.y, restPose.current.neck.y + 1.2, lerpFactor); // Sharp turn
+                bones.current.neck.rotation.x = THREE.MathUtils.lerp(bones.current.neck.rotation.x, restPose.current.neck.x + 0.4, lerpFactor); // Down
             }
+            // Optional: Hand could potentially cover eyes if we wanted, but keeping it "Non-distracting"
         }
 
         // --- IDLE ---

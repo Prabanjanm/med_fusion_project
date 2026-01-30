@@ -1,8 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { companyAPI, ngoAPI, authAPI } from '../services/api';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { Building2, Handshake, Stethoscope, ArrowRight, CheckCircle2, ShieldCheck, Mail, Lock, FileText, BadgeCheck, FileCheck, ChevronRight, ChevronLeft } from 'lucide-react';
 import WelcomeCharacter from '../components/WelcomeCharacter';
+import PasswordInput from '../components/PasswordInput';
 import '../styles/Auth.css';
 
 /**
@@ -14,17 +16,23 @@ import '../styles/Auth.css';
  */
 const RegisterCompany = () => {
     const navigate = useNavigate();
-    const location = useLocation();
+    const { roleId } = useParams(); // Get role from route param
 
-    // Get role from URL query params (default to 'csr' if not found or invalid)
-    const getInitialRole = () => {
-        const searchParams = new URLSearchParams(location.search);
-        const roleParam = searchParams.get('role');
-        const validRoles = ['csr', 'ngo', 'clinic', 'auditor'];
-        return validRoles.includes(roleParam) ? roleParam : 'csr';
+    // Normalize roleId from URL to internal key
+    const getRoleFromParam = (param) => {
+        const map = {
+            'company': 'csr',
+            'corporate': 'csr',
+            'csr': 'csr',
+            'ngo': 'ngo',
+            'clinic': 'clinic',
+            'auditor': 'auditor'
+        };
+        return map[param] || 'csr';
     };
 
-    const [selectedRole, setSelectedRole] = useState(getInitialRole());
+    const selectedRole = getRoleFromParam(roleId);
+
     const [currentStep, setCurrentStep] = useState(1);
     const [activeField, setActiveField] = useState('none'); // 'none', 'general', 'password'
     const [hasGreeted, setHasGreeted] = useState(false); // Track initial greeting
@@ -92,7 +100,8 @@ const RegisterCompany = () => {
     };
 
     const config = getRoleConfig(selectedRole);
-    const activeColor = roles.find(r => r.id === selectedRole).color;
+    const activeRoleObj = roles.find(r => r.id === selectedRole);
+    const activeColor = activeRoleObj ? activeRoleObj.color : '#00d4ff';
 
     const handleChange = (e) => {
         setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -107,15 +116,50 @@ const RegisterCompany = () => {
         if (currentStep > 1) setCurrentStep(currentStep - 1);
     };
 
-    const handleSubmit = () => {
-        setCurrentStep(4); // 4 = processing
-        setTimeout(() => {
-            setCurrentStep(5); // 5 = success
-        }, 2000);
+    const handleSubmit = async () => {
+        setCurrentStep(4); // Processing UI
+        try {
+            // 1. Register Entity
+            if (selectedRole === 'csr') {
+                // Step 1: Register CSR Company (JSON)
+                // Password is NOT sent here
+                await companyAPI.register({
+                    company_name: formData.name,
+                    cin: formData.id_number,
+                    pan: formData.secondary_id,
+                    official_email: formData.email
+                });
+
+                // Step 2: Set Password immediately (JSON)
+                // This is required because registration creates user with password_set=False
+                await authAPI.setPassword(formData.email, formData.password);
+
+            } else if (selectedRole === 'ngo') {
+                await ngoAPI.register({
+                    ngo_name: formData.name,
+                    csr_1_number: formData.id_number,
+                    has_80g: true, // Defaulting as UI doesn't have field
+                    official_email: formData.email
+                });
+                // NGO flow also needs password set, assuming similar requirement:
+                await authAPI.setPassword(formData.email, formData.password);
+            } else {
+                throw new Error("Self-registration is only available for Corporate and NGOs. Clinics and Auditors are invited partners.");
+            }
+
+            // Note: setPassword call is now integrated inside the if/blocks to be explicit per role flow requirement
+            // removed separate await authAPI.setPassword call that was outside
+
+            setCurrentStep(5); // Success UI
+        } catch (error) {
+            console.error("Registration failed", error);
+            alert(error.message || "Registration failed");
+            setCurrentStep(3); // Go back to step 3
+        }
     };
 
     // Initial Greeting Timer
-    React.useEffect(() => {
+    useEffect(() => {
         const timer = setTimeout(() => {
             setHasGreeted(true);
         }, 2000); // Match wave animation duration
@@ -213,21 +257,24 @@ const RegisterCompany = () => {
 
                                     <h3 style={{ fontSize: '1rem', color: '#fff', marginBottom: '1.5rem' }}>Role Identification</h3>
 
-                                    {/* Role Tabs */}
-                                    <div style={{ display: 'flex', gap: '10px', marginBottom: '1.5rem', flexWrap: 'wrap' }}>
-                                        {roles.map((role) => (
-                                            <button key={role.id} onClick={() => setSelectedRole(role.id)}
-                                                style={{
-                                                    flex: '1 1 40%',
-                                                    padding: '10px', borderRadius: '8px', border: '1px solid transparent', cursor: 'pointer',
-                                                    background: selectedRole === role.id ? `${activeColor}20` : 'rgba(255,255,255,0.05)',
-                                                    borderColor: selectedRole === role.id ? activeColor : 'transparent',
-                                                    color: selectedRole === role.id ? activeColor : '#94a3b8',
-                                                    fontSize: '0.8rem', fontWeight: 600, display: 'flex', alignItems: 'center', justifySelf: 'center', gap: '8px'
-                                                }}>
-                                                {role.icon} {role.label}
-                                            </button>
-                                        ))}
+                                    {/* Role Display (Non-interactive) */}
+                                    <div style={{
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '12px',
+                                        marginBottom: '1.5rem',
+                                        background: `rgba(${parseInt(activeColor.slice(1, 3), 16)}, ${parseInt(activeColor.slice(3, 5), 16)}, ${parseInt(activeColor.slice(5, 7), 16)}, 0.1)`,
+                                        padding: '12px',
+                                        borderRadius: '8px',
+                                        border: `1px solid ${activeColor}40`
+                                    }}>
+                                        <div style={{ color: activeColor }}>
+                                            {activeRoleObj?.icon}
+                                        </div>
+                                        <div>
+                                            <p style={{ fontSize: '0.9rem', fontWeight: 'bold', color: activeColor, margin: 0 }}>{activeRoleObj?.label}</p>
+                                            <p style={{ fontSize: '0.75rem', color: '#94a3b8', margin: 0 }}>{activeRoleObj?.desc}</p>
+                                        </div>
                                     </div>
 
                                     <div className="input-group-modern">
@@ -307,8 +354,7 @@ const RegisterCompany = () => {
                                     <h3 style={{ fontSize: '1rem', color: '#fff', marginBottom: '1rem' }}>Account Security</h3>
                                     <div className="input-group-modern">
                                         <label className="input-label" style={{ display: 'block', fontSize: '0.75rem', color: '#94a3b8', marginBottom: '0.5rem' }}>CREATE PASSWORD</label>
-                                        <input
-                                            type="password"
+                                        <PasswordInput
                                             name="password"
                                             className="form-input"
                                             placeholder="••••••••"
@@ -347,7 +393,7 @@ const RegisterCompany = () => {
                                             <CheckCircle2 size={60} color={activeColor} style={{ margin: '0 auto 1.5rem' }} />
                                             <h3 style={{ color: activeColor, fontSize: '1.5rem' }}>Welcome Aboard!</h3>
                                             <p style={{ color: '#94a3b8', marginTop: '0.5rem' }}>Your account has been successfully created.</p>
-                                            <button onClick={() => navigate('/login')} className="btn-login-modern" style={{ background: activeColor, color: '#000', marginTop: '2.5rem', width: '100%', padding: '12px' }}>PROCEED TO LOGIN</button>
+                                            <button onClick={() => navigate(`/login/${selectedRole}`)} className="btn-login-modern" style={{ background: activeColor, color: '#000', marginTop: '2.5rem', width: '100%', padding: '12px' }}>PROCEED TO LOGIN</button>
                                         </>
                                     )}
                                 </motion.div>
@@ -378,7 +424,7 @@ const RegisterCompany = () => {
 
                         {currentStep === 1 && (
                             <div style={{ textAlign: 'center', marginTop: '1.5rem' }}>
-                                <span onClick={() => navigate('/login')} style={{ fontSize: '0.85rem', color: '#64748b', cursor: 'pointer' }}>Already have an account? Login</span>
+                                <span onClick={() => navigate(`/login/${selectedRole}`)} style={{ fontSize: '0.85rem', color: '#64748b', cursor: 'pointer' }}>Already have an account? Login</span>
                             </div>
                         )}
                     </div>

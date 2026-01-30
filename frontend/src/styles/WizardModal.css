@@ -196,6 +196,40 @@
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
+/* Select dropdown specific styling */
+.wizard-select {
+    cursor: pointer;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23f8fafc' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 1rem center;
+    padding-right: 2.5rem;
+}
+
+/* Dropdown option styling - better contrast */
+.wizard-select option {
+    background: #0f172a;
+    /* Dark blue background */
+    color: #f8fafc;
+    /* White text */
+    padding: 0.75rem 1rem;
+    font-size: 0.95rem;
+}
+
+.wizard-select option:hover,
+.wizard-select option:focus,
+.wizard-select option:checked {
+    background: #1e293b;
+    /* Slightly lighter on hover/select */
+    color: #ffffff;
+}
+
+/* Disabled option (placeholder) */
+.wizard-select option:disabled {
+    color: #64748b;
+    /* Muted gray */
+}
+
 .wizard-input:focus,
 .wizard-select:focus,
 .wizard-textarea:focus {

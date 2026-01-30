@@ -16,44 +16,14 @@ const AuditTrail = () => {
   const [selectedDonation, setSelectedDonation] = useState(null);
 
   // Mock data with complete lifecycle
-  const auditData = [
-    {
-      id: 'DON-2025-001',
-      donorName: 'John Healthcare Corp',
-      ngoName: 'Red Cross India',
-      clinicName: 'City General Hospital',
-      resourceType: 'PPE Kits',
-      quantity: '100 boxes',
-      donationTimestamp: '2025-01-15 10:30:00 UTC',
-      donationHash: '0x3f4d5e6a7b8c9d0e1f2a3b4c5d6e7f8a',
-      allocationTimestamp: '2025-01-15 14:45:00 UTC',
-      allocationHash: '0x4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b',
-      receiptTimestamp: '2025-01-16 09:20:00 UTC',
-      receiptHash: '0x5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c',
-      status: 'completed',
-    },
-    {
-      id: 'DON-2025-002',
-      donorName: 'Medical Supplies Ltd',
-      ngoName: 'WHO Partners',
-      clinicName: 'Emergency Care Clinic',
-      resourceType: 'Medical Gloves',
-      quantity: '500 boxes',
-      donationTimestamp: '2025-01-18 11:15:00 UTC',
-      donationHash: '0x6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d',
-      allocationTimestamp: '2025-01-18 15:30:00 UTC',
-      allocationHash: '0x7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e',
-      receiptTimestamp: null,
-      receiptHash: null,
-      status: 'in-transit',
-    },
-  ];
+  // No mock data - waiting for backend integration
+  const auditData = [];
 
   const filteredData = auditData.filter(item =>
-    item.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    item.donorName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    item.ngoName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    item.clinicName.toLowerCase().includes(searchTerm.toLowerCase())
+    (item.id || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (item.donorName || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (item.ngoName || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (item.clinicName || '').toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const handleViewDetails = (donation) => {

@@ -6,7 +6,7 @@ import ProtectedRoutes from './routes/ProtectedRoutes';
 import Login from './auth/Login';
 import SetPassword from './auth/SetPassword';
 import RegisterCompany from './auth/RegisterCompany';
-import Welcome from './auth/Welcome';
+import RoleSelection from './auth/RoleSelection';
 import Home from './pages/Home';
 
 // ...
@@ -45,10 +45,23 @@ function App() {
         <Routes>
           {/* Public Routes */}
           <Route path="/" element={<Home />} />
-          <Route path="/welcome" element={<Welcome />} />
-          <Route path="/login" element={<Login />} />
-          <Route path="/register" element={<RegisterCompany />} />
+
+          {/* Role Selection acts as the Auth Entry Portal */}
+          <Route path="/auth/select" element={<RoleSelection />} />
+
+          {/* Redirect Generic Login/Register to Role Selection */}
+          {/* Redirect Generic Login/Register to Role Selection */}
+          <Route path="/login" element={<Navigate to="/auth/select?mode=login" replace />} />
+          <Route path="/register" element={<Navigate to="/auth/select?mode=register" replace />} />
+
           <Route path="/auth/set-password" element={<SetPassword />} />
+
+          {/* Role Specific Auth Routes */}
+          <Route path="/:roleId/login" element={<Login />} />
+          <Route path="/login/:roleId" element={<Login />} />
+          {/* Support both patterns: /role/register and /register/role */}
+          <Route path="/:roleId/register" element={<RegisterCompany />} />
+          <Route path="/register/:roleId" element={<RegisterCompany />} />
 
           {/* CSR Routes */}
           <Route

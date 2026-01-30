@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { Lock, ShieldCheck, Key, ArrowRight } from 'lucide-react';
+import PasswordInput from '../components/PasswordInput';
 import '../styles/Auth.css';
 
 const SetPassword = () => {
@@ -66,8 +67,7 @@ const SetPassword = () => {
                             <label className="input-label" style={{ display: 'flex', gap: '8px', fontSize: '0.75rem', color: '#64748b', marginBottom: '0.5rem', alignItems: 'center' }}>
                                 <Lock size={14} /> NEW PASSWORD
                             </label>
-                            <input
-                                type="password"
+                            <PasswordInput
                                 name="password"
                                 className="form-input"
                                 placeholder="••••••••"
@@ -82,8 +82,7 @@ const SetPassword = () => {
                             <label className="input-label" style={{ display: 'flex', gap: '8px', fontSize: '0.75rem', color: '#64748b', marginBottom: '0.5rem', alignItems: 'center' }}>
                                 <ShieldCheck size={14} /> CONFIRM PASSWORD
                             </label>
-                            <input
-                                type="password"
+                            <PasswordInput
                                 name="confirmPassword"
                                 className="form-input"
                                 placeholder="••••••••"

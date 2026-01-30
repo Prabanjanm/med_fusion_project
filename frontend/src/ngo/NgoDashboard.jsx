@@ -1,39 +1,50 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Inbox, Send, FileSearch, Activity } from 'lucide-react';
 import Layout from '../components/Layout';
 import Table from '../components/Table';
 import SummaryCard from '../components/SummaryCard';
 import StatusBadge from '../components/StatusBadge';
+import { ngoAPI } from '../services/api';
 import '../styles/DashboardLayout.css';
 
 const NgoDashboard = () => {
   const navigate = useNavigate();
+  const [donations, setDonations] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [stats, setStats] = useState({ incoming: 0, allocated: 0, review: 0, clinics: 0 });
 
-  // Mock data
-  const incomingDonations = [
-    {
-      id: 'DON-2025-001',
-      donor_name: 'ABC Corporation',
-      resource_type: 'PPE Kits',
-      quantity: '100 boxes',
-      status: 'received',
-    },
-    {
-      id: 'DON-2025-002',
-      donor_name: 'XYZ Healthcare',
-      resource_type: 'Medical Gloves',
-      quantity: '500 boxes',
-      status: 'in-review',
-    },
-    {
-      id: 'DON-2025-003',
-      donor_name: 'Global Charities',
-      resource_type: 'Syringes',
-      quantity: '1000 pieces',
-      status: 'pending',
-    },
-  ];
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        // Load pending donations
+        const pending = await ngoAPI.getPendingDonations().catch(() => []);
+        // Ideally we also fetch allocated history to populate full stats
+        // For now, we only have pending endpoint confirmed
+
+        setDonations(pending.map(d => ({
+          id: d.donation_id,
+          donor_name: d.company_name,
+          resource_type: d.item_name,
+          quantity: d.quantity,
+          status: d.status
+        })));
+
+        setStats({
+          incoming: pending.length,
+          allocated: 0, // Placeholder until history API available
+          review: 0,
+          clinics: 0
+        });
+
+      } catch (error) {
+        console.error("Failed to load NGO data", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchData();
+  }, []);
 
   return (
     <Layout>
@@ -48,27 +59,37 @@ const NgoDashboard = () => {
       </div>
 
       <div className="stats-grid">
-        <SummaryCard label="Incoming Resources" value="24" color="#00E5FF" icon={Inbox} />
-        <SummaryCard label="Allocated" value="18" color="#00ff88" icon={Send} />
-        <SummaryCard label="In Review" value="4" color="#ff9800" icon={FileSearch} />
-        <SummaryCard label="Active Clinics" value="12" color="#b400ff" icon={Activity} />
+        <SummaryCard label="Incoming Resources" value={loading ? "-" : stats.incoming} color="#00E5FF" icon={Inbox} />
+        <SummaryCard label="Allocated" value={loading ? "-" : stats.allocated} color="#00ff88" icon={Send} />
+        <SummaryCard label="In Review" value={loading ? "-" : stats.review} color="#ff9800" icon={FileSearch} />
+        <SummaryCard label="Active Clinics" value={loading ? "-" : stats.clinics} color="#b400ff" icon={Activity} />
       </div>
 
       <div className="table-card">
         <h2 className="table-header-title">Incoming Donations</h2>
-        <Table
-          columns={[
-            { key: 'id', label: 'Donation ID' },
-            { key: 'donor_name', label: 'Donor' },
-            { key: 'resource_type', label: 'Resource Type' },
-            { key: 'quantity', label: 'Quantity' },
-            { key: 'status', label: 'Status' },
-          ]}
-          data={incomingDonations}
-          renderCell={(row, key) =>
-            key === 'status' ? <StatusBadge status={row.status} /> : row[key]
-          }
-        />
+
+        {loading ? (
+          <div style={{ padding: '3rem', textAlign: 'center', color: '#64748b' }}>Loading data...</div>
+        ) : donations.length === 0 ? (
+          <div style={{ padding: '3rem', textAlign: 'center', color: '#64748b' }}>
+            <p>No incoming donations to review.</p>
+            <p style={{ fontSize: '0.85rem', marginTop: '0.5rem' }}>Donations pending review will appear here.</p>
+          </div>
+        ) : (
+          <Table
+            columns={[
+              { key: 'id', label: 'Donation ID' },
+              { key: 'donor_name', label: 'Donor' },
+              { key: 'resource_type', label: 'Resource Type' },
+              { key: 'quantity', label: 'Quantity' },
+              { key: 'status', label: 'Status' },
+            ]}
+            data={donations}
+            renderCell={(row, key) =>
+              key === 'status' ? <StatusBadge status={row.status} /> : row[key]
+            }
+          />
+        )}
       </div>
     </Layout>
   );

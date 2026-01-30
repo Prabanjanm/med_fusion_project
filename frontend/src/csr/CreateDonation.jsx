@@ -1,4 +1,6 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { donationAPI } from '../services/api';
 import { Upload, Plus, FileText, CheckCircle } from 'lucide-react';
 import Layout from '../components/Layout';
 import WizardModal, { ReviewSummary } from '../components/WizardModal';
@@ -9,6 +11,7 @@ import '../styles/FormStyles.css';
  * Uses the WizardModal to guide users through the donation process.
  */
 const CreateDonation = () => {
+  const navigate = useNavigate();
   const [isWizardOpen, setIsWizardOpen] = useState(false);
 
   const [formData, setFormData] = useState({
@@ -25,7 +28,7 @@ const CreateDonation = () => {
 
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [submittedHash, setSubmittedHash] = useState(null);
+
 
   const resourceOptions = [
     { value: 'ppe', label: 'PPE Kits' },
@@ -82,14 +85,30 @@ const CreateDonation = () => {
 
   const handleSubmit = async () => {
     setIsSubmitting(true);
-    // Simulate API call and blockchain recording
-    setTimeout(() => {
-      console.log('Donation submitted:', formData);
-      const mockHash = "0x" + Array.from({ length: 64 }, () => Math.floor(Math.random() * 16).toString(16)).join('');
-      setSubmittedHash(mockHash);
+    try {
+      const payload = {
+        item_name: `${formData.resourceType} (${formData.unit})`,
+        quantity: parseInt(formData.quantity, 10),
+        purpose: formData.purpose || `Donation to ${formData.ngoName}`,
+        board_resolution_ref: `BR-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+        csr_policy_declared: true
+      };
+
+      const response = await donationAPI.create(payload);
+
+      // Use real ID or hash from response if available, else mock visual hash
+      const hash = response.tx_hash || response.donation_id || "0xHASH...";
+
+      console.log('Donation submitted:', response);
+      // Removed local success screen logic - redirect immediately
       setIsSubmitting(false);
       setIsWizardOpen(false); // Close wizard
-    }, 2000);
+      navigate('/csr/history'); // Redirect as per requirements
+    } catch (error) {
+      console.error("Donation creation failed", error);
+      alert("Failed to create donation: " + error.message);
+      setIsSubmitting(false);
+    }
   };
 
   // Step Components
@@ -104,6 +123,7 @@ const CreateDonation = () => {
           onChange={handleChange}
           placeholder="e.g. John Doe"
           className="wizard-input"
+          required
         />
         {errors.donorName && <span style={{ color: '#ef4444', fontSize: '0.8rem' }}>{errors.donorName}</span>}
       </div>
@@ -116,6 +136,7 @@ const CreateDonation = () => {
           onChange={handleChange}
           placeholder="e.g. Health Corp Global"
           className="wizard-input"
+          required
         />
         {errors.donorOrgName && <span style={{ color: '#ef4444', fontSize: '0.8rem' }}>{errors.donorOrgName}</span>}
       </div>
@@ -141,8 +162,9 @@ const CreateDonation = () => {
           value={formData.ngoName}
           onChange={handleChange}
           className="wizard-select"
+          required
         >
-          <option value="">Select Receiver NGO</option>
+          <option value="" disabled>Select Receiver NGO</option>
           {ngoOptions.map(opt => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
         </select>
         {errors.ngoName && <span style={{ color: '#ef4444', fontSize: '0.8rem' }}>{errors.ngoName}</span>}
@@ -182,6 +204,8 @@ const CreateDonation = () => {
           onChange={handleChange}
           placeholder="0"
           className="wizard-input"
+          min="1"
+          required
         />
         {errors.quantity && <span style={{ color: '#ef4444', fontSize: '0.8rem' }}>{errors.quantity}</span>}
       </div>
@@ -223,46 +247,7 @@ const CreateDonation = () => {
     }
   ];
 
-  if (submittedHash) {
-    return (
-      <Layout>
-        <div style={{ height: '80vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center' }}>
-          <div style={{ fontSize: '4rem', color: '#00ff94', marginBottom: '1rem', animation: 'bounce 1s' }}>
-            <CheckCircle size={80} />
-          </div>
-          <h1 style={{ fontSize: '2.5rem', marginBottom: '0.5rem' }}>Transaction Recorded</h1>
-          <p style={{ color: 'var(--text-muted)', maxWidth: '500px', margin: '0 auto 2rem' }}>
-            The donation has been successfully written to the blockchain ledger.
-            Immutable hash generated.
-          </p>
 
-          <div style={{ background: 'rgba(0,0,0,0.3)', padding: '1rem 2rem', borderRadius: '8px', border: '1px dashed #334155', fontFamily: 'monospace', color: '#00ff94', marginBottom: '2rem' }}>
-            {submittedHash}
-          </div>
-
-          <button
-            className="btn-primary"
-            onClick={() => {
-              setSubmittedHash(null);
-              setFormData({
-                donorName: '', donorOrgName: '', resourceType: 'ppe', quantity: '', unit: 'pieces',
-                donationDate: new Date().toISOString().split('T')[0], ngoName: '', purpose: '', supportingDocument: null
-              });
-            }}
-          >
-            Make Another Donation
-          </button>
-        </div>
-        <style>{`
-             @keyframes bounce {
-               0%, 20%, 50%, 80%, 100% {transform: translateY(0);}
-               40% {transform: translateY(-20px);}
-               60% {transform: translateY(-10px);}
-             }
-           `}</style>
-      </Layout>
-    )
-  }
 
   return (
     <Layout>

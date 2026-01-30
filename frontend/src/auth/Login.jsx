@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Building2, Handshake, Stethoscope, FileCheck, ArrowRight, ShieldCheck, Info } from 'lucide-react';
 import WelcomeCharacter from '../components/WelcomeCharacter';
+import PasswordInput from '../components/PasswordInput';
 import '../styles/Auth.css';
 
 /**
@@ -13,8 +14,26 @@ import '../styles/Auth.css';
 const Login = () => {
   const navigate = useNavigate();
   const { login } = useAuth();
+  const { roleId } = useParams(); // Get role from route param
 
-  const [selectedRole, setSelectedRole] = useState('csr');
+  // Normalize roleId from URL to internal key
+  const getRoleFromParam = (param) => {
+    const map = {
+      'corporate': 'csr',
+      'csr': 'csr',
+      'ngo': 'ngo',
+      'clinic': 'clinic',
+      'auditor': 'auditor'
+    };
+    // Fallback to previous default 'csr' if no param but usually there should be one
+    return map[param] || 'csr';
+  };
+
+  const lockedRole = getRoleFromParam(roleId);
+
+  // Use lockedRole instead of state for selection
+  const selectedRole = lockedRole;
+
   const [formData, setFormData] = useState({ identifier: '', secret: '' });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -38,6 +57,7 @@ const Login = () => {
   };
 
   const config = getRoleConfig(selectedRole);
+  const activeRoleObj = roles.find(r => r.id === selectedRole);
 
   const handleInputChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -50,14 +70,39 @@ const Login = () => {
     setError('');
     try {
       if (!formData.identifier || !formData.secret) throw new Error('CREDENTIALS REQUIRED');
-      await new Promise((resolve) => setTimeout(resolve, 1500));
+
+      // Perform real login
+      const user = await login(formData.identifier, formData.secret);
+      console.log('Login successful, user:', user);
+
       setActiveField('success');
       setTimeout(() => {
-        login(formData.identifier, selectedRole);
-        navigate(`/${selectedRole}`);
+        // Get role from login response
+        const targetRole = user?.role ? user.role.toLowerCase() : selectedRole;
+
+        // CRITICAL: Use explicit dashboard mapping to prevent redirect to /auth/select
+        const dashboardMap = {
+          'csr': '/csr',
+          'ngo': '/ngo',
+          'clinic': '/clinic',
+          'auditor': '/auditor'
+        };
+
+        const dashboardPath = dashboardMap[targetRole];
+        if (!dashboardPath) {
+          console.error('Invalid role:', targetRole, '- cannot determine dashboard');
+          setError('Invalid role received from server');
+          setLoading(false);
+          return;
+        }
+
+        console.log('Navigating to dashboard:', dashboardPath, 'for role:', targetRole);
+        navigate(dashboardPath, { replace: true });
       }, 800);
     } catch (err) {
-      setError(err.message || 'AUTHENTICATION FAILED');
+      console.error('Login error:', err);
+      // Friendly error message
+      setError(err.message?.includes('401') ? 'INVALID CREDENTIALS' : 'AUTHENTICATION FAILED');
       setLoading(false);
     }
   };
@@ -87,7 +132,7 @@ const Login = () => {
         {/* LEFT PANEL: BRANDING & VISUAL (40%) */}
         <div style={{
           flex: '0 0 40%',
-          background: `radial-gradient(circle at center, ${roles.find(r => r.id === selectedRole).color}15 0%, rgba(15, 23, 42, 0.5) 100%)`,
+          background: `radial-gradient(circle at center, ${activeRoleObj?.color}15 0%, rgba(15, 23, 42, 0.5) 100%)`,
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
@@ -126,7 +171,7 @@ const Login = () => {
                 d="M100,165 C100,165 50,130 50,90 C50,60 75,50 100,80 C125,50 150,60 150,90 C150,130 100,165 100,165 Z"
                 stroke="#ff004c"
                 strokeWidth="4"
-                fill={activeField === 'secret' ? `${roles.find(r => r.id === selectedRole).color}20` : "none"}
+                fill={activeField === 'secret' ? `${activeRoleObj?.color}20` : "none"}
                 strokeLinecap="round"
                 initial={{ scale: 0.8, opacity: 0 }}
                 animate={{
@@ -185,9 +230,9 @@ const Login = () => {
             marginTop: '2rem',
             padding: '6px 16px',
             borderRadius: '20px',
-            background: `${roles.find(r => r.id === selectedRole).color}20`,
-            color: roles.find(r => r.id === selectedRole).color,
-            border: `1px solid ${roles.find(r => r.id === selectedRole).color}60`,
+            background: `${activeRoleObj?.color}20`,
+            color: activeRoleObj?.color,
+            border: `1px solid ${activeRoleObj?.color}60`,
             fontSize: '0.75rem',
             fontWeight: '600',
             display: 'flex', alignItems: 'center', gap: '8px'
@@ -199,30 +244,24 @@ const Login = () => {
         {/* RIGHT PANEL: INTERACTION (60%) */}
         <div style={{ flex: '1', padding: '3rem', display: 'flex', flexDirection: 'column', justifyContent: 'center', position: 'relative' }}>
 
-          {/* COMPACT ROLE TABS */}
-          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '2.5rem', background: 'rgba(255,255,255,0.03)', padding: '5px', borderRadius: '12px' }}>
-            {roles.map((role) => (
-              <button
-                key={role.id}
-                onClick={() => setSelectedRole(role.id)}
-                style={{
-                  flex: 1,
-                  background: selectedRole === role.id ? 'rgba(255,255,255,0.1)' : 'transparent',
-                  border: 'none',
-                  borderRadius: '8px',
-                  padding: '10px',
-                  cursor: 'pointer',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
-                  color: selectedRole === role.id ? role.color : '#64748b',
-                  fontSize: '0.8rem',
-                  fontWeight: selectedRole === role.id ? '600' : '400',
-                  transition: 'all 0.3s'
-                }}
-              >
-                {role.icon}
-                <span className="role-label-text">{role.label}</span>
-              </button>
-            ))}
+          {/* COMPACT ROLE TABS - REPLACED WITH STATIC INDICATOR */}
+          <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '2.5rem', background: 'rgba(255,255,255,0.03)', padding: '10px', borderRadius: '12px' }}>
+            <div
+              style={{
+                background: 'rgba(255,255,255,0.05)',
+                border: `1px solid ${activeRoleObj?.color}40`,
+                borderRadius: '8px',
+                padding: '10px 20px',
+                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
+                color: activeRoleObj?.color,
+                fontSize: '0.9rem',
+                fontWeight: '600',
+                width: '100%'
+              }}
+            >
+              {activeRoleObj?.icon}
+              <span>Login as {activeRoleObj?.label}</span>
+            </div>
           </div>
 
           <form onSubmit={handleSubmit} className="login-form-simple" style={{ flex: 1 }}>
@@ -245,8 +284,7 @@ const Login = () => {
                 </div>
                 <div style={{ marginBottom: '1.5rem' }}>
                   <label style={{ display: 'block', fontSize: '0.7rem', color: '#64748b', marginBottom: '0.5rem', fontWeight: '600' }}>{config.secretLabel}</label>
-                  <input
-                    type="password"
+                  <PasswordInput
                     name="secret"
                     className="form-input"
                     placeholder={config.secretPlaceholder}
@@ -267,7 +305,7 @@ const Login = () => {
               type="submit"
               className="btn-login-modern"
               style={{
-                background: `linear-gradient(90deg, ${roles.find(r => r.id === selectedRole).color} 0%, ${roles.find(r => r.id === selectedRole).color}dd 100%)`,
+                background: `linear-gradient(90deg, ${activeRoleObj?.color} 0%, ${activeRoleObj?.color}dd 100%)`,
                 color: '#000', fontWeight: 'bold', marginTop: '1rem', height: '50px'
               }}
             >
@@ -277,16 +315,14 @@ const Login = () => {
 
           {/* Footer Area */}
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '2rem', borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: '1rem' }}>
-            <span onClick={() => navigate('/register')} style={{ color: '#94a3b8', fontSize: '0.8rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '5px' }}>
+            <span onClick={() => navigate(`/register/${selectedRole}`)} style={{ color: '#94a3b8', fontSize: '0.8rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '5px' }}>
               Create New Account <ArrowRight size={14} />
             </span>
 
             {/* Tiny Demo Links */}
             <div style={{ display: 'flex', gap: '8px' }}>
-              {roles.map(r => (
-                <div key={r.id} onClick={() => { setSelectedRole(r.id); login(`demo@${r.id}.com`, r.id); navigate(`/${r.id}`) }}
-                  style={{ width: '8px', height: '8px', borderRadius: '50%', background: r.color, cursor: 'pointer', opacity: 0.5 }} title={`Demo ${r.label}`} />
-              ))}
+              <div onClick={() => { setFormData({ identifier: `demo@${selectedRole}.com`, secret: selectedRole }) }}
+                style={{ width: '8px', height: '8px', borderRadius: '50%', background: activeRoleObj?.color, cursor: 'pointer', opacity: 0.5 }} title={`Fill Demo ${activeRoleObj?.label}`} />
             </div>
           </div>
         </div>

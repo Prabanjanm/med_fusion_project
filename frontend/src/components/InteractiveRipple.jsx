@@ -32,11 +32,12 @@ const InteractiveRipple = () => {
             position: 'fixed',
             top: 0,
             left: 0,
-            width: '100%',
-            height: '100%',
+            width: '100vw',
+            height: '100vh',
             pointerEvents: 'none',
             zIndex: 9999,
-            overflow: 'hidden'
+            /* CRITICAL: Remove overflow:hidden to allow ripples to flow freely */
+            overflow: 'visible'
         }}>
             {ripples.map((ripple) => (
                 <span

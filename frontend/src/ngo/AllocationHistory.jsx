@@ -14,49 +14,13 @@ const AllocationHistory = () => {
   const [filterStatus, setFilterStatus] = useState('all');
 
   // Mock data
-  const allocations = [
-    {
-      id: 'ALLOC-2025-001',
-      donationId: 'DON-2025-001',
-      clinicName: 'City General Hospital',
-      allocatedQuantity: '50 boxes',
-      status: 'confirmed',
-      date: 'Jan 15, 2025',
-      blockchainHash: '0x7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e',
-    },
-    {
-      id: 'ALLOC-2025-002',
-      donationId: 'DON-2025-001',
-      clinicName: 'Rural Health Center',
-      allocatedQuantity: '50 boxes',
-      status: 'confirmed',
-      date: 'Jan 15, 2025',
-      blockchainHash: '0x8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f',
-    },
-    {
-      id: 'ALLOC-2025-003',
-      donationId: 'DON-2025-002',
-      clinicName: 'Emergency Care Clinic',
-      allocatedQuantity: '250 boxes',
-      status: 'in-transit',
-      date: 'Jan 18, 2025',
-      blockchainHash: '0x9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a',
-    },
-    {
-      id: 'ALLOC-2025-004',
-      donationId: 'DON-2025-003',
-      clinicName: 'Community Clinic West',
-      allocatedQuantity: '500 units',
-      status: 'pending-receipt',
-      date: 'Jan 20, 2025',
-      blockchainHash: '0xa0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b',
-    },
-  ];
+  // No mock data - waiting for backend integration
+  const allocations = [];
 
   const filteredAllocations = allocations.filter(alloc => {
-    const matchesSearch = alloc.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      alloc.donationId.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      alloc.clinicName.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesSearch = (alloc.id || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (alloc.donationId || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (alloc.clinicName || '').toLowerCase().includes(searchTerm.toLowerCase());
 
     const matchesStatus = filterStatus === 'all' || alloc.status === filterStatus;
 
