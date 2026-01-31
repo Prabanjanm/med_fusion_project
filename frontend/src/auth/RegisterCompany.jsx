@@ -51,7 +51,7 @@ const RegisterCompany = () => {
     const roles = [
         { id: 'csr', label: 'Corporate', icon: <Building2 size={18} />, color: '#06b6d4', desc: 'Donor' },
         { id: 'ngo', label: 'NGO', icon: <Handshake size={18} />, color: '#14b8a6', desc: 'Partner' },
-        { id: 'clinic', label: 'Clinic', icon: <Stethoscope size={18} />, color: '#94a3b8', desc: 'Provider' },
+        { id: 'clinic', label: 'Clinic', icon: <Stethoscope size={18} />, color: '#f97316', desc: 'Provider' },
         { id: 'auditor', label: 'Auditor', icon: <FileCheck size={18} />, color: '#818cf8', desc: 'Verifier' },
     ];
 
@@ -391,9 +391,14 @@ const RegisterCompany = () => {
                                     ) : (
                                         <>
                                             <CheckCircle2 size={60} color={activeColor} style={{ margin: '0 auto 1.5rem' }} />
-                                            <h3 style={{ color: activeColor, fontSize: '1.5rem' }}>Welcome Aboard!</h3>
-                                            <p style={{ color: '#94a3b8', marginTop: '0.5rem' }}>Your account has been successfully created.</p>
-                                            <button onClick={() => navigate(`/login/${selectedRole}`)} className="btn-login-modern" style={{ background: activeColor, color: '#000', marginTop: '2.5rem', width: '100%', padding: '12px' }}>PROCEED TO LOGIN</button>
+                                            <h3 style={{ color: activeColor, fontSize: '1.5rem' }}>Registration Submitted</h3>
+                                            <p style={{ color: '#94a3b8', marginTop: '0.5rem', maxWidth: '400px', margin: '0.5rem auto' }}>
+                                                Your account is pending verification by our Audit team.
+                                                You will be notified once approved.
+                                            </p>
+                                            <button onClick={() => navigate('/')} className="btn-login-modern" style={{ background: 'transparent', border: `1px solid ${activeColor}`, color: activeColor, marginTop: '2.5rem', width: '100%', padding: '12px' }}>
+                                                RETURN TO HOME
+                                            </button>
                                         </>
                                     )}
                                 </motion.div>

@@ -1,9 +1,11 @@
+
 import React, { useState, useEffect } from 'react';
 import { Truck, Activity, Search, Building2, Package } from 'lucide-react';
 import Layout from '../components/Layout';
 import StatusBadge from '../components/StatusBadge';
 import SummaryCard from '../components/SummaryCard';
 import '../styles/DashboardLayout.css';
+import UserApprovals from './UserApprovals';
 
 const AuditorNgoRegistry = () => {
     const [loading, setLoading] = useState(true);
@@ -23,7 +25,7 @@ const AuditorNgoRegistry = () => {
                     allocations_made: 42,
                     status: 'ACTIVE',
                     history: [
-                        { action: 'Verified Product', target: 'PPE Kits (500) from TechCorp', date: '2026-01-31' },
+                        { action: 'Verified Product', target: 'PPE Kits (500) from TechCorp', date: '2026-01-30' },
                         { action: 'Allocated Stock', target: 'City Health Clinic (50 Kits)', date: '2026-01-29' }
                     ]
                 },
@@ -91,6 +93,9 @@ const AuditorNgoRegistry = () => {
                     />
                 </div>
             </div>
+
+            {/* PENDING APPROVALS */}
+            <UserApprovals roleFilter="ngo" />
 
             {/* Stats Grid */}
             <div className="stats-grid" style={{ marginBottom: '2rem' }}>

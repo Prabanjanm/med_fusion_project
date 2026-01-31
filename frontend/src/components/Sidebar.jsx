@@ -107,6 +107,10 @@ const Sidebar = ({ role }) => {
               <Users size={20} className="nav-icon" />
               <span className="nav-label">NGO History</span>
             </NavLink>
+            <NavLink to="/auditor/pending-requests" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
+              <ClipboardCheck size={20} className="nav-icon" />
+              <span className="nav-label">Pending Requests</span>
+            </NavLink>
           </>
         )}
 

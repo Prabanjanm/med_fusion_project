@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { User, Activity, FileText, Search, Building } from 'lucide-react';
 import Layout from '../components/Layout';
@@ -5,6 +6,7 @@ import Table from '../components/Table';
 import StatusBadge from '../components/StatusBadge';
 import SummaryCard from '../components/SummaryCard';
 import '../styles/DashboardLayout.css';
+import UserApprovals from './UserApprovals';
 
 const AuditorCsrRegistry = () => {
     const [loading, setLoading] = useState(true);
@@ -92,6 +94,9 @@ const AuditorCsrRegistry = () => {
                     />
                 </div>
             </div>
+
+            {/* PENDING APPROVALS */}
+            <UserApprovals roleFilter="csr" />
 
             {/* Stats Grid */}
             <div className="stats-grid" style={{ marginBottom: '2rem' }}>
