@@ -2,6 +2,9 @@ import React, { useState } from 'react';
 import { Send, Truck, CheckCircle } from 'lucide-react';
 import Layout from '../components/Layout';
 import WizardModal, { ReviewSummary } from '../components/WizardModal';
+import { BlockchainToastContainer } from '../components/BlockchainToast';
+import { useBlockchainToast } from '../hooks/useBlockchainToast';
+import { simulateBlockchainTransaction, BlockchainEventTypes, getBlockchainEventMessage } from '../utils/blockchainService';
 import '../styles/FormStyles.css';
 
 /**
@@ -10,6 +13,7 @@ import '../styles/FormStyles.css';
  */
 const AllocateToClinic = () => {
   const [isWizardOpen, setIsWizardOpen] = useState(false);
+  const { toasts, showToast, removeToast } = useBlockchainToast();
 
   const [formData, setFormData] = useState({
     donationId: '',
@@ -61,14 +65,25 @@ const AllocateToClinic = () => {
 
   const handleSubmit = async () => {
     setIsSubmitting(true);
-    // Simulate API call
-    setTimeout(() => {
+    try {
+      // Simulate blockchain transaction
+      const blockchainResult = await simulateBlockchainTransaction(formData, 1500);
+
+      // Show blockchain notification toast (60s for demo visibility)
+      const message = getBlockchainEventMessage(BlockchainEventTypes.ALLOCATION_VERIFIED);
+      showToast(message, blockchainResult.hash, 'success', 60000);
+
+      // Simulate API call
       console.log('Allocation submitted:', formData);
-      const mockHash = "0x" + Array.from({ length: 64 }, () => Math.floor(Math.random() * 16).toString(16)).join('');
-      setSubmittedHash(mockHash);
+      console.log('Mock blockchain transaction:', blockchainResult);
+
+      setSubmittedHash(blockchainResult.hash);
       setIsSubmitting(false);
       setIsWizardOpen(false);
-    }, 2000);
+    } catch (error) {
+      console.error('Allocation failed:', error);
+      setIsSubmitting(false);
+    }
   };
 
   const Step1Selection = (
@@ -185,8 +200,21 @@ const AllocateToClinic = () => {
             The allocation has been successfully broadcast to the network.
           </p>
 
-          <div style={{ background: 'rgba(0,0,0,0.3)', padding: '1rem 2rem', borderRadius: '8px', border: '1px dashed #334155', fontFamily: 'monospace', color: '#00ff94', marginBottom: '2rem' }}>
+          <div style={{ background: 'rgba(0,0,0,0.3)', padding: '1rem 2rem', borderRadius: '8px', border: '1px dashed #334155', fontFamily: 'monospace', color: '#00ff94', marginBottom: '1rem' }}>
             {submittedHash}
+          </div>
+
+          <div style={{
+            background: 'rgba(251, 191, 36, 0.1)',
+            border: '1px solid rgba(251, 191, 36, 0.3)',
+            borderRadius: '8px',
+            padding: '12px 20px',
+            marginBottom: '2rem',
+            maxWidth: '500px'
+          }}>
+            <p style={{ color: '#fbbf24', fontSize: '0.85rem', margin: 0 }}>
+              ⚠️ <strong>Simulated Blockchain Hash</strong> - Mock verification for demo purposes
+            </p>
           </div>
 
           <button
@@ -214,6 +242,8 @@ const AllocateToClinic = () => {
 
   return (
     <Layout>
+      <BlockchainToastContainer toasts={toasts} removeToast={removeToast} />
+
       <div className="page-header">
         <div>
           <h1 className="page-title">Clinic Allocation</h1>

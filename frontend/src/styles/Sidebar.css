@@ -34,7 +34,7 @@
 }
 
 .brand-name {
-    font-family: 'Orbitron', sans-serif;
+    font-family: var(--font-family);
     font-size: 1.25rem;
     font-weight: 700;
     color: #fff;

@@ -1,0 +1,199 @@
+/* ============================================
+   Blockchain Block Component Styles
+   Mock/Demo Blockchain Visualization
+   ============================================ */
+
+.blockchain-block {
+    background: rgba(15, 23, 42, 0.8);
+    backdrop-filter: blur(12px);
+    border: 2px solid rgba(6, 182, 212, 0.3);
+    border-radius: 12px;
+    padding: 1.25rem;
+    min-width: 320px;
+    max-width: 380px;
+    position: relative;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.blockchain-block:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 24px rgba(6, 182, 212, 0.2);
+    border-color: rgba(6, 182, 212, 0.6);
+}
+
+/* Block Header */
+.block-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.block-id {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-family: 'Orbitron', sans-serif;
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: #06b6d4;
+    letter-spacing: 0.5px;
+}
+
+.block-status {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.status-spinner {
+    font-size: 1rem;
+    display: inline-block;
+}
+
+.status-label {
+    font-family: 'Orbitron', sans-serif;
+}
+
+/* Block Content */
+.block-content {
+    margin-bottom: 1rem;
+}
+
+.block-event {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+    padding: 0.75rem;
+    background: rgba(6, 182, 212, 0.1);
+    border-radius: 8px;
+    border-left: 3px solid #06b6d4;
+}
+
+.event-icon {
+    font-size: 1.5rem;
+}
+
+.event-label {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: #fff;
+    font-family: 'Orbitron', sans-serif;
+}
+
+/* Block Details */
+.block-details {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.detail-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.75rem;
+    padding: 0.4rem 0;
+}
+
+.detail-label {
+    color: #94a3b8;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    font-family: 'Orbitron', sans-serif;
+}
+
+.detail-value {
+    color: #e2e8f0;
+    font-weight: 600;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.7rem;
+}
+
+.hash-value {
+    color: #06b6d4;
+    background: rgba(6, 182, 212, 0.1);
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    font-family: 'JetBrains Mono', monospace;
+}
+
+/* Block Footer */
+.block-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-top: 0.75rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.demo-badge {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.7rem;
+    color: #94a3b8;
+    font-weight: 500;
+    font-style: italic;
+}
+
+.verified-badge {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.7rem;
+    color: #10b981;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    background: rgba(16, 185, 129, 0.1);
+    padding: 0.3rem 0.6rem;
+    border-radius: 12px;
+    border: 1px solid rgba(16, 185, 129, 0.3);
+    font-family: 'Orbitron', sans-serif;
+}
+
+/* Block Connector */
+.block-connector {
+    position: absolute;
+    right: -30px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #06b6d4;
+    opacity: 0.6;
+    animation: pulse 2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+
+    0%,
+    100% {
+        opacity: 0.4;
+    }
+
+    50% {
+        opacity: 1;
+    }
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .blockchain-block {
+        min-width: 280px;
+        max-width: 100%;
+        padding: 1rem;
+    }
+
+    .block-connector {
+        display: none;
+    }
+}

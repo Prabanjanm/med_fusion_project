@@ -6,7 +6,7 @@
     display: inline-block;
     padding: 6px 14px;
     border-radius: var(--radius-sm);
-    font-family: 'Orbitron', sans-serif;
+    font-family: var(--font-family);
     font-size: 0.7rem;
     font-weight: 700;
     text-align: center;

@@ -90,6 +90,38 @@ const AuditTrail = () => {
         </div>
       </div>
 
+      {/* Blockchain Demo Disclaimer */}
+      <div style={{
+        background: 'linear-gradient(135deg, rgba(251, 191, 36, 0.15) 0%, rgba(245, 158, 11, 0.1) 100%)',
+        border: '2px solid rgba(251, 191, 36, 0.4)',
+        borderRadius: '12px',
+        padding: '16px 20px',
+        marginBottom: '2rem',
+        display: 'flex',
+        alignItems: 'center',
+        gap: '12px'
+      }}>
+        <div style={{
+          background: 'rgba(251, 191, 36, 0.2)',
+          borderRadius: '50%',
+          padding: '10px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center'
+        }}>
+          <Shield size={24} color="#fbbf24" />
+        </div>
+        <div style={{ flex: 1 }}>
+          <h3 style={{ color: '#fcd34d', fontSize: '1rem', fontWeight: '700', marginBottom: '4px' }}>
+            🔬 Demo Mode: Simulated Blockchain Integration
+          </h3>
+          <p style={{ color: '#fde68a', fontSize: '0.9rem', margin: 0, lineHeight: '1.5' }}>
+            All blockchain transaction hashes displayed below are <strong>simulated for demonstration purposes</strong>.
+            This represents the planned future enhancement where all CSR transactions will be immutably recorded on a distributed ledger for complete transparency and auditability.
+          </p>
+        </div>
+      </div>
+
       <div className="table-card" style={{ marginBottom: '2rem' }}>
         <div style={{ display: 'flex', gap: '1rem', marginBottom: '1.5rem' }}>
           <div style={{ position: 'relative', flex: 1, maxWidth: '400px' }}>
@@ -138,7 +170,7 @@ const AuditTrail = () => {
                 <h4>Donation Created</h4>
                 <p className="timestamp">{selectedDonation.donationTimestamp}</p>
                 <div className="blockchain-hash" style={{ marginTop: '0.5rem', background: 'rgba(0,0,0,0.2)', padding: '0.5rem', borderRadius: '4px' }}>
-                  <strong style={{ color: 'var(--text-muted)', fontSize: '0.8rem' }}>Hash:</strong>
+                  <strong style={{ color: 'var(--text-muted)', fontSize: '0.8rem' }}>Simulated Blockchain Hash:</strong>
                   <code style={{ display: 'block', overflowWrap: 'break-word', color: 'var(--accent-cyan)' }}>{selectedDonation.donationHash}</code>
                 </div>
               </div>
@@ -153,7 +185,7 @@ const AuditTrail = () => {
                   <>
                     <p className="timestamp">{selectedDonation.allocationTimestamp}</p>
                     <div className="blockchain-hash" style={{ marginTop: '0.5rem', background: 'rgba(0,0,0,0.2)', padding: '0.5rem', borderRadius: '4px' }}>
-                      <strong style={{ color: 'var(--text-muted)', fontSize: '0.8rem' }}>Hash:</strong>
+                      <strong style={{ color: 'var(--text-muted)', fontSize: '0.8rem' }}>Simulated Blockchain Hash:</strong>
                       <code style={{ display: 'block', overflowWrap: 'break-word', color: 'var(--accent-cyan)' }}>{selectedDonation.allocationHash}</code>
                     </div>
                   </>
@@ -170,7 +202,7 @@ const AuditTrail = () => {
                   <>
                     <p className="timestamp">{selectedDonation.receiptTimestamp}</p>
                     <div className="blockchain-hash" style={{ marginTop: '0.5rem', background: 'rgba(0,0,0,0.2)', padding: '0.5rem', borderRadius: '4px' }}>
-                      <strong style={{ color: 'var(--text-muted)', fontSize: '0.8rem' }}>Hash:</strong>
+                      <strong style={{ color: 'var(--text-muted)', fontSize: '0.8rem' }}>Simulated Blockchain Hash:</strong>
                       <code style={{ display: 'block', overflowWrap: 'break-word', color: 'var(--accent-cyan)' }}>{selectedDonation.receiptHash}</code>
                     </div>
                   </>

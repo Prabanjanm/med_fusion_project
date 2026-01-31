@@ -1,0 +1,298 @@
+/* ============================================
+   Blockchain Ledger Component Styles
+   Mock/Demo Blockchain Ledger Panel
+   ============================================ */
+
+.blockchain-ledger {
+    background: rgba(10, 15, 30, 0.95);
+    backdrop-filter: blur(16px);
+    border: 1px solid rgba(6, 182, 212, 0.2);
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+    transition: all 0.3s ease;
+}
+
+.blockchain-ledger.expanded {
+    border-color: rgba(6, 182, 212, 0.4);
+    box-shadow: 0 12px 48px rgba(6, 182, 212, 0.2);
+}
+
+/* Ledger Header */
+.ledger-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1.25rem 1.5rem;
+    background: rgba(6, 182, 212, 0.05);
+    border-bottom: 1px solid rgba(6, 182, 212, 0.1);
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.ledger-header:hover {
+    background: rgba(6, 182, 212, 0.1);
+}
+
+.ledger-title {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.ledger-title h3 {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: #fff;
+    margin: 0;
+    letter-spacing: 0.5px;
+}
+
+.block-count {
+    background: rgba(6, 182, 212, 0.2);
+    color: #06b6d4;
+    padding: 0.25rem 0.75rem;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    font-family: 'Orbitron', sans-serif;
+    border: 1px solid rgba(6, 182, 212, 0.3);
+}
+
+.ledger-controls {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.demo-indicator {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.75rem;
+    color: #94a3b8;
+    font-weight: 500;
+    font-style: italic;
+    background: rgba(148, 163, 184, 0.1);
+    padding: 0.4rem 0.75rem;
+    border-radius: 12px;
+    border: 1px solid rgba(148, 163, 184, 0.2);
+}
+
+.toggle-btn {
+    background: transparent;
+    border: none;
+    color: #06b6d4;
+    cursor: pointer;
+    padding: 0.25rem;
+    display: flex;
+    align-items: center;
+    transition: all 0.2s ease;
+}
+
+.toggle-btn:hover {
+    color: #14b8a6;
+    transform: scale(1.1);
+}
+
+/* Ledger Content */
+.ledger-content {
+    overflow: hidden;
+}
+
+/* Info Banner */
+.ledger-info {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+    padding: 1rem 1.5rem;
+    background: rgba(59, 130, 246, 0.1);
+    border-left: 3px solid #3b82f6;
+    margin: 1rem 1.5rem;
+    border-radius: 8px;
+}
+
+.ledger-info p {
+    margin: 0;
+    font-size: 0.85rem;
+    color: #cbd5e1;
+    line-height: 1.5;
+}
+
+/* Blocks Container */
+.blocks-container {
+    padding: 1rem 1.5rem 1.5rem;
+    max-height: 600px;
+    overflow-y: auto;
+}
+
+.blocks-container::-webkit-scrollbar {
+    width: 8px;
+}
+
+.blocks-container::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 4px;
+}
+
+.blocks-container::-webkit-scrollbar-thumb {
+    background: rgba(6, 182, 212, 0.3);
+    border-radius: 4px;
+}
+
+.blocks-container::-webkit-scrollbar-thumb:hover {
+    background: rgba(6, 182, 212, 0.5);
+}
+
+/* Empty State */
+.empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 3rem 1rem;
+    text-align: center;
+    color: #64748b;
+}
+
+.empty-state svg {
+    opacity: 0.3;
+    margin-bottom: 1rem;
+}
+
+.empty-state p {
+    font-size: 1rem;
+    font-weight: 600;
+    color: #94a3b8;
+    margin: 0.5rem 0;
+}
+
+.empty-state span {
+    font-size: 0.85rem;
+    color: #64748b;
+}
+
+/* Blocks Timeline */
+.blocks-timeline {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.block-wrapper {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.block-number {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: #06b6d4;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    padding-left: 0.5rem;
+}
+
+.timeline-connector {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin: 0.5rem 0;
+}
+
+.connector-line {
+    width: 2px;
+    height: 30px;
+    background: linear-gradient(180deg, #06b6d4 0%, #10b981 100%);
+    opacity: 0.5;
+}
+
+.connector-arrow {
+    font-size: 1.5rem;
+    color: #06b6d4;
+    opacity: 0.6;
+    animation: bounce 2s ease-in-out infinite;
+}
+
+@keyframes bounce {
+
+    0%,
+    100% {
+        transform: translateY(0);
+    }
+
+    50% {
+        transform: translateY(5px);
+    }
+}
+
+/* Ledger Stats */
+.ledger-stats {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1rem;
+    padding: 1.5rem;
+    background: rgba(6, 182, 212, 0.05);
+    border-top: 1px solid rgba(6, 182, 212, 0.1);
+}
+
+.stat-item {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+    text-align: center;
+}
+
+.stat-label {
+    font-size: 0.7rem;
+    color: #94a3b8;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    font-weight: 600;
+    font-family: 'Orbitron', sans-serif;
+}
+
+.stat-value {
+    font-size: 1rem;
+    font-weight: 700;
+    color: #fff;
+    font-family: 'Orbitron', sans-serif;
+}
+
+.stat-value.verified {
+    color: #10b981;
+}
+
+.stat-value.locked {
+    color: #fbbf24;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .ledger-header {
+        flex-direction: column;
+        gap: 1rem;
+        align-items: flex-start;
+    }
+
+    .ledger-controls {
+        width: 100%;
+        justify-content: space-between;
+    }
+
+    .blocks-container {
+        max-height: 400px;
+    }
+
+    .ledger-stats {
+        grid-template-columns: 1fr;
+        gap: 0.75rem;
+    }
+
+    .blockchain-block {
+        min-width: 100%;
+    }
+}

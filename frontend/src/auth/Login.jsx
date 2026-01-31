@@ -319,10 +319,31 @@ const Login = () => {
               Create New Account <ArrowRight size={14} />
             </span>
 
-            {/* Tiny Demo Links */}
-            <div style={{ display: 'flex', gap: '8px' }}>
-              <div onClick={() => { setFormData({ identifier: `demo@${selectedRole}.com`, secret: selectedRole }) }}
-                style={{ width: '8px', height: '8px', borderRadius: '50%', background: activeRoleObj?.color, cursor: 'pointer', opacity: 0.5 }} title={`Fill Demo ${activeRoleObj?.label}`} />
+            {/* Demo Credentials Button */}
+            <div
+              onClick={() => {
+                setFormData({
+                  identifier: `demo@${selectedRole}.com`,
+                  secret: selectedRole
+                })
+              }}
+              style={{
+                padding: '6px 12px',
+                background: `${activeRoleObj?.color}20`,
+                border: `1px solid ${activeRoleObj?.color}40`,
+                borderRadius: '8px',
+                color: activeRoleObj?.color,
+                fontSize: '0.75rem',
+                fontWeight: '600',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+                transition: 'all 0.2s ease'
+              }}
+              title={`Email: demo@${selectedRole}.com | Password: ${selectedRole}`}
+            >
+              🔬 Use Demo Login
             </div>
           </div>
         </div>

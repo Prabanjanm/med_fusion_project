@@ -10,6 +10,12 @@ const Sidebar = ({ role }) => {
   // Normalize role to lowercase for consistent comparison
   const normalizedRole = role ? String(role).toLowerCase().trim() : '';
 
+  // Debug logging to help identify role issues
+  console.log('=== Sidebar Debug ===');
+  console.log('Raw role prop:', role);
+  console.log('Normalized role:', normalizedRole);
+  console.log('Will show navigation for:', normalizedRole || 'NONE (no role)');
+
   return (
     <aside className="sidebar">
       <div className="sidebar-header">

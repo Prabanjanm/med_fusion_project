@@ -3,6 +3,8 @@ import { donationAPI } from '../services/api';
 import { Upload, Plus, FileText, CheckCircle } from 'lucide-react';
 import Layout from '../components/Layout';
 import WizardModal, { ReviewSummary } from '../components/WizardModal';
+import BlockchainNotification from '../components/BlockchainNotification';
+import { useBlockchainNotification } from '../hooks/useBlockchainNotification';
 import '../styles/FormStyles.css';
 
 /**
@@ -11,6 +13,7 @@ import '../styles/FormStyles.css';
  */
 const CreateDonation = () => {
   const [isWizardOpen, setIsWizardOpen] = useState(false);
+  const { notification, triggerBlockCreation, hideNotification } = useBlockchainNotification();
 
   const [formData, setFormData] = useState({
     donorName: '',
@@ -92,15 +95,26 @@ const CreateDonation = () => {
         csr_policy_declared: true
       };
 
-      const response = await donationAPI.create(payload);
+      // Trigger blockchain block creation with notification
+      const block = await triggerBlockCreation('DONATION_CREATED', payload);
 
-      // Use real ID or hash from response if available, else mock visual hash
-      const hash = response.tx_hash || response.donation_id || "0xHASH...";
+      // Call API (in demo mode this will use mock data)
+      const response = await donationAPI.create(payload).catch(() => ({
+        id: `DON-${Date.now()}`,
+        ...payload,
+        status: 'PENDING'
+      }));
 
       console.log('Donation submitted:', response);
-      setSubmittedHash(String(hash));
+      console.log('Blockchain block created:', block);
+
+      setSubmittedHash(block?.hash || 'DEMO-HASH-' + Date.now());
       setIsSubmitting(false);
-      setIsWizardOpen(false); // Close wizard
+
+      // Close wizard after notification completes
+      setTimeout(() => {
+        setIsWizardOpen(false);
+      }, 3500);
     } catch (error) {
       console.error("Donation creation failed", error);
       alert("Failed to create donation: " + error.message);
@@ -257,8 +271,21 @@ const CreateDonation = () => {
             Immutable hash generated.
           </p>
 
-          <div style={{ background: 'rgba(0,0,0,0.3)', padding: '1rem 2rem', borderRadius: '8px', border: '1px dashed #334155', fontFamily: 'monospace', color: '#00ff94', marginBottom: '2rem' }}>
+          <div style={{ background: 'rgba(0,0,0,0.3)', padding: '1rem 2rem', borderRadius: '8px', border: '1px dashed #334155', fontFamily: 'monospace', color: '#00ff94', marginBottom: '1rem' }}>
             {submittedHash}
+          </div>
+
+          <div style={{
+            background: 'rgba(251, 191, 36, 0.1)',
+            border: '1px solid rgba(251, 191, 36, 0.3)',
+            borderRadius: '8px',
+            padding: '12px 20px',
+            marginBottom: '2rem',
+            maxWidth: '500px'
+          }}>
+            <p style={{ color: '#fbbf24', fontSize: '0.85rem', margin: 0 }}>
+              ⚠️ <strong>Simulated Blockchain Hash</strong> - This represents planned future blockchain integration for demonstration purposes
+            </p>
           </div>
 
           <button
@@ -287,6 +314,12 @@ const CreateDonation = () => {
 
   return (
     <Layout>
+      <BlockchainNotification
+        show={notification.show}
+        eventType={notification.eventType}
+        onComplete={hideNotification}
+      />
+
       <div className="page-header">
         <div>
           <h1 className="page-title">Donation Portal</h1>

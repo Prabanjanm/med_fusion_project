@@ -14,8 +14,8 @@ const Layout = ({ children }) => {
 
     return (
         <div className="app-container">
-            {/* Persistent Left Sidebar */}
-            <Sidebar role={user?.role || 'csr'} />
+            {/* Persistent Left Sidebar - Pass actual role without fallback */}
+            <Sidebar role={user?.role} />
 
             {/* Main Content Area */}
             <div className="main-content-wrapper">

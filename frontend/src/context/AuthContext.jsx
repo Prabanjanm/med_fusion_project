@@ -62,8 +62,13 @@ export const AuthProvider = ({ children }) => {
 
       const decoded = parseJwt(access_token);
 
-      // Use role from response, or fallback to token, or default to 'csr' in that order
-      const derivedRole = (role || decoded?.role || decoded?.scopes?.[0] || 'csr').toLowerCase();
+      // Use role from response, or fallback to token - NO hardcoded defaults
+      // This ensures we never assign the wrong role to a user
+      const derivedRole = (role || decoded?.role || decoded?.scopes?.[0])?.toLowerCase();
+
+      if (!derivedRole) {
+        throw new Error('No role information received from server');
+      }
 
       const userData = {
         username: email,

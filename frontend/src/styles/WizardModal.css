@@ -51,7 +51,7 @@
 }
 
 .wizard-title h2 {
-    font-family: 'Inter', sans-serif;
+    font-family: 'Orbitron', sans-serif;
     font-size: 1.25rem;
     font-weight: 600;
     color: #fff;
@@ -190,7 +190,7 @@
     /* Dark translucent */
     color: #f8fafc;
     /* White text */
-    font-family: 'Inter', sans-serif;
+    font-family: 'Orbitron', sans-serif;
     font-size: 0.95rem;
     transition: all 0.2s;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);

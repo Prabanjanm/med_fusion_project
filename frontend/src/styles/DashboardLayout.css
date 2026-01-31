@@ -47,17 +47,14 @@
   margin-bottom: 2rem;
 }
 
-/* Page Header */
+/* Page Header - No Hard Borders */
 .page-header {
   margin-bottom: 3rem;
-  /* Increased separation from content */
   display: flex;
   justify-content: space-between;
   align-items: flex-end;
-  border-bottom: 1px solid rgba(0, 229, 255, 0.2);
-  /* Separator line */
+  /* Removed hard border - using gradient fade instead */
   padding-bottom: 1.5rem;
-  /* More space inside the header border */
 }
 
 .page-title {
@@ -65,20 +62,20 @@
   font-weight: 700;
   color: #fff;
   margin-bottom: 0.5rem;
-  text-shadow: 0 0 10px rgba(0, 229, 255, 0.4);
-  /* Glowing title */
+  text-shadow: 0 0 20px rgba(6, 182, 212, 0.2);
+  /* Subtle glow */
 }
 
-/* BRIGHTER SUBTITLE AS REQUESTED */
+/* Softer Subtitle for Cohesive Flow */
 .page-subtitle {
-  color: var(--accent-cyan);
-  /* Cyan color */
+  color: #94a3b8;
+  /* Muted gray instead of bright cyan */
   font-size: 1rem;
-  font-weight: 500;
-  letter-spacing: 0.5px;
-  text-transform: uppercase;
-  opacity: 0.9;
-  text-shadow: 0 0 8px rgba(0, 229, 255, 0.2);
+  font-weight: 400;
+  /* Lighter weight */
+  letter-spacing: 0.3px;
+  opacity: 0.7;
+  /* No text-transform or heavy styling */
 }
 
 /* Responsive adjustment */

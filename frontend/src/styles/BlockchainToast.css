@@ -1,0 +1,190 @@
+/* BlockchainToast Styles */
+
+.blockchain-toast-container {
+    position: fixed;
+    top: 80px;
+    right: 20px;
+    z-index: 10000;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    pointer-events: none;
+}
+
+.blockchain-toast {
+    pointer-events: all;
+    min-width: 380px;
+    max-width: 480px;
+    background: linear-gradient(135deg, rgba(15, 23, 42, 0.98) 0%, rgba(30, 41, 59, 0.98) 100%);
+    backdrop-filter: blur(20px);
+    border-radius: 12px;
+    border: 1px solid rgba(100, 255, 218, 0.3);
+    box-shadow:
+        0 10px 40px rgba(0, 0, 0, 0.5),
+        0 0 20px rgba(100, 255, 218, 0.15),
+        inset 0 1px 0 rgba(255, 255, 255, 0.05);
+    opacity: 0;
+    transform: translateX(400px);
+    transition: all 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+}
+
+.blockchain-toast.visible {
+    opacity: 1;
+    transform: translateX(0);
+}
+
+.blockchain-toast.exiting {
+    opacity: 0;
+    transform: translateX(400px) scale(0.9);
+    transition: all 0.3s ease-in;
+}
+
+.blockchain-toast-content {
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+    padding: 16px 18px;
+}
+
+.blockchain-toast-icon {
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: rgba(100, 255, 218, 0.15);
+    color: #64ffda;
+    animation: pulse-glow 2s ease-in-out infinite;
+}
+
+@keyframes pulse-glow {
+
+    0%,
+    100% {
+        box-shadow: 0 0 10px rgba(100, 255, 218, 0.3);
+    }
+
+    50% {
+        box-shadow: 0 0 20px rgba(100, 255, 218, 0.5);
+    }
+}
+
+.blockchain-toast-body {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.blockchain-toast-message {
+    color: #f8fafc;
+    font-size: 0.95rem;
+    font-weight: 600;
+    line-height: 1.4;
+    letter-spacing: 0.01em;
+}
+
+.blockchain-toast-hash {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    background: rgba(0, 0, 0, 0.3);
+    padding: 8px 10px;
+    border-radius: 6px;
+    border: 1px dashed rgba(100, 255, 218, 0.2);
+}
+
+.blockchain-toast-hash-label {
+    font-size: 0.7rem;
+    color: #94a3b8;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    font-weight: 600;
+}
+
+.blockchain-toast-hash-value {
+    font-family: 'Courier New', monospace;
+    font-size: 0.75rem;
+    color: #64ffda;
+    word-break: break-all;
+    line-height: 1.4;
+}
+
+.blockchain-toast-disclaimer {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.75rem;
+    color: #fbbf24;
+    background: rgba(251, 191, 36, 0.1);
+    padding: 6px 10px;
+    border-radius: 6px;
+    border: 1px solid rgba(251, 191, 36, 0.2);
+    margin-top: 4px;
+}
+
+.blockchain-toast-disclaimer strong {
+    color: #fcd34d;
+}
+
+.blockchain-toast-close {
+    flex-shrink: 0;
+    background: transparent;
+    border: none;
+    color: #94a3b8;
+    cursor: pointer;
+    padding: 4px;
+    border-radius: 4px;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.blockchain-toast-close:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: #f8fafc;
+}
+
+/* Type Variants */
+.blockchain-toast-success .blockchain-toast-icon {
+    background: rgba(34, 197, 94, 0.15);
+    color: #22c55e;
+}
+
+.blockchain-toast-success {
+    border-color: rgba(34, 197, 94, 0.3);
+}
+
+.blockchain-toast-info .blockchain-toast-icon {
+    background: rgba(59, 130, 246, 0.15);
+    color: #3b82f6;
+}
+
+.blockchain-toast-info {
+    border-color: rgba(59, 130, 246, 0.3);
+}
+
+.blockchain-toast-warning .blockchain-toast-icon {
+    background: rgba(251, 191, 36, 0.15);
+    color: #fbbf24;
+}
+
+.blockchain-toast-warning {
+    border-color: rgba(251, 191, 36, 0.3);
+}
+
+/* Responsive */
+@media (max-width: 640px) {
+    .blockchain-toast-container {
+        right: 10px;
+        left: 10px;
+    }
+
+    .blockchain-toast {
+        min-width: auto;
+        max-width: 100%;
+    }
+}
