@@ -37,9 +37,10 @@ import ProductCatalog from './clinic/ProductCatalog';
 
 // Auditor Components
 import AuditDashboard from './auditor/AuditDashboard';
-import AuditTrail from './auditor/AuditTrail';
 import AuditorCsrRegistry from './auditor/AuditorCsrRegistry';
 import AuditorNgoRegistry from './auditor/AuditorNgoRegistry';
+import AuditorPendingRequests from './auditor/AuditorPendingRequests';
+import AuditTrail from './auditor/AuditTrail';
 import Settings from './components/Settings';
 import BlockchainVerify from './components/BlockchainVerify';
 
@@ -170,6 +171,10 @@ function App() {
           <Route
             path="/auditor/ngo-registry"
             element={<ProtectedRoutes element={<AuditorNgoRegistry />} allowedRoles={['auditor']} />}
+          />
+          <Route
+            path="/auditor/pending-requests"
+            element={<ProtectedRoutes element={<AuditorPendingRequests />} allowedRoles={['auditor']} />}
           />
 
           {/* Universal Shared Routes (But protected) */}

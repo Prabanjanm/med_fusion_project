@@ -7,6 +7,7 @@ import SummaryCard from '../components/SummaryCard';
 import StatusBadge from '../components/StatusBadge';
 import { auditorAPI } from '../services/api';
 import '../styles/DashboardLayout.css';
+import UserApprovals from './UserApprovals';
 
 const AuditDashboard = () => {
   const navigate = useNavigate();
@@ -60,6 +61,9 @@ const AuditDashboard = () => {
         <SummaryCard label="Active NGOs" value={loading ? "-" : stats.ngos} color="#ff9800" icon={Users} />
         <SummaryCard label="Hash Verified" value={loading ? "-" : stats.verified} color="#b400ff" icon={Link} />
       </div>
+
+      {/* Pending User Approvals */}
+      <UserApprovals />
 
       <div className="table-card">
         <h2 className="table-header-title">Recent Audit Records</h2>
