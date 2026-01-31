@@ -23,3 +23,20 @@ print("clinic_user:", hash_password("clinic123"))
 print("auditor_user:", hash_password("audit123"))
 
 
+{
+  "clinic_name": "Primary Health Centre – Bopal",
+  "facility_id": "PHC-GJ-102347",
+  "facility_id_type": "National Health Facility Registry",
+  "doctor_registration_number": "GMC-2011-04321",
+  "pincode": "380058",
+  "official_email": "prabanjanm22@gmail.com"
+}
+
+ host: "smtp-relay.brevo.com",
+  port: 587,
+  secure: false,
+  auth: {
+    user: "a102d6001@smtp-brevo.com",
+    pass: "CHp9xN6QOGJb21SM",
+  },
+

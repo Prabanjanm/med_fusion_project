@@ -19,16 +19,21 @@ async def create_donation_endpoint(
     db: AsyncSession = Depends(get_db),
     user: dict = Depends(require_role("CSR"))
 ):
-    donation = await create_donation(
+    result = await create_donation(
         db=db,
         data=data,
         company_id=user["company_id"]
     )
 
     return {
-        "donation_id": donation.id,
-        "status": donation.status,
-        "created_at": donation.created_at
+        "donation_id": result["donation"].id,
+        "status": result["donation"].status,
+        "created_at": result["donation"].created_at,
+         "audit": {
+            "tx_hash": result["audit"]["tx_hash"],
+            "block_number": result["audit"]["block_number"],
+            "status": result["audit"]["status"]
+        }
     }
 
 

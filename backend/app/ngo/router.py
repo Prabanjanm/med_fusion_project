@@ -3,13 +3,20 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from app.db.deps import get_db
 from app.ngo.schema import NGORegister, ClinicCreate
-from app.ngo.service import register_and_verify_ngo
+from app.ngo.service import accept_csr_donation, register_and_verify_ngo
 from app.core.security import require_role
 from app.ngo.service import check_ngo_acceptance_eligibility
 from app.ngo.accept_service import accept_donation_safely
 from app.ngo.service import register_clinic
 from app.models.clinic_requirment import ClinicRequirement
 from app.models.ngo import NGO
+from app.core.security import require_role
+from app.ngo.schema import ClinicNeedCreate
+from app.ngo.service import create_clinic_need , get_current_ngo, get_available_donations , get_accepted_donations, get_clinic_requirements, allocate_donation
+from app.db.deps import get_db
+from app.models.donation import Donation
+from app.models.donation_allocation import DonationAllocation
+from app.ngo.schema import AllocationCreate
 
 router = APIRouter(
     prefix="/ngo",
@@ -54,20 +61,20 @@ async def check_donation_eligibility(
 # ---------------------------------------------
 # 2️⃣ Accept donation safely
 # ---------------------------------------------
-@router.post("/donations/{donation_id}/accept")
-async def accept_donation(
-    donation_id: int,
-    user=Depends(require_role("NGO")),
-    db=Depends(get_db)
-):
-    """
-    Accept a CSR donation after passing all safety checks.
-    """
-    return await accept_donation_safely(
-        db=db,
-        donation_id=donation_id,
-        ngo_id=user["ngo_id"]
-    )
+# @router.post("/donations/{donation_id}/accept")
+# async def accept_donation(
+#     donation_id: int,
+#     user=Depends(require_role("NGO")),
+#     db=Depends(get_db)
+# ):
+#     """
+#     Accept a CSR donation after passing all safety checks.
+#     """
+#     return await accept_donation_safely(
+#         db=db,
+#         donation_id=donation_id,
+#         ngo_id=user["ngo_id"]
+#     )
 
 @router.post("/clinics")
 async def register_clinic_endpoint(
@@ -81,30 +88,59 @@ async def register_clinic_endpoint(
     if not ngo_obj:
         raise HTTPException(status_code=404, detail="NGO not found")
     
-    return await register_clinic(db, ngo_obj, data.official_email, data.clinic_name)
+    return await register_clinic(db, ngo_obj, data.official_email, data.clinic_name,data.facility_id, data.facility_id_type, data.doctor_registration_number, data.pincode)
 
 
 
-@router.post("/clinics/{clinic_id}/requirements")
-async def add_clinic_requirement(
-    clinic_id: int,
-    item_name: str,
-    quantity: int,
-    notes: str | None = None,
+@router.post("/clinic-needs")
+async def create_need(
+    data: ClinicNeedCreate,
     db=Depends(get_db),
-    ngo=Depends(require_role("NGO"))
+    ngo=Depends(get_current_ngo),
+    _: dict = Depends(require_role("NGO"))
 ):
-  
+    """
+    NGO records a clinic requirement after physical audit.
+    Clinic must be onboarded before allocation.
+    """
+    return await create_clinic_need(db, ngo, data)
 
-    req = ClinicRequirement(
-        clinic_id=clinic_id,
-        ngo_id=ngo["ngo_id"],
-        item_name=item_name,
-        quantity=quantity,
-        notes=notes
+@router.post("/donations/{donation_id}/accept")
+async def accept_donation_endpoint(
+    donation_id: int,
+    db = Depends(get_db),
+    ngo = Depends(require_role("NGO"))
+):
+    return await accept_csr_donation(db, ngo, donation_id)
+
+
+@router.get("/donations/available")
+async def list_available_donations(
+    db: AsyncSession = Depends(get_db),
+    ngo = Depends(require_role("NGO"))
+):
+    return await get_available_donations(db)
+
+@router.get("/dashboard/data")
+async def ngo_dashboard_data(
+    db: AsyncSession = Depends(get_db),
+    ngo = Depends(require_role("NGO"))
+):
+    return {
+        "accepted_donations": await get_accepted_donations(db, ngo),
+        "clinic_requirements": await get_clinic_requirements(db, ngo),
+    }
+
+@router.post("/donations/allocate")
+async def allocate_donation_endpoint(
+    payload: AllocationCreate,
+    db: AsyncSession = Depends(get_db),
+    ngo = Depends(require_role("NGO"))
+):
+    return await allocate_donation(
+        db,
+        ngo,
+        payload.donation_id,
+        payload.clinic_requirement_id
+
     )
-
-    db.add(req)
-    await db.commit()
-
-    return {"message": "Clinic requirement recorded"}
