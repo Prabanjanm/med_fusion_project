@@ -1,6 +1,6 @@
 import React from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
-import { LayoutDashboard, PlusCircle, History, Send, Link, Settings, FileText, CheckCircle, Truck, ClipboardCheck, ShieldCheck, Hexagon, Boxes, Activity } from 'lucide-react';
+import { LayoutDashboard, PlusCircle, History, Send, Link, Settings, FileText, CheckCircle, Truck, ClipboardCheck, ShieldCheck, Hexagon, Boxes, Activity, Building, Users } from 'lucide-react';
 import '../styles/Sidebar.css';
 
 const Sidebar = ({ role }) => {
@@ -98,6 +98,14 @@ const Sidebar = ({ role }) => {
             <NavLink to="/auditor/trail" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
               <FileText size={20} className="nav-icon" />
               <span className="nav-label">Audit Trail</span>
+            </NavLink>
+            <NavLink to="/auditor/csr-registry" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
+              <Building size={20} className="nav-icon" />
+              <span className="nav-label">CSR History</span>
+            </NavLink>
+            <NavLink to="/auditor/ngo-registry" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
+              <Users size={20} className="nav-icon" />
+              <span className="nav-label">NGO History</span>
             </NavLink>
           </>
         )}

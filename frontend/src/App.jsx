@@ -38,6 +38,8 @@ import ProductCatalog from './clinic/ProductCatalog';
 // Auditor Components
 import AuditDashboard from './auditor/AuditDashboard';
 import AuditTrail from './auditor/AuditTrail';
+import AuditorCsrRegistry from './auditor/AuditorCsrRegistry';
+import AuditorNgoRegistry from './auditor/AuditorNgoRegistry';
 import Settings from './components/Settings';
 import BlockchainVerify from './components/BlockchainVerify';
 
@@ -160,6 +162,14 @@ function App() {
           <Route
             path="/auditor/trail"
             element={<ProtectedRoutes element={<AuditTrail />} allowedRoles={['auditor']} />}
+          />
+          <Route
+            path="/auditor/csr-registry"
+            element={<ProtectedRoutes element={<AuditorCsrRegistry />} allowedRoles={['auditor']} />}
+          />
+          <Route
+            path="/auditor/ngo-registry"
+            element={<ProtectedRoutes element={<AuditorNgoRegistry />} allowedRoles={['auditor']} />}
           />
 
           {/* Universal Shared Routes (But protected) */}

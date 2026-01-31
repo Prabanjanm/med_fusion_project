@@ -83,21 +83,6 @@ const ClinicDashboard = () => {
         </div>
         <div style={{ display: 'flex', gap: '1rem' }}>
           <button
-            className="btn-secondary"
-            onClick={() => navigate('/clinic/request-products')}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '0.5rem',
-              minWidth: '200px',
-              justifyContent: 'center',
-              borderRadius: '12px'
-            }}
-          >
-            <Package size={18} />
-            REQUEST PRODUCTS
-          </button>
-          <button
             className="btn-submit"
             onClick={() => navigate('/clinic/receipts')}
             style={{
@@ -130,110 +115,9 @@ const ClinicDashboard = () => {
           color="#00ff88"
           icon={CheckSquare}
         />
-        <SummaryCard
-          label="Requests Pending"
-          value={loading ? "-" : stats.requestsPending}
-          color="#f59e0b"
-          icon={Clock}
-        />
-        <SummaryCard
-          label="Requests Approved"
-          value={loading ? "-" : stats.requestsApproved}
-          color="#10b981"
-          icon={CheckSquare}
-        />
       </div>
 
-      {/* Recent Requests Section */}
-      <div className="table-card" style={{ marginBottom: '2rem' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-          <h2 className="table-header-title">My Recent Requests</h2>
-          <button
-            onClick={() => navigate('/clinic/request-status')}
-            style={{
-              background: 'rgba(59, 130, 246, 0.1)',
-              border: '1px solid rgba(59, 130, 246, 0.3)',
-              borderRadius: '8px',
-              padding: '0.5rem 1rem',
-              color: '#3b82f6',
-              cursor: 'pointer',
-              fontSize: '0.9rem',
-              fontWeight: 600
-            }}
-          >
-            View All Requests
-          </button>
-        </div>
 
-        {loading ? (
-          <div style={{ padding: '3rem', textAlign: 'center', color: '#64748b' }}>Loading requests...</div>
-        ) : requests.length === 0 ? (
-          <div style={{ padding: '3rem', textAlign: 'center', color: '#64748b' }}>
-            <Package size={48} color="#64748b" style={{ marginBottom: '1rem' }} />
-            <p>No product requests yet.</p>
-            <p style={{ fontSize: '0.85rem', marginTop: '0.5rem' }}>
-              Click "Request Products" to submit your first request.
-            </p>
-          </div>
-        ) : (
-          <div style={{ display: 'grid', gap: '1rem' }}>
-            {requests.slice(0, 3).map(request => (
-              <div
-                key={request.id}
-                style={{
-                  padding: '1.5rem',
-                  background: 'rgba(255,255,255,0.02)',
-                  border: '1px solid rgba(255,255,255,0.1)',
-                  borderRadius: '12px',
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center'
-                }}
-              >
-                <div style={{ flex: 1 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '0.5rem' }}>
-                    <h4 style={{ color: '#fff', margin: 0 }}>{request.id}</h4>
-                    {request.priority === 'emergency' && (
-                      <div style={{
-                        padding: '0.25rem 0.75rem',
-                        background: 'rgba(239, 68, 68, 0.1)',
-                        border: '1px solid rgba(239, 68, 68, 0.3)',
-                        borderRadius: '12px',
-                        color: '#ef4444',
-                        fontSize: '0.75rem',
-                        fontWeight: 600,
-                        textTransform: 'uppercase',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '0.25rem'
-                      }}>
-                        <AlertTriangle size={12} />
-                        EMERGENCY
-                      </div>
-                    )}
-                  </div>
-                  <p style={{ color: '#64748b', fontSize: '0.9rem', margin: 0 }}>
-                    {request.items.length} item{request.items.length !== 1 ? 's' : ''} •
-                    Submitted {new Date(request.created_at).toLocaleDateString()}
-                  </p>
-                </div>
-                <div style={{
-                  padding: '0.5rem 1rem',
-                  background: `rgba(${getRequestStatusColor(request.status)}, 0.1)`,
-                  border: `1px solid ${getRequestStatusColor(request.status)}`,
-                  borderRadius: '8px',
-                  color: getRequestStatusColor(request.status),
-                  fontSize: '0.85rem',
-                  fontWeight: 600,
-                  textTransform: 'uppercase'
-                }}>
-                  {request.status}
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
 
       {/* Incoming Allocations */}
       <div className="table-card">
@@ -262,7 +146,7 @@ const ClinicDashboard = () => {
           />
         )}
       </div>
-    </Layout>
+    </Layout >
   );
 };
 

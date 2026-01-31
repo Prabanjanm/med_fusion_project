@@ -24,7 +24,7 @@ const CreateDonation = () => {
     donationDate: new Date().toISOString().split('T')[0],
     ngoName: '',
     purpose: '',
-    supportingDocument: null,
+
   });
 
   const [errors, setErrors] = useState({});
@@ -61,10 +61,7 @@ const CreateDonation = () => {
     if (errors[name]) setErrors(prev => ({ ...prev, [name]: '' }));
   };
 
-  const handleFileChange = (e) => {
-    const file = e.target.files?.[0];
-    setFormData(prev => ({ ...prev, supportingDocument: file }));
-  };
+
 
   // Step 1: Validation
   const validateStep1 = () => {
@@ -80,7 +77,7 @@ const CreateDonation = () => {
     const newErrors = {};
     if (!formData.quantity || formData.quantity <= 0) newErrors.quantity = 'Valid quantity is required';
     if (!formData.ngoName) newErrors.ngoName = 'Please select an NGO';
-    if (!formData.supportingDocument) newErrors.supportingDocument = 'Supporting document is required';
+    // supportingDocument check removed as per user request
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -94,7 +91,7 @@ const CreateDonation = () => {
         purpose: formData.purpose || `Donation to ${formData.ngoName}`,
         board_resolution_ref: `BR-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
         csr_policy_declared: true,
-        supportingDocument: formData.supportingDocument
+
       };
 
       // Trigger blockchain block creation with notification
@@ -223,25 +220,7 @@ const CreateDonation = () => {
         {errors.quantity && <span style={{ color: '#ef4444', fontSize: '0.8rem' }}>{errors.quantity}</span>}
       </div>
 
-      <div className="wizard-field-group">
-        <label className="wizard-label">Supporting Document <span style={{ color: '#ef4444' }}>*</span></label>
-        <div style={{
-          border: errors.supportingDocument ? '1px dashed #ef4444' : '1px dashed #cbd5e1',
-          padding: '1rem',
-          borderRadius: '8px',
-          textAlign: 'center',
-          background: '#f8fafc'
-        }}>
-          <label style={{ cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.5rem', color: '#64748b' }}>
-            <Upload size={24} color={errors.supportingDocument ? '#ef4444' : 'currentColor'} />
-            <span style={{ color: errors.supportingDocument ? '#ef4444' : 'inherit' }}>
-              {formData.supportingDocument ? formData.supportingDocument.name : "Click to Upload Proof (Required)"}
-            </span>
-            <input type="file" style={{ display: 'none' }} onChange={handleFileChange} required />
-          </label>
-        </div>
-        {errors.supportingDocument && <span style={{ color: '#ef4444', fontSize: '0.8rem', marginTop: '0.5rem', display: 'block' }}>{errors.supportingDocument}</span>}
-      </div>
+
     </div>
   );
 
@@ -385,7 +364,7 @@ const CreateDonation = () => {
                 setSubmittedHash(null);
                 setFormData({
                   donorName: '', donorOrgName: '', resourceType: 'ppe', quantity: '', unit: 'pieces',
-                  donationDate: new Date().toISOString().split('T')[0], ngoName: '', purpose: '', supportingDocument: null
+                  donationDate: new Date().toISOString().split('T')[0], ngoName: '', purpose: ''
                 });
               }}
               style={{
