@@ -343,7 +343,7 @@ const CsrDashboard = () => {
               {/* Legend with Metrics */}
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '1rem' }}>
                 {[
-                  { label: 'Received', count: stats.completed, color: '#00e5ff' },
+                  { label: 'Accepted', count: stats.completed, color: '#00e5ff' },
                   { label: 'In Transit', count: stats.inTransit, color: '#3b82f6' },
                   { label: 'Pending', count: stats.pending, color: '#8b5cf6' }
                 ].map((item, idx) => (

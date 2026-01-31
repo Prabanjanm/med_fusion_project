@@ -51,7 +51,7 @@ const RegisterCompany = () => {
     const roles = [
         { id: 'csr', label: 'Corporate', icon: <Building2 size={18} />, color: '#06b6d4', desc: 'Donor' },
         { id: 'ngo', label: 'NGO', icon: <Handshake size={18} />, color: '#14b8a6', desc: 'Partner' },
-        { id: 'clinic', label: 'Clinic', icon: <Stethoscope size={18} />, color: '#94a3b8', desc: 'Provider' },
+        { id: 'clinic', label: 'Clinic', icon: <Stethoscope size={18} />, color: '#f97316', desc: 'Provider' },
         { id: 'auditor', label: 'Auditor', icon: <FileCheck size={18} />, color: '#818cf8', desc: 'Verifier' },
     ];
 
