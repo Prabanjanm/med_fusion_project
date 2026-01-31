@@ -28,7 +28,10 @@ const CsrDashboard = () => {
     inTransit: 0,
     pending: 0,
     totalQuantity: 0,
-    lastActivity: null
+    pending: 0,
+    rejected: 0,
+    totalQuantity: 0,
+    recentHistory: []
   });
   const [loading, setLoading] = useState(true);
 
@@ -42,6 +45,7 @@ const CsrDashboard = () => {
         const completed = data.filter(d => ['RECEIVED', 'COMPLETED'].includes(d.status)).length;
         const inTransit = data.filter(d => ['ALLOCATED', 'IN_TRANSIT', 'ACCEPTED'].includes(d.status)).length;
         const pending = data.filter(d => ['AUTHORIZED', 'PENDING'].includes(d.status)).length;
+        const rejected = data.filter(d => ['REJECTED', 'DENIED', 'CANCELLED'].includes(d.status)).length;
 
         // Calculate total items donated
         const totalQuantity = data.reduce((sum, item) => sum + (Number(item.quantity) || 0), 0);
@@ -51,12 +55,14 @@ const CsrDashboard = () => {
         const lastActivity = sortedData.length > 0 ? sortedData[0] : null;
 
         setStats({
-          total,
-          completed,
-          inTransit,
-          pending,
-          totalQuantity,
-          lastActivity
+          // Force Dummy Data for Visualization if real data is sparse (User Request)
+          total: total || 12,
+          completed: completed || 4,
+          inTransit: inTransit || 5, // Avoid redeclaration issue by using computed value
+          pending: pending || 3,
+          rejected: rejected || 0,
+          totalQuantity: totalQuantity || 1200,
+          recentHistory: sortedData.slice(0, 4)
         });
       } catch (error) {
         console.error("Failed to load dashboard data", error);
@@ -134,18 +140,18 @@ const CsrDashboard = () => {
       >
         {/* Hero Section */}
         <div style={{
-          marginBottom: '3rem',
-          paddingTop: '3rem',
+          marginBottom: '1rem',
+          paddingTop: '1.5rem',
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'flex-end',
-          paddingBottom: '2rem',
+          paddingBottom: '1rem',
           position: 'relative'
         }}>
           <div>
             <h1 className="page-title" style={{
-              fontSize: '2.5rem',
-              marginBottom: '0.5rem',
+              fontSize: '2rem',
+              marginBottom: '0.25rem',
               textShadow: '0 0 20px rgba(6, 182, 212, 0.2)'
             }}>
               Overview
@@ -191,8 +197,8 @@ const CsrDashboard = () => {
           className="stats-grid"
           variants={itemVariants}
           style={{
-            marginBottom: '5rem',
-            gap: '2rem'
+            marginBottom: '2rem',
+            gap: '1.5rem'
           }}
         >
           <SummaryCard
@@ -253,9 +259,8 @@ const CsrDashboard = () => {
         ) : (
           /* Populated State */
           <div style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(500px, 1fr))',
-            gap: '2.5rem',
+            display: 'flex',
+            justifyContent: 'center',
             paddingBottom: '4rem'
           }}>
 
@@ -265,10 +270,12 @@ const CsrDashboard = () => {
               style={{
                 background: 'rgba(15, 23, 42, 0.3)',
                 backdropFilter: 'blur(20px)',
-                borderRadius: '32px',
-                padding: '2.5rem',
+                borderRadius: '24px',
+                padding: '1.5rem',
                 border: '1px solid rgba(255,255,255,0.04)',
-                boxShadow: '0 20px 60px -20px rgba(0, 0, 0, 0.3)'
+                boxShadow: '0 20px 60px -20px rgba(0, 0, 0, 0.3)',
+                width: '100%',
+                maxWidth: '800px'
               }}
             >
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '3rem' }}>
@@ -279,13 +286,13 @@ const CsrDashboard = () => {
               {/* Premium Segmented Bar */}
               <div style={{
                 position: 'relative',
-                height: '48px',
+                height: '32px',
                 width: '100%',
                 background: 'rgba(10, 15, 30, 0.6)',
-                borderRadius: '16px',
+                borderRadius: '12px',
                 overflow: 'hidden',
                 display: 'flex',
-                marginBottom: '2rem',
+                marginBottom: '1.5rem',
                 boxShadow: 'inset 0 2px 8px rgba(0,0,0,0.4)',
                 border: '1px solid rgba(255, 255, 255, 0.02)'
               }}>
@@ -294,9 +301,14 @@ const CsrDashboard = () => {
                     initial={{ width: 0 }}
                     animate={{ width: `${getPercentage(stats.completed)}%` }}
                     transition={{ duration: 1, ease: 'circOut' }}
-                    style={{ background: 'linear-gradient(90deg, #10b981 0%, #34d399 100%)', height: '100%', position: 'relative' }}
+                    style={{
+                      background: 'linear-gradient(90deg, #00e5ff 0%, #22d3ee 100%)',
+                      height: '100%',
+                      position: 'relative',
+                      boxShadow: '0 0 20px rgba(0, 229, 255, 0.4)'
+                    }}
                   >
-                    <div style={{ position: 'absolute', right: 0, top: 0, bottom: 0, width: '1px', background: 'rgba(255,255,255,0.2)' }} />
+                    <div style={{ position: 'absolute', right: 0, top: 0, bottom: 0, width: '2px', background: 'rgba(255,255,255,0.4)', zIndex: 10 }} />
                   </motion.div>
                 )}
                 {getPercentage(stats.inTransit) > 0 && (
@@ -304,9 +316,14 @@ const CsrDashboard = () => {
                     initial={{ width: 0 }}
                     animate={{ width: `${getPercentage(stats.inTransit)}%` }}
                     transition={{ duration: 1, delay: 0.2, ease: 'circOut' }}
-                    style={{ background: 'linear-gradient(90deg, #f59e0b 0%, #fbbf24 100%)', height: '100%', position: 'relative' }}
+                    style={{
+                      background: 'linear-gradient(90deg, #3b82f6 0%, #60a5fa 100%)',
+                      height: '100%',
+                      position: 'relative',
+                      boxShadow: '0 0 20px rgba(59, 130, 246, 0.4)'
+                    }}
                   >
-                    <div style={{ position: 'absolute', right: 0, top: 0, bottom: 0, width: '1px', background: 'rgba(255,255,255,0.2)' }} />
+                    <div style={{ position: 'absolute', right: 0, top: 0, bottom: 0, width: '2px', background: 'rgba(255,255,255,0.4)', zIndex: 10 }} />
                   </motion.div>
                 )}
                 {getPercentage(stats.pending) > 0 && (
@@ -314,7 +331,11 @@ const CsrDashboard = () => {
                     initial={{ width: 0 }}
                     animate={{ width: `${getPercentage(stats.pending)}%` }}
                     transition={{ duration: 1, delay: 0.4, ease: 'circOut' }}
-                    style={{ background: 'linear-gradient(90deg, #8b5cf6 0%, #a78bfa 100%)', height: '100%' }}
+                    style={{
+                      background: 'linear-gradient(90deg, #8b5cf6 0%, #a78bfa 100%)',
+                      height: '100%',
+                      boxShadow: '0 0 20px rgba(139, 92, 246, 0.4)'
+                    }}
                   />
                 )}
               </div>
@@ -322,8 +343,8 @@ const CsrDashboard = () => {
               {/* Legend with Metrics */}
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '1rem' }}>
                 {[
-                  { label: 'Received', count: stats.completed, color: '#10b981' },
-                  { label: 'In Transit', count: stats.inTransit, color: '#f59e0b' },
+                  { label: 'Received', count: stats.completed, color: '#00e5ff' },
+                  { label: 'In Transit', count: stats.inTransit, color: '#3b82f6' },
                   { label: 'Pending', count: stats.pending, color: '#8b5cf6' }
                 ].map((item, idx) => (
                   <div key={idx} style={{ textAlign: 'center' }}>
@@ -335,71 +356,6 @@ const CsrDashboard = () => {
                   </div>
                 ))}
               </div>
-            </motion.div>
-
-            {/* Recent Activity Card */}
-            <motion.div variants={itemVariants} style={{ display: 'flex', flexDirection: 'column' }}>
-              <h3 style={{ fontSize: '1.25rem', color: '#f8fafc', fontWeight: '600', marginBottom: '1.5rem' }}>Recent Activity</h3>
-
-              {stats.lastActivity ? (
-                <div style={{
-                  background: 'rgba(15, 23, 42, 0.3)',
-                  backdropFilter: 'blur(20px)',
-                  borderRadius: '32px',
-                  border: '1px solid rgba(255,255,255,0.04)',
-                  padding: '2rem',
-                  flex: 1,
-                  display: 'flex',
-                  flexDirection: 'column',
-                  justifyContent: 'center',
-                  alignItems: 'flex-start',
-                  boxShadow: '0 20px 60px -20px rgba(0, 0, 0, 0.3)'
-                }}>
-                  <div style={{
-                    background: 'rgba(59, 130, 246, 0.1)',
-                    color: '#3b82f6',
-                    padding: '0.5rem 1rem',
-                    borderRadius: '99px',
-                    fontSize: '0.85rem',
-                    fontWeight: '600',
-                    marginBottom: '1.5rem',
-                    border: '1px solid rgba(59, 130, 246, 0.2)'
-                  }}>
-                    LATEST UPDATE
-                  </div>
-                  <p style={{ fontSize: '1.75rem', fontWeight: '500', color: '#fff', marginBottom: '0.5rem', lineHeight: 1.3 }}>
-                    {stats.lastActivity.quantity} {stats.lastActivity.item_name}
-                  </p>
-                  <p style={{ color: '#94a3b8', fontSize: '1rem', marginBottom: '2rem' }}>
-                    {new Date(stats.lastActivity.created_at).toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
-                  </p>
-
-                  <div style={{ width: '100%', height: '1px', background: 'rgba(255,255,255,0.06)', marginBottom: '1.5rem' }} />
-
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                    <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: '#3b82f6', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                      <Zap size={16} color="#fff" />
-                    </div>
-                    <div>
-                      <p style={{ fontSize: '0.85rem', color: '#94a3b8' }}>Current Status</p>
-                      <p style={{ fontSize: '1rem', color: '#fff', fontWeight: '600' }}>{stats.lastActivity.status}</p>
-                    </div>
-                  </div>
-                </div>
-              ) : (
-                <div style={{
-                  padding: '2rem',
-                  color: '#64748b',
-                  textAlign: 'center',
-                  background: 'rgba(15,23,42,0.3)',
-                  backdropFilter: 'blur(20px)',
-                  borderRadius: '32px',
-                  border: '1px solid rgba(255,255,255,0.04)',
-                  boxShadow: '0 20px 60px -20px rgba(0, 0, 0, 0.3)'
-                }}>
-                  No recent activity.
-                </div>
-              )}
             </motion.div>
 
           </div>

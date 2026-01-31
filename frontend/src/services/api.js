@@ -171,19 +171,54 @@ export const companyAPI = {
 };
 
 // ===== Donations (CSR) =====
+
+// Helper functions for demo mode data persistence
+const MOCK_DONATIONS_KEY = 'csr_tracker_mock_donations';
+
+const getMockDonations = () => {
+  try {
+    const stored = localStorage.getItem(MOCK_DONATIONS_KEY);
+    return stored ? JSON.parse(stored) : [];
+  } catch (error) {
+    console.error('Error reading mock donations:', error);
+    return [];
+  }
+};
+
+const saveMockDonation = (donation) => {
+  try {
+    const existing = getMockDonations();
+    const updated = [donation, ...existing]; // Add new donation at the beginning
+    localStorage.setItem(MOCK_DONATIONS_KEY, JSON.stringify(updated));
+    return donation;
+  } catch (error) {
+    console.error('Error saving mock donation:', error);
+    return donation;
+  }
+};
+
 export const donationAPI = {
   create: async (data) => {
     if (DEMO_MODE) {
       console.log('🔬 DEMO MODE: Creating mock donation');
       await new Promise(resolve => setTimeout(resolve, 500));
 
-      return {
+      const newDonation = {
         id: `DON-${Date.now()}`,
-        ...data,
+        item_name: data.resourceType || data.item_name,
+        quantity: parseInt(data.quantity) || 0,
+        purpose: data.purpose || 'CSR Initiative',
         status: 'PENDING',
         created_at: new Date().toISOString(),
+        ngo_name: data.ngoName || 'Pending Assignment',
+        donor_name: data.donorName || 'CSR Donor',
         blockchain_hash: `0x${Math.random().toString(16).substring(2, 66)}`
       };
+
+      // Save to localStorage
+      saveMockDonation(newDonation);
+
+      return newDonation;
     }
 
     return apiCall('/donations/', {
@@ -193,53 +228,37 @@ export const donationAPI = {
   },
   getHistory: async () => {
     if (DEMO_MODE) {
-      console.log('🔬 DEMO MODE: Returning mock donation history');
+      console.log('🔬 DEMO MODE: Returning mock donation history from localStorage');
       await new Promise(resolve => setTimeout(resolve, 300));
 
-      return [
-        {
-          id: 'DON-2024-001',
-          item_name: 'Medical Masks (boxes)',
-          quantity: 5000,
-          purpose: 'COVID-19 Relief',
-          status: 'ALLOCATED',
-          created_at: '2024-01-15T10:30:00Z',
-          ngo_name: 'Red Cross India'
-        },
-        {
-          id: 'DON-2024-002',
-          item_name: 'PPE Kits (pieces)',
-          quantity: 1000,
-          purpose: 'Healthcare Support',
-          status: 'COMPLETED',
-          created_at: '2024-01-10T14:20:00Z',
-          ngo_name: 'WHO Partners'
-        },
-        {
-          id: 'DON-2024-003',
-          item_name: 'Surgical Gloves (boxes)',
-          quantity: 10000,
-          purpose: 'Hospital Supply',
-          status: 'PENDING',
-          created_at: '2024-01-20T09:15:00Z',
-          ngo_name: 'MSF India'
-        }
-      ];
+      // Get donations from localStorage
+      const donations = getMockDonations();
+
+      // If no donations exist, return empty array (not static dummy data)
+      if (donations.length === 0) {
+        console.log('📭 No donations in localStorage - returning empty array');
+        return [];
+      }
+
+      console.log(`📦 Returning ${donations.length} donations from localStorage`);
+      return donations;
     }
 
     return apiCall('/donations/history');
   },
   getAnalytics: async () => {
     if (DEMO_MODE) {
-      console.log('🔬 DEMO MODE: Returning mock analytics');
+      console.log('🔬 DEMO MODE: Calculating analytics from localStorage donations');
       await new Promise(resolve => setTimeout(resolve, 200));
 
+      const donations = getMockDonations();
+
       return {
-        total_donations: 15,
-        total_value: 2500000,
-        pending: 3,
-        allocated: 7,
-        completed: 5
+        total_donations: donations.length,
+        total_value: donations.reduce((sum, d) => sum + (d.quantity || 0), 0),
+        pending: donations.filter(d => d.status === 'PENDING').length,
+        allocated: donations.filter(d => d.status === 'ALLOCATED').length,
+        completed: donations.filter(d => d.status === 'COMPLETED').length
       };
     }
 

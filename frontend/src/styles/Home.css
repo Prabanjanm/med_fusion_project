@@ -4,7 +4,7 @@
     position: relative;
     width: 100%;
     min-height: 100vh;
-    background-color: #0f172a;
+    background-color: #020617;
     /* Slate 900 */
     color: #f8fafc;
     /* REMOVED overflow-x: hidden to allow animations to flow */
@@ -99,7 +99,7 @@
     /* CRITICAL: Remove overflow:hidden to allow animations to flow freely */
     overflow: visible;
     /* Deep calm background with subtle movement */
-    background: radial-gradient(circle at 50% 30%, #1e293b 0%, #0f172a 60%);
+    background: linear-gradient(to bottom, transparent 85%, #020617 100%), radial-gradient(circle at 50% 30%, #1e293b 0%, #020617 70%);
     /* Negative margin to break out of any parent constraints */
     margin-left: calc(-50vw + 50%);
     margin-right: calc(-50vw + 50%);

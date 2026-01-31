@@ -2,7 +2,6 @@ import React from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { LogOut, User } from 'lucide-react';
-import Logo from './Logo';
 import '../styles/Navbar.css';
 
 const Navbar = () => {
@@ -27,10 +26,8 @@ const Navbar = () => {
   return (
     <header className="dashboard-navbar">
       <div className="navbar-content">
-        {/* Left Side: Global Brand Text */}
-        <div className="navbar-brand" style={{ transform: 'scale(0.7)', transformOrigin: 'left center' }}>
-          <Logo />
-        </div>
+        {/* Empty left side - logo only in sidebar */}
+        <div></div>
 
         {/* Right Side: User Profile & Actions */}
         <div className="navbar-actions">

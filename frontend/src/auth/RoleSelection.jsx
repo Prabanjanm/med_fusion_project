@@ -127,7 +127,15 @@ const RoleSelection = () => {
                                 <ShieldCheck size={14} color="#00ff9d" />
                                 <span style={{ fontSize: '0.75rem', color: '#cbd5e1', fontWeight: '500', letterSpacing: '0.5px' }}>SECURE ACCESS PORTAL</span>
                             </div>
-                            <h1 style={{ fontSize: '2.2rem', fontWeight: '700', color: '#fff', marginBottom: '0.8rem', letterSpacing: '-0.5px' }}>Select Your Portal</h1>
+                            <h1 style={{
+                                fontSize: '2.2rem',
+                                fontWeight: '700',
+                                color: '#fff',
+                                marginBottom: '0.8rem',
+                                letterSpacing: '0.05em',
+                                fontFamily: "'Orbitron', sans-serif",
+                                textTransform: 'uppercase'
+                            }}>Select Your Portal</h1>
                             <p style={{ color: '#94a3b8', fontSize: '1rem', maxWidth: '550px', margin: '0 auto', lineHeight: '1.6' }}>
                                 Identify your role to access the dedicated secure dashboard.
                             </p>
@@ -195,7 +203,17 @@ const RoleSelection = () => {
                                             {role.icon}
                                         </div>
 
-                                        <h3 style={{ color: '#fff', fontSize: '1.1rem', marginBottom: '0.8rem', fontWeight: '600' }}>{role.label}</h3>
+                                        <h3 style={{
+                                            color: '#fff',
+                                            fontSize: '1.1rem',
+                                            marginBottom: '0.8rem',
+                                            fontWeight: '700',
+                                            fontFamily: "'Orbitron', sans-serif",
+                                            letterSpacing: '0.1em',
+                                            textTransform: 'uppercase'
+                                        }}>
+                                            {role.label}
+                                        </h3>
                                         <p style={{ color: '#64748b', fontSize: '0.85rem', marginBottom: 'auto', lineHeight: '1.5', padding: '0 5px' }}>
                                             {role.desc}
                                         </p>

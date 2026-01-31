@@ -1,6 +1,6 @@
 import React from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
-import { LayoutDashboard, PlusCircle, History, Send, Link, Settings, FileText, CheckCircle, Truck, ClipboardCheck, ShieldCheck } from 'lucide-react';
+import { LayoutDashboard, PlusCircle, History, Send, Link, Settings, FileText, CheckCircle, Truck, ClipboardCheck, ShieldCheck, Hexagon, Boxes, Activity } from 'lucide-react';
 import '../styles/Sidebar.css';
 
 const Sidebar = ({ role }) => {
@@ -19,12 +19,20 @@ const Sidebar = ({ role }) => {
   return (
     <aside className="sidebar">
       <div className="sidebar-header">
-        <div className="logo-icon">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z" />
-            <path d="M12 5v14" />
-            <path d="M5 12h14" />
-          </svg>
+        <div className="logo-icon" style={{ position: 'relative', width: '48px', height: '48px', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+          <Hexagon
+            size={48}
+            color="#3b82f6"
+            fill="rgba(59, 130, 246, 0.1)"
+            strokeWidth={1.5}
+          />
+          <div style={{ position: 'absolute' }}>
+            <Boxes
+              size={24}
+              color="#22d3ee"
+              strokeWidth={2}
+            />
+          </div>
         </div>
         <span className="brand-name">CSR TRACKER</span>
       </div>
@@ -43,6 +51,10 @@ const Sidebar = ({ role }) => {
             <NavLink to="/csr/history" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
               <History size={20} className="nav-icon" />
               <span className="nav-label">History</span>
+            </NavLink>
+            <NavLink to="/csr/status" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
+              <Activity size={20} className="nav-icon" />
+              <span className="nav-label">Track Status</span>
             </NavLink>
           </>
         )}

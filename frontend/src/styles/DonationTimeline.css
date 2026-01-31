@@ -1,0 +1,264 @@
+/* ============================================
+   Donation Timeline Styles
+   ============================================ */
+
+.donation-timeline-container {
+    background: rgba(15, 23, 42, 0.4);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 24px;
+    padding: 2rem;
+    margin: 2rem 0;
+}
+
+.timeline-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.timeline-header h3 {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: #fff;
+    margin: 0;
+}
+
+.timeline-badge {
+    padding: 0.5rem 1rem;
+    background: rgba(251, 191, 36, 0.1);
+    border: 1px solid rgba(251, 191, 36, 0.3);
+    border-radius: 20px;
+    font-size: 0.85rem;
+    color: #fbbf24;
+    font-weight: 600;
+}
+
+.timeline-content {
+    position: relative;
+    padding-left: 2rem;
+}
+
+.timeline-stage {
+    position: relative;
+    padding-bottom: 2.5rem;
+    display: flex;
+    gap: 1.5rem;
+    align-items: flex-start;
+}
+
+.timeline-stage:last-child {
+    padding-bottom: 0;
+}
+
+.timeline-connector {
+    position: absolute;
+    left: 32px;
+    top: 48px;
+    width: 2px;
+    height: calc(100% - 24px);
+    transition: all 0.3s ease;
+}
+
+.timeline-connector.active {
+    background: linear-gradient(180deg, #10b981 0%, rgba(16, 185, 129, 0.3) 100%);
+    box-shadow: 0 0 10px rgba(16, 185, 129, 0.3);
+}
+
+.timeline-connector.inactive {
+    background: rgba(100, 116, 139, 0.2);
+}
+
+.timeline-icon {
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 2px solid;
+    flex-shrink: 0;
+    transition: all 0.3s ease;
+    position: relative;
+    z-index: 2;
+}
+
+.timeline-stage.completed .timeline-icon {
+    animation: pulse-glow 2s ease-in-out infinite;
+}
+
+@keyframes pulse-glow {
+
+    0%,
+    100% {
+        box-shadow: 0 0 15px rgba(16, 185, 129, 0.4);
+    }
+
+    50% {
+        box-shadow: 0 0 25px rgba(16, 185, 129, 0.6);
+    }
+}
+
+.timeline-stage-content {
+    flex: 1;
+    background: rgba(15, 23, 42, 0.3);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 16px;
+    padding: 1.5rem;
+    transition: all 0.3s ease;
+}
+
+.timeline-stage.completed .timeline-stage-content {
+    border-color: rgba(16, 185, 129, 0.2);
+    background: rgba(16, 185, 129, 0.05);
+}
+
+.timeline-stage.rejected .timeline-stage-content {
+    border-color: rgba(239, 68, 68, 0.2);
+    background: rgba(239, 68, 68, 0.05);
+}
+
+.timeline-stage-content:hover {
+    transform: translateX(4px);
+    border-color: rgba(255, 255, 255, 0.12);
+}
+
+.stage-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.75rem;
+}
+
+.stage-label {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #fff;
+    margin: 0;
+}
+
+.stage-role-badge {
+    padding: 0.25rem 0.75rem;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.stage-description {
+    color: #94a3b8;
+    font-size: 0.95rem;
+    margin: 0 0 1rem 0;
+    line-height: 1.5;
+}
+
+.stage-timestamp {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: #64748b;
+    font-size: 0.85rem;
+    margin-bottom: 0.75rem;
+    font-family: 'Courier New', monospace;
+}
+
+.stage-status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    font-weight: 600;
+}
+
+.stage-status-badge.completed {
+    background: rgba(16, 185, 129, 0.1);
+    color: #10b981;
+    border: 1px solid rgba(16, 185, 129, 0.3);
+}
+
+.stage-status-badge.pending {
+    background: rgba(100, 116, 139, 0.1);
+    color: #94a3b8;
+    border: 1px solid rgba(100, 116, 139, 0.3);
+}
+
+.stage-status-badge.rejected {
+    background: rgba(239, 68, 68, 0.1);
+    color: #ef4444;
+    border: 1px solid rgba(239, 68, 68, 0.3);
+}
+
+.timeline-footer {
+    margin-top: 2rem;
+    padding-top: 2rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.blockchain-note {
+    display: flex;
+    gap: 1rem;
+    padding: 1.5rem;
+    background: rgba(59, 130, 246, 0.05);
+    border: 1px solid rgba(59, 130, 246, 0.2);
+    border-radius: 12px;
+}
+
+.note-icon {
+    font-size: 1.5rem;
+    flex-shrink: 0;
+}
+
+.note-content {
+    flex: 1;
+}
+
+.note-content strong {
+    display: block;
+    color: #3b82f6;
+    font-size: 0.95rem;
+    margin-bottom: 0.5rem;
+}
+
+.note-content p {
+    color: #94a3b8;
+    font-size: 0.9rem;
+    line-height: 1.6;
+    margin: 0;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .donation-timeline-container {
+        padding: 1.5rem;
+    }
+
+    .timeline-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 1rem;
+    }
+
+    .timeline-content {
+        padding-left: 0;
+    }
+
+    .timeline-stage {
+        flex-direction: column;
+        gap: 1rem;
+    }
+
+    .timeline-connector {
+        display: none;
+    }
+
+    .timeline-icon {
+        width: 48px;
+        height: 48px;
+    }
+}

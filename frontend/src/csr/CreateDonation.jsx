@@ -80,6 +80,7 @@ const CreateDonation = () => {
     const newErrors = {};
     if (!formData.quantity || formData.quantity <= 0) newErrors.quantity = 'Valid quantity is required';
     if (!formData.ngoName) newErrors.ngoName = 'Please select an NGO';
+    if (!formData.supportingDocument) newErrors.supportingDocument = 'Supporting document is required';
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -92,7 +93,8 @@ const CreateDonation = () => {
         quantity: parseInt(formData.quantity, 10),
         purpose: formData.purpose || `Donation to ${formData.ngoName}`,
         board_resolution_ref: `BR-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
-        csr_policy_declared: true
+        csr_policy_declared: true,
+        supportingDocument: formData.supportingDocument
       };
 
       // Trigger blockchain block creation with notification
@@ -222,14 +224,23 @@ const CreateDonation = () => {
       </div>
 
       <div className="wizard-field-group">
-        <label className="wizard-label">Supporting Document (Optional)</label>
-        <div style={{ border: '1px dashed #cbd5e1', padding: '1rem', borderRadius: '8px', textAlign: 'center', background: '#f8fafc' }}>
+        <label className="wizard-label">Supporting Document <span style={{ color: '#ef4444' }}>*</span></label>
+        <div style={{
+          border: errors.supportingDocument ? '1px dashed #ef4444' : '1px dashed #cbd5e1',
+          padding: '1rem',
+          borderRadius: '8px',
+          textAlign: 'center',
+          background: '#f8fafc'
+        }}>
           <label style={{ cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.5rem', color: '#64748b' }}>
-            <Upload size={24} />
-            <span>{formData.supportingDocument ? formData.supportingDocument.name : "Click to Upload Proof"}</span>
-            <input type="file" style={{ display: 'none' }} onChange={handleFileChange} />
+            <Upload size={24} color={errors.supportingDocument ? '#ef4444' : 'currentColor'} />
+            <span style={{ color: errors.supportingDocument ? '#ef4444' : 'inherit' }}>
+              {formData.supportingDocument ? formData.supportingDocument.name : "Click to Upload Proof (Required)"}
+            </span>
+            <input type="file" style={{ display: 'none' }} onChange={handleFileChange} required />
           </label>
         </div>
+        {errors.supportingDocument && <span style={{ color: '#ef4444', fontSize: '0.8rem', marginTop: '0.5rem', display: 'block' }}>{errors.supportingDocument}</span>}
       </div>
     </div>
   );
@@ -288,18 +299,131 @@ const CreateDonation = () => {
             </p>
           </div>
 
-          <button
-            className="btn-primary"
-            onClick={() => {
-              setSubmittedHash(null);
-              setFormData({
-                donorName: '', donorOrgName: '', resourceType: 'ppe', quantity: '', unit: 'pieces',
-                donationDate: new Date().toISOString().split('T')[0], ngoName: '', purpose: '', supportingDocument: null
-              });
-            }}
-          >
-            Make Another Donation
-          </button>
+          <div style={{
+            display: 'flex',
+            gap: '1.5rem',
+            justifyContent: 'center',
+            flexWrap: 'wrap',
+            background: 'rgba(15, 23, 42, 0.6)',
+            padding: '2rem',
+            borderRadius: '24px',
+            border: '1px solid rgba(255,255,255,0.08)',
+            backdropFilter: 'blur(12px)',
+            boxShadow: '0 10px 30px -10px rgba(0,0,0,0.5)',
+            margin: '0 auto'
+          }}>
+            <button
+              onClick={() => navigate(`/csr/history?refresh=${Date.now()}`)}
+              style={{
+                background: 'transparent',
+                color: '#4361EE',
+                padding: '12px 32px',
+                borderRadius: '8px',
+                border: '1px solid #4361EE',
+                fontWeight: '700',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '12px',
+                cursor: 'pointer',
+                boxShadow: '0 0 15px rgba(67, 97, 238, 0.15)',
+                textTransform: 'uppercase',
+                letterSpacing: '1px',
+                fontFamily: "'Orbitron', sans-serif",
+                transition: 'all 0.3s',
+              }}
+              onMouseOver={(e) => {
+                e.currentTarget.style.background = 'rgba(67, 97, 238, 0.1)';
+                e.currentTarget.style.boxShadow = '0 0 25px rgba(67, 97, 238, 0.4)';
+                e.currentTarget.style.transform = 'translateY(-2px)';
+              }}
+              onMouseOut={(e) => {
+                e.currentTarget.style.background = 'transparent';
+                e.currentTarget.style.boxShadow = '0 0 15px rgba(67, 97, 238, 0.15)';
+                e.currentTarget.style.transform = 'translateY(0)';
+              }}
+            >
+              <div style={{ color: '#4361EE' }}>📋</div>
+              View History
+            </button>
+
+            <button
+              onClick={() => navigate('/verify')}
+              style={{
+                background: 'transparent',
+                color: '#00f2ff',
+                padding: '12px 32px',
+                borderRadius: '8px',
+                border: '1px solid #00f2ff',
+                fontWeight: '700',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '12px',
+                cursor: 'pointer',
+                boxShadow: '0 0 15px rgba(0, 242, 255, 0.15)',
+                textTransform: 'uppercase',
+                letterSpacing: '1px',
+                fontFamily: "'Orbitron', sans-serif",
+                transition: 'all 0.3s',
+              }}
+              onMouseOver={(e) => {
+                e.currentTarget.style.background = 'rgba(0, 242, 255, 0.1)';
+                e.currentTarget.style.boxShadow = '0 0 25px rgba(0, 242, 255, 0.4)';
+                e.currentTarget.style.transform = 'translateY(-2px)';
+              }}
+              onMouseOut={(e) => {
+                e.currentTarget.style.background = 'transparent';
+                e.currentTarget.style.boxShadow = '0 0 15px rgba(0, 242, 255, 0.15)';
+                e.currentTarget.style.transform = 'translateY(0)';
+              }}
+            >
+              <div style={{ color: '#00f2ff' }}>📊</div>
+              Verify on Blockchain
+            </button>
+
+            <button
+              onClick={() => {
+                setSubmittedHash(null);
+                setFormData({
+                  donorName: '', donorOrgName: '', resourceType: 'ppe', quantity: '', unit: 'pieces',
+                  donationDate: new Date().toISOString().split('T')[0], ngoName: '', purpose: '', supportingDocument: null
+                });
+              }}
+              style={{
+                background: 'transparent',
+                color: '#94a3b8',
+                padding: '12px 32px',
+                borderRadius: '8px',
+                border: '1px solid #94a3b8',
+                fontWeight: '700',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '12px',
+                cursor: 'pointer',
+                boxShadow: '0 0 15px rgba(148, 163, 184, 0.1)',
+                textTransform: 'uppercase',
+                letterSpacing: '1px',
+                fontFamily: "'Orbitron', sans-serif",
+                transition: 'all 0.3s',
+              }}
+              onMouseOver={(e) => {
+                e.currentTarget.style.background = 'rgba(148, 163, 184, 0.1)';
+                e.currentTarget.style.borderColor = '#fff';
+                e.currentTarget.style.color = '#fff';
+                e.currentTarget.style.boxShadow = '0 0 20px rgba(255, 255, 255, 0.2)';
+                e.currentTarget.style.transform = 'translateY(-2px)';
+              }}
+              onMouseOut={(e) => {
+                e.currentTarget.style.background = 'transparent';
+                e.currentTarget.style.borderColor = '#94a3b8';
+                e.currentTarget.style.color = '#94a3b8';
+                e.currentTarget.style.boxShadow = '0 0 15px rgba(148, 163, 184, 0.1)';
+                e.currentTarget.style.transform = 'translateY(0)';
+              }}
+            >
+              <div style={{ color: '#94a3b8' }}>➕</div>
+              Make Another
+            </button>
+          </div>
         </div>
         <style>{`
              @keyframes bounce {

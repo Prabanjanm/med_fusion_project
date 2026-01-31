@@ -15,10 +15,14 @@ import Home from './pages/Home';
 import CsrDashboard from './csr/CsrDashboard';
 import CreateDonation from './csr/CreateDonation';
 import DonationHistory from './csr/DonationHistory';
+import DonationDetails from './csr/DonationDetails';
+import CsrTrackStatus from './csr/CsrTrackStatus';
 import ProductDeclaration from './csr/ProductDeclaration';
 
 // NGO Components
 import NgoDashboard from './ngo/NgoDashboard';
+import NgoPendingDonations from './ngo/NgoPendingDonations';
+import NgoClinicRequests from './ngo/NgoClinicRequests';
 import AllocateToClinic from './ngo/AllocateToClinic';
 import AllocationHistory from './ngo/AllocationHistory';
 import ProductVerification from './ngo/ProductVerification';
@@ -26,6 +30,8 @@ import RequestValidation from './ngo/RequestValidation';
 
 // Clinic Components
 import ClinicDashboard from './clinic/ClinicDashboard';
+import ClinicProductRequest from './clinic/ClinicProductRequest';
+import ClinicRequestStatus from './clinic/ClinicRequestStatus';
 import ConfirmReceipt from './clinic/ConfirmReceipt';
 import ProductCatalog from './clinic/ProductCatalog';
 
@@ -81,14 +87,31 @@ function App() {
             element={<ProtectedRoutes element={<DonationHistory />} allowedRoles={['csr']} />}
           />
           <Route
+            path="/csr/status"
+            element={<ProtectedRoutes element={<CsrTrackStatus />} allowedRoles={['csr']} />}
+          />
+          <Route
+            path="/csr/donation/:id"
+            element={<ProtectedRoutes element={<DonationDetails />} allowedRoles={['csr']} />}
+          />
+          <Route
             path="/csr/declare-product"
             element={<ProtectedRoutes element={<ProductDeclaration />} allowedRoles={['csr']} />}
           />
+
 
           {/* NGO Routes */}
           <Route
             path="/ngo"
             element={<ProtectedRoutes element={<NgoDashboard />} allowedRoles={['ngo']} />}
+          />
+          <Route
+            path="/ngo/pending-donations"
+            element={<ProtectedRoutes element={<NgoPendingDonations />} allowedRoles={['ngo']} />}
+          />
+          <Route
+            path="/ngo/clinic-requests"
+            element={<ProtectedRoutes element={<NgoClinicRequests />} allowedRoles={['ngo']} />}
           />
           <Route
             path="/ngo/allocate"
@@ -111,6 +134,14 @@ function App() {
           <Route
             path="/clinic"
             element={<ProtectedRoutes element={<ClinicDashboard />} allowedRoles={['clinic']} />}
+          />
+          <Route
+            path="/clinic/request-products"
+            element={<ProtectedRoutes element={<ClinicProductRequest />} allowedRoles={['clinic']} />}
+          />
+          <Route
+            path="/clinic/request-status"
+            element={<ProtectedRoutes element={<ClinicRequestStatus />} allowedRoles={['clinic']} />}
           />
           <Route
             path="/clinic/receipts"
