@@ -20,7 +20,7 @@ def require_role(required_role: str):
                 algorithms=[settings.ALGORITHM]
             )
 
-            role = payload.get("role")
+            role = payload.get("role") or payload.get("CLINIC")
             if role != required_role:
                 raise HTTPException(
                     status_code=status.HTTP_403_FORBIDDEN,

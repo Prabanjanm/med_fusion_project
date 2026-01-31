@@ -5,3 +5,25 @@ from pydantic import BaseModel
 class SetPasswordRequest(BaseModel):
     token: str
     password: str
+
+class ConfirmReceiptResponse(BaseModel):
+    message: str
+
+from datetime import datetime
+from pydantic import BaseModel
+
+
+class ClinicAllocationHistory(BaseModel):
+    allocation_id: int
+    item_name: str
+    quantity: int
+    purpose: str
+
+    ngo_name: str
+
+    allocated_at: datetime
+    received: bool
+    received_at: datetime | None
+
+    class Config:
+        from_attributes = True

@@ -16,7 +16,7 @@ class ClinicRequirement(Base):
     item_name = Column(String, nullable=False)
     quantity = Column(Integer, nullable=False)
     purpose = Column(String, nullable=False)
-
+    priority = Column(Integer, nullable=False) 
     status = Column(String, default="PENDING") 
 
     created_at = Column(DateTime(timezone=True), server_default=func.now())

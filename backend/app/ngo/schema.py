@@ -1,4 +1,5 @@
 from pydantic import BaseModel, Field
+from datetime import datetime
 
 
 class NGORegister(BaseModel):
@@ -25,3 +26,17 @@ class ClinicNeedCreate(BaseModel):
     item_name: str
     quantity: int
     purpose: str
+    priority: int
+
+class DonationAllocationResponse(BaseModel):
+    id: int
+    donation_id: int
+    clinic_requirement_id: int
+    allocated_at: datetime
+
+    class Config:
+        from_attributes = True
+
+class AllocationCreate(BaseModel):
+    donation_id: int
+    clinic_requirement_id: int

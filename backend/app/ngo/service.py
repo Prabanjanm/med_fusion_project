@@ -1,3 +1,4 @@
+from fastapi.concurrency import run_in_threadpool
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.models.trusted_ngo import TrustedNGO
@@ -7,6 +8,8 @@ from fastapi import HTTPException, status
 from app.models.ngo import NGO
 from app.models.donation import Donation
 from app.models.company import Company
+from app.models.donation_allocation import DonationAllocation
+from app.blockchain.service import log_to_blockchain
 
 
 
@@ -261,13 +264,20 @@ async def create_clinic_need(db, ngo, data):
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Clinic has not completed onboarding (password not set)"
         )
-
+    
+    if data.priority not in [1, 2, 3, 4]:
+        raise HTTPException(
+            400,
+            "Priority must be between 1 (Critical) and 4 (Low)"
+        )
+    
     # 3️⃣ Create clinic need
     need = ClinicRequirement(
         ngo_id=ngo.id,
         clinic_id=clinic.id,
         item_name=data.item_name,
         quantity=data.quantity,
+        priority=data.priority,
         purpose=data.purpose
     )
 
@@ -303,3 +313,106 @@ async def get_current_ngo(
     
     return ngo
 
+
+from fastapi import HTTPException
+from sqlalchemy import select, func
+from app.models.donation import Donation
+from app.models.clinic_requirment import ClinicRequirement
+
+
+async def accept_csr_donation(db, payload, donation_id: int):
+    """
+    Accept CSR donation ONLY if valid clinic requirements exist.
+    """
+    
+    ngo_id = payload.get("ngo_id")
+    donation = await db.get(Donation, donation_id)
+
+    if not donation:
+        raise HTTPException(404, "Donation not found")
+
+    if donation.status != "AUTHORIZED":
+        raise HTTPException(400, "Donation already processed")
+
+    donation.status = "ACCEPTED"
+    donation.ngo_id = ngo_id
+
+    await db.commit()
+    await db.refresh(donation)
+    audit = await run_in_threadpool(
+        log_to_blockchain,
+        "DONATION_CREATED",
+        str(donation.id)
+    )
+
+
+    return {
+        "message": "Donation accepted successfully",
+        "donation_id": donation_id,
+        "item": donation.item_name,
+        "quantity": donation.quantity,
+        "status": donation.status,
+        "audit": audit
+    }
+
+
+from sqlalchemy import select
+from app.models.donation import Donation
+
+async def get_available_donations(db: AsyncSession):
+    """
+    Return donations that are not yet accepted by any NGO
+    """
+    result = await db.execute(
+        select(Donation)
+        .where(Donation.ngo_id.is_(None))
+        .where(Donation.status == "AUTHORIZED")
+        .order_by(Donation.created_at.desc())
+    )
+
+    return result.scalars().all()
+
+async def get_accepted_donations(db, ngo):
+    result = await db.execute(
+        select(Donation)
+        .where(Donation.ngo_id == ngo)
+        .where(Donation.status == "ACCEPTED")
+    )
+    return result.scalars().all()
+
+async def get_clinic_requirements(db, ngo):
+    result = await db.execute(
+        select(ClinicRequirement)
+        .where(ClinicRequirement.ngo_id == ngo)
+        .order_by(ClinicRequirement.priority.desc())
+    )
+    return result.scalars().all()
+
+
+async def allocate_donation(db, payload, donation_id, clinic_requirement_id):
+    donation = await db.get(Donation, donation_id)
+    requirement = await db.get(ClinicRequirement, clinic_requirement_id)
+    ngo_id = payload.get("ngo_id")
+    if not donation or donation.status != "ACCEPTED":
+        raise HTTPException(400, "Donation not eligible")
+    print("NGO:", ngo_id)
+    if requirement.ngo_id != ngo_id:
+        raise HTTPException(403, "Invalid clinic requirement")
+
+    allocation = DonationAllocation(
+        donation_id=donation.id,
+        clinic_requirement_id=requirement.id
+    )
+
+    donation.status = "ALLOCATED"
+
+    db.add(allocation)
+    await db.commit()
+    await db.refresh(allocation)
+    audit = await run_in_threadpool(
+        log_to_blockchain,
+        "DONATION_ALLOCATED",
+        str(donation.id)
+    )
+
+    return { "allocation": allocation, "audit": audit }
