@@ -171,7 +171,7 @@ const Home = () => {
             </section>
 
             {/* INTERACTIVE PROOF SECTION WITH HOVER */}
-            <section className="section" style={{ padding: '8rem 0', background: '#020617', position: 'relative', overflow: 'hidden' }}>
+            <section className="section" style={{ padding: '8rem 0', background: 'linear-gradient(to bottom, #020617 0%, #0f172a 100%)', position: 'relative', overflow: 'hidden', marginTop: '-2px' }}>
                 <div className="container" style={{ maxWidth: '1000px', margin: '0 auto' }}>
                     <div style={{ textAlign: 'center', marginBottom: '6rem' }}>
                         <h2 style={{ fontFamily: 'Inter, sans-serif', fontSize: '2.5rem', fontWeight: '700', color: '#fff', marginBottom: '1rem', letterSpacing: '-1px' }}>
