@@ -18,28 +18,36 @@ const MOCK_USERS = {
     password: 'csr',
     name: 'TechCorp Industries',
     email: 'demo@csr.com',
-    approval_status: 'APPROVED' // Existing users approved by default
+    approval_status: 'APPROVED',
+    id_number: 'CIN-8829-TC-29',
+    wallet: '0x71C93F...92F8A1'
   },
   'demo@ngo.com': {
     role: 'ngo',
     password: 'ngo',
     name: 'Global Health NGO',
     email: 'demo@ngo.com',
-    approval_status: 'APPROVED'
+    approval_status: 'APPROVED',
+    id_number: 'NGO-REG-9911-GH',
+    wallet: '0x4A1B2C...89D7E2'
   },
   'demo@clinic.com': {
     role: 'clinic',
     password: 'clinic',
     name: 'City Medical Clinic',
     email: 'demo@clinic.com',
-    approval_status: 'APPROVED'
+    approval_status: 'APPROVED',
+    id_number: 'CL-LIC-4455-CM',
+    wallet: '0x99AABB...112233'
   },
   'demo@auditor.com': {
     role: 'auditor',
     password: 'auditor',
     name: 'Government Auditor',
     email: 'demo@auditor.com',
-    approval_status: 'APPROVED' // Auditors serve as admins, usually pre-approved
+    approval_status: 'APPROVED',
+    id_number: 'AUD-GOV-0001',
+    wallet: '0x000000...FFFFFF'
   }
 };
 

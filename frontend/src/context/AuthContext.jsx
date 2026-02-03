@@ -74,6 +74,7 @@ export const AuthProvider = ({ children }) => {
         username: email,
         role: derivedRole,
         ...decoded,
+        ...response.user, // Include all user details (name, id_number, etc.) from the backend response
         token: access_token
       };
 

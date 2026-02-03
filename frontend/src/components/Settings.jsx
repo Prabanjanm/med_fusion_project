@@ -5,28 +5,32 @@ import {
 } from 'lucide-react';
 import Layout from '../components/Layout';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useAuth } from '../context/AuthContext';
 
 /**
  * Settings Component
  * Redesigned to match the "Cyberpunk Medical" aesthetic with high-fidelity UI.
  */
 const Settings = () => {
+    const { user: authUser, logout } = useAuth();
     const [activeTab, setActiveTab] = useState('profile');
     const [showKey, setShowKey] = useState(false);
     const [copied, setCopied] = useState(false);
 
-    // Mock Blockchain Identity Data
-    const [user] = useState({
-        name: 'Dr. Sarah Mitchell',
-        role: 'CSR Manager',
-        roleDesc: 'Health Corp Global',
-        email: 'sarah.m@healthcorp.com',
-        wallet: '0x71C93F...92F8A1',
-        shortWallet: '0x71C...92F',
-        identityId: 'ID-8829-XJ-29',
-        lastLogin: '2025-01-24 08:30:15 UTC',
+    // Dynamic User Data from Context
+    const user = {
+        name: authUser?.name || authUser?.username || 'Guest User',
+        role: authUser?.role || 'Guest',
+        roleDesc: authUser?.role === 'csr' ? 'Corporate Partner' :
+            authUser?.role === 'ngo' ? 'Verified NGO' :
+                authUser?.role === 'clinic' ? 'Healthcare Provider' : 'System Auditor',
+        email: authUser?.email || authUser?.username || 'No Email',
+        wallet: authUser?.wallet || '0x71C93F...92F8A1', // Fallback for demo
+        shortWallet: authUser?.wallet ? `${authUser.wallet.substring(0, 6)}...${authUser.wallet.substring(authUser.wallet.length - 4)}` : '0x71C...92F',
+        identityId: authUser?.id_number || `ID-${Math.random().toString(36).substr(2, 9).toUpperCase()}`,
+        lastLogin: new Date().toLocaleDateString(), // Just for display
         twoFactor: true
-    });
+    };
 
     const handleCopy = () => {
         navigator.clipboard.writeText(user.wallet);
