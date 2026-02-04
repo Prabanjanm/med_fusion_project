@@ -15,12 +15,13 @@ const DonationDetails = () => {
 
     useEffect(() => {
         const fetchDonation = async () => {
+            console.log('🔍 Fetching details for Donation ID:', id);
             try {
-                const allDonations = await donationAPI.getHistory();
-                const found = allDonations.find(d => d.id === id);
-                setDonation(found);
+                const data = await donationAPI.getById(id);
+                console.log('✅ Received details:', data);
+                setDonation(data);
             } catch (error) {
-                console.error('Failed to fetch donation:', error);
+                console.error('❌ Failed to fetch donation details:', error);
             } finally {
                 setLoading(false);
             }
@@ -80,7 +81,7 @@ const DonationDetails = () => {
                             <h1 className="page-title" style={{ marginBottom: '0.5rem' }}>
                                 Donation Details
                             </h1>
-                            <p className="page-subtitle">{donation.id}</p>
+                            <p className="page-subtitle">{donation.display_id || `DON-${donation.id}`}</p>
                         </div>
                         <StatusBadge status={donation.status} />
                     </div>

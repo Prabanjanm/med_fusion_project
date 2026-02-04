@@ -32,6 +32,19 @@ const CreateDonation = () => {
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submittedHash, setSubmittedHash] = useState(null);
+  const [availableNgos, setAvailableNgos] = useState([]);
+
+  React.useEffect(() => {
+    const fetchNgos = async () => {
+      try {
+        const ngos = await donationAPI.getVerifiedNgos();
+        setAvailableNgos(ngos);
+      } catch (error) {
+        console.error("Failed to fetch NGOs:", error);
+      }
+    };
+    fetchNgos();
+  }, []);
 
   const resourceOptions = [
     { value: 'ppe', label: 'PPE Kits' },
@@ -41,13 +54,6 @@ const CreateDonation = () => {
     { value: 'medications', label: 'Medications' },
     { value: 'equipment', label: 'Medical Equipment' },
     { value: 'other', label: 'Other' },
-  ];
-
-  const ngoOptions = [
-    { value: 'ngo1', label: 'Red Cross India' },
-    { value: 'ngo2', label: 'WHO Partners' },
-    { value: 'ngo3', label: 'MSF India' },
-    { value: 'ngo4', label: 'Médecins du Monde' },
   ];
 
   const unitOptions = [
@@ -91,7 +97,8 @@ const CreateDonation = () => {
       const payload = {
         item_name: `${formData.resourceType} (${formData.unit})`,
         quantity: parseInt(formData.quantity, 10),
-        purpose: formData.purpose || `Donation to ${formData.ngoName}`,
+        ngo_id: formData.ngoName ? parseInt(formData.ngoName, 10) : null,
+        purpose: formData.purpose || `Donation to selected NGO`,
         board_resolution_ref: formData.boardResolution || `BR-${Date.now()}`,
         csr_policy_declared: formData.csrPolicy,
         expiry_date: formData.expiryDate || null,
@@ -178,7 +185,7 @@ const CreateDonation = () => {
           required
         >
           <option value="" disabled>Select Receiver NGO</option>
-          {ngoOptions.map(opt => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
+          {availableNgos.map(ngo => <option key={ngo.id} value={ngo.id}>{ngo.name}</option>)}
         </select>
         {errors.ngoName && <span style={{ color: '#ef4444', fontSize: '0.8rem' }}>{errors.ngoName}</span>}
       </div>

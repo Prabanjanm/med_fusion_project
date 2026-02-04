@@ -25,8 +25,8 @@ const Sidebar = ({ role }) => {
             { path: '/csr', label: 'Dashboard', icon: LayoutDashboard },
             { path: '/csr/create-donation', label: 'New Donation', icon: PlusCircle },
             { path: '/csr/history', label: 'History', icon: History },
-            { path: '/csr/status', label: 'Track Status', icon: Activity },
-            { path: '/csr/verify-and-record', label: 'Verify & Record', icon: ShieldCheck },
+            { path: '/csr/status', label: 'View Timeline', icon: Activity },
+            { path: '/csr/verify-and-record', label: 'Audit Trail', icon: ShieldCheck },
             { path: '/settings', label: 'Settings', icon: Settings },
         ],
         ngo: [

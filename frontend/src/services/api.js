@@ -77,7 +77,9 @@ export const donationAPI = {
   }),
   getAll: () => apiCall('/donations/history'), // Router: /donations/history
   getHistory: () => apiCall('/donations/history'), // Alias for consistency
-  getAnalytics: () => apiCall('/donations/analytics')
+  getById: (id) => apiCall(`/donations/${id}`),
+  getAnalytics: () => apiCall('/donations/analytics'),
+  getVerifiedNgos: () => apiCall('/donations/ngos/verified')
 };
 
 // ===== NGO =====

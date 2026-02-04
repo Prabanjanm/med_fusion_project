@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Box, Link2, Lock, Calendar, Hash, FileText, ChevronDown, ChevronUp } from 'lucide-react';
+import { Box, Link2, Lock, Calendar, Hash, FileText, ChevronDown, ChevronUp, CheckCircle } from 'lucide-react';
 import { auditorAPI } from '../services/api';
 import '../styles/BlockchainLedgerView.css';
 

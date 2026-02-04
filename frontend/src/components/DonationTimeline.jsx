@@ -34,7 +34,7 @@ const DonationTimeline = ({ donation }) => {
                 : donation.ngo_verified
                     ? `Verified and accepted by ${donation.ngo_name}`
                     : 'Awaiting NGO verification',
-            completed: ['ACCEPTED', 'ALLOCATED', 'IN_TRANSIT', 'RECEIVED', 'COMPLETED'].includes(donation.status),
+            completed: ['ACCEPTED', 'ALLOCATED', 'RECEIVED', 'COMPLETED'].includes(donation.status),
             rejected: isRejected
         },
         {
@@ -45,7 +45,7 @@ const DonationTimeline = ({ donation }) => {
             status: donation.clinic_request_status || 'pending',
             timestamp: donation.clinic_requested_at,
             description: donation.clinic_name ? `Requested by ${donation.clinic_name}` : 'Awaiting clinic request',
-            completed: ['ALLOCATED', 'IN_TRANSIT', 'RECEIVED', 'COMPLETED'].includes(donation.status),
+            completed: ['ALLOCATED', 'RECEIVED', 'COMPLETED'].includes(donation.status),
             disabled: isRejected
         },
         {
@@ -56,18 +56,7 @@ const DonationTimeline = ({ donation }) => {
             status: donation.allocation_status || 'pending',
             timestamp: donation.allocated_at,
             description: donation.allocated_at ? `${donation.allocated_quantity || donation.quantity} units allocated` : 'Awaiting allocation',
-            completed: ['ALLOCATED', 'IN_TRANSIT', 'RECEIVED', 'COMPLETED'].includes(donation.status),
-            disabled: isRejected
-        },
-        {
-            id: 'in_transit',
-            label: 'In Transit',
-            role: 'Logistics',
-            icon: Truck,
-            status: donation.transit_status || 'pending',
-            timestamp: donation.shipped_at,
-            description: donation.shipped_at ? 'Products in transit to clinic' : 'Awaiting shipment',
-            completed: ['IN_TRANSIT', 'RECEIVED', 'COMPLETED'].includes(donation.status),
+            completed: ['ALLOCATED', 'RECEIVED', 'COMPLETED'].includes(donation.status),
             disabled: isRejected
         },
         {
@@ -91,17 +80,17 @@ const DonationTimeline = ({ donation }) => {
 
     const getStageIcon = (stage) => {
         const IconComponent = stage.icon;
-        if (stage.completed) return <CheckCircle size={24} />;
-        if (stage.status === 'rejected') return <AlertCircle size={24} />;
-        return <Clock size={24} />;
+        if (stage.completed) return <CheckCircle size={20} />;
+        if (stage.status === 'rejected') return <AlertCircle size={20} />;
+        return <Clock size={20} />;
     };
 
     return (
         <div className="donation-timeline-container">
             <div className="timeline-header">
-                <h3>Donation Lifecycle Tracker</h3>
+                <h3>View Timeline</h3>
                 <div className="timeline-badge">
-                    <span>🔒 Audit & Blockchain-Ready Tracking (Demo)</span>
+                    <span>🔒 Immutable Audit Trail</span>
                 </div>
             </div>
 

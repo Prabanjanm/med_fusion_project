@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { motion } from 'framer-motion';
-import { Activity, RefreshCw, Zap } from 'lucide-react';
+import { Activity, RefreshCw, Zap, Building2 } from 'lucide-react';
 import Layout from '../components/Layout';
 import { donationAPI } from '../services/api';
 import '../styles/DashboardLayout.css';
@@ -22,9 +22,7 @@ const CsrTrackStatus = () => {
         setLoading(true);
         try {
             const data = await donationAPI.getHistory();
-            // Sort by date desc
-            const sortedData = [...data].sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
-            setDonations(sortedData);
+            setDonations(data);
         } catch (error) {
             console.error("Failed to load tracking data", error);
         } finally {
@@ -32,128 +30,159 @@ const CsrTrackStatus = () => {
         }
     };
 
-    const itemVariants = {
-        hidden: { y: 20, opacity: 0 },
-        visible: { y: 0, opacity: 1 }
-    };
-
     return (
         <Layout>
             <div style={{ maxWidth: '1000px', margin: '0 auto', padding: '2rem' }}>
                 <div className="page-header" style={{ marginBottom: '3rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <div>
-                        <h1 className="page-title" style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>
-                            Live Tracking Stream
+                        <h1 className="page-title" style={{ fontSize: '2.5rem', marginBottom: '0.5rem', background: 'linear-gradient(90deg, #fff 0%, #94a3b8 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+                            Donation Journey
                         </h1>
-                        <p className="page-subtitle">Real-time status updates of all donations</p>
+                        <p className="page-subtitle" style={{ color: '#64748b' }}>Complete lifecycle tracking of your contributions</p>
                     </div>
                     <button
                         onClick={fetchData}
                         disabled={loading}
                         style={{
-                            background: 'transparent',
-                            border: '1px solid rgba(255,255,255,0.1)',
+                            background: 'rgba(255,255,255,0.03)',
+                            border: '1px solid rgba(255,255,255,0.08)',
                             color: '#94a3b8',
-                            padding: '0.5rem 1rem',
+                            padding: '0.75rem 1.25rem',
                             borderRadius: '12px',
                             cursor: 'pointer',
                             display: 'flex',
                             alignItems: 'center',
-                            gap: '0.5rem'
+                            gap: '0.5rem',
+                            transition: 'all 0.2s'
                         }}
                     >
                         <RefreshCw size={16} className={loading ? 'spin-icon' : ''} />
-                        Refresh
+                        Sync Registry
                     </button>
                 </div>
 
                 {loading ? (
-                    <div style={{ padding: '3rem', textAlign: 'center', color: '#64748b' }}>
-                        Loading stream...
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                        {[1, 2, 3].map(i => (
+                            <div key={i} style={{ height: '100px', background: 'rgba(15,23,42,0.3)', borderRadius: '16px', animate: 'pulse 2s infinite' }} />
+                        ))}
                     </div>
                 ) : donations.length === 0 ? (
                     <div style={{
-                        padding: '3rem',
+                        padding: '4rem 2rem',
                         textAlign: 'center',
                         background: 'rgba(15,23,42,0.3)',
                         backdropFilter: 'blur(20px)',
-                        borderRadius: '16px',
-                        border: '1px solid rgba(255,255,255,0.04)'
+                        borderRadius: '24px',
+                        border: '1px solid rgba(255,255,255,0.04)',
+                        color: '#64748b'
                     }}>
-                        <Zap size={32} color="#64748b" style={{ marginBottom: '1rem', display: 'inline-block' }} />
-                        <p style={{ color: '#94a3b8' }}>No activity to track yet.</p>
+                        <Zap size={48} style={{ marginBottom: '1.5rem', opacity: 0.5 }} />
+                        <h3>No Active Journeys</h3>
+                        <p>Start a new donation to begin tracking its journey.</p>
+                        <button
+                            onClick={() => navigate('/csr/create-donation')}
+                            className="btn btn-primary"
+                            style={{ marginTop: '2rem' }}
+                        >
+                            Create Donation
+                        </button>
                     </div>
                 ) : (
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
                         {donations.map((item, idx) => {
-                            // Determine Status Style
-                            let statusColor = '#94a3b8'; // default gray
-                            if (['COMPLETED', 'RECEIVED', 'ACCEPTED', 'APPROVED'].includes(item.status)) statusColor = '#10b981'; // green
-                            else if (['PENDING', 'AUTHORIZED'].includes(item.status)) statusColor = '#f59e0b'; // amber
-                            else if (['IN_TRANSIT', 'ALLOCATED'].includes(item.status)) statusColor = '#3b82f6'; // blue
-                            else if (['REJECTED', 'DENIED', 'CANCELLED'].includes(item.status)) statusColor = '#ef4444'; // red
+                            const isCompleted = ['COMPLETED', 'RECEIVED'].includes(item.status);
+                            const pending = ['PENDING', 'AUTHORIZED'].includes(item.status);
 
                             return (
                                 <motion.div
                                     key={item.id}
-                                    initial={{ x: 20, opacity: 0 }}
+                                    initial={{ x: -20, opacity: 0 }}
                                     animate={{ x: 0, opacity: 1 }}
-                                    transition={{ delay: idx * 0.05 }}
-                                    whileHover={{ scale: 1.02, x: 5 }}
+                                    transition={{ delay: idx * 0.1 }}
+                                    whileHover={{ x: 10, background: 'rgba(30, 41, 59, 0.4)' }}
                                     style={{
-                                        background: `linear-gradient(90deg, rgba(15, 23, 42, 0.6) 0%, rgba(15, 23, 42, 0.4) 100%)`,
+                                        background: 'rgba(15, 23, 42, 0.4)',
                                         backdropFilter: 'blur(10px)',
-                                        borderRadius: '16px',
-                                        border: '1px solid rgba(255,255,255,0.05)',
-                                        borderLeft: `4px solid ${statusColor}`,
-                                        padding: '1.5rem',
+                                        borderRadius: '20px',
+                                        border: '1px solid rgba(255,255,255,0.06)',
+                                        padding: '1.5rem 2rem',
                                         display: 'flex',
                                         alignItems: 'center',
-                                        justifyContent: 'space-between',
-                                        boxShadow: `0 4px 20px -5px ${statusColor}15`,
-                                        cursor: 'pointer'
+                                        gap: '2rem',
+                                        cursor: 'pointer',
+                                        position: 'relative',
+                                        overflow: 'hidden'
                                     }}
                                     onClick={() => navigate(`/csr/donation/${item.id}`)}
                                 >
-                                    <div>
-                                        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '0.5rem' }}>
-                                            <span style={{ color: '#fff', fontWeight: '700', fontSize: '1.1rem', fontFamily: "'Inter', sans-serif" }}>
-                                                {item.item_name}
-                                            </span>
-                                            <span style={{
-                                                fontSize: '0.8rem',
-                                                color: '#94a3b8',
-                                                background: 'rgba(255,255,255,0.05)',
-                                                padding: '2px 8px',
-                                                borderRadius: '4px',
-                                                border: '1px solid rgba(255,255,255,0.05)'
-                                            }}>
-                                                x{Number(item.quantity).toLocaleString()}
+                                    {/* Left Accent */}
+                                    <div style={{
+                                        position: 'absolute',
+                                        left: 0,
+                                        top: 0,
+                                        bottom: 0,
+                                        width: '4px',
+                                        background: isCompleted ? '#10b981' : (pending ? '#f59e0b' : '#3b82f6')
+                                    }} />
+
+                                    {/* Item Info */}
+                                    <div style={{ flex: 1 }}>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.4rem' }}>
+                                            <h3 style={{ margin: 0, fontSize: '1.1rem', color: '#fff' }}>{item.item_name}</h3>
+                                            <span style={{ fontSize: '0.8rem', color: '#64748b', background: 'rgba(255,255,255,0.04)', padding: '2px 8px', borderRadius: '4px' }}>
+                                                #{String(item.id).padStart(5, '0')}
                                             </span>
                                         </div>
-                                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#64748b', fontSize: '0.85rem' }}>
-                                            <span>{new Date(item.created_at).toLocaleDateString()}</span>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', color: '#64748b', fontSize: '0.85rem' }}>
+                                            <span style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                                                <Building2 size={14} /> {item.ngo_name || 'Assignment Pending'}
+                                            </span>
                                             <span>•</span>
-                                            <span>{item.ngo_name || 'Pending Assignment'}</span>
+                                            <span style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                                                <Zap size={14} /> {item.quantity} units
+                                            </span>
                                         </div>
                                     </div>
 
-                                    <div style={{ textAlign: 'right' }}>
+                                    {/* Mini Progress */}
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem', padding: '0 1rem' }}>
+                                        {[1, 2, 3].map((step) => {
+                                            const active = (step === 1) ||
+                                                (step === 2 && !pending) ||
+                                                (step === 3 && isCompleted);
+                                            return (
+                                                <div key={step} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                                    <div style={{
+                                                        width: '12px',
+                                                        height: '12px',
+                                                        borderRadius: '50%',
+                                                        background: active ? (isCompleted ? '#10b981' : '#3b82f6') : 'rgba(255,255,255,0.05)',
+                                                        boxShadow: active ? `0 0 10px ${isCompleted ? '#10b98140' : '#3b82f640'}` : 'none'
+                                                    }} />
+                                                    {step < 3 && (
+                                                        <div style={{ width: '20px', height: '2px', background: active ? (isCompleted ? '#10b98140' : '#3b82f640') : 'rgba(255,255,255,0.05)' }} />
+                                                    )}
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+
+                                    {/* Action */}
+                                    <div style={{ textAlign: 'right', minWidth: '120px' }}>
                                         <span style={{
-                                            color: statusColor,
-                                            fontWeight: '700',
-                                            fontSize: '0.9rem',
+                                            display: 'block',
+                                            fontSize: '0.75rem',
+                                            fontWeight: 700,
                                             textTransform: 'uppercase',
                                             letterSpacing: '1px',
-                                            display: 'block',
-                                            marginBottom: '4px',
-                                            fontFamily: "'Orbitron', sans-serif",
-                                            textShadow: `0 0 10px ${statusColor}40`
+                                            color: isCompleted ? '#10b981' : (pending ? '#f59e0b' : '#3b82f6'),
+                                            marginBottom: '0.25rem'
                                         }}>
                                             {item.status}
                                         </span>
-                                        <span style={{ fontSize: '0.75rem', color: '#64748b', fontFamily: 'monospace' }}>
-                                            #{String(item.id).padStart(6, '0')}
+                                        <span style={{ fontSize: '0.8rem', color: '#64748b' }}>
+                                            View Journey →
                                         </span>
                                     </div>
                                 </motion.div>
