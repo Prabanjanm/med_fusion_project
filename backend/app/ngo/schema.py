@@ -7,6 +7,7 @@ class NGORegister(BaseModel):
     csr_1_number: str = Field(..., example="CSR00012345")
     has_80g: bool = Field(..., example=True)
     official_email: str = Field(..., example="ngo@healthreach.org")
+    password: str | None = None  # Optional: if provided, sets password immediately
 
 
 class ClinicCreate(BaseModel):

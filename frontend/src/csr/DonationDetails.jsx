@@ -44,7 +44,7 @@ const DonationDetails = () => {
             <Layout>
                 <div style={{ padding: '3rem', textAlign: 'center' }}>
                     <p style={{ color: '#94a3b8' }}>Donation not found</p>
-                    <button onClick={() => navigate('/csr/history')} className="btn-primary" style={{ marginTop: '1rem' }}>
+                    <button onClick={() => navigate('/csr/history')} className="btn btn-primary" style={{ marginTop: '1rem' }}>
                         Back to History
                     </button>
                 </div>

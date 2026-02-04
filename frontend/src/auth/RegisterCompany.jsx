@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { companyAPI, ngoAPI, authAPI } from '../services/api';
+import { companyAPI, ngoAPI, clinicAPI, auditorAPI, authAPI } from '../services/api';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Building2, Handshake, Stethoscope, ArrowRight, CheckCircle2, ShieldCheck, Mail, Lock, FileText, BadgeCheck, FileCheck, ChevronRight, ChevronLeft } from 'lucide-react';
@@ -24,9 +24,7 @@ const RegisterCompany = () => {
             'company': 'csr',
             'corporate': 'csr',
             'csr': 'csr',
-            'ngo': 'ngo',
-            'clinic': 'clinic',
-            'auditor': 'auditor'
+            'ngo': 'ngo'
         };
         return map[param] || 'csr';
     };
@@ -51,8 +49,6 @@ const RegisterCompany = () => {
     const roles = [
         { id: 'csr', label: 'Corporate', icon: <Building2 size={18} />, color: '#06b6d4', desc: 'Donor' },
         { id: 'ngo', label: 'NGO', icon: <Handshake size={18} />, color: '#14b8a6', desc: 'Partner' },
-        { id: 'clinic', label: 'Clinic', icon: <Stethoscope size={18} />, color: '#f97316', desc: 'Provider' },
-        { id: 'auditor', label: 'Auditor', icon: <FileCheck size={18} />, color: '#818cf8', desc: 'Verifier' },
     ];
 
     // Dynamic Config
@@ -120,40 +116,43 @@ const RegisterCompany = () => {
         setCurrentStep(4); // Processing UI
         try {
             // 1. Register Entity
+            // 1. Register Entity
             if (selectedRole === 'csr') {
-                // Step 1: Register CSR Company (JSON)
-                // Password is NOT sent here
-                await companyAPI.register({
+                // Step 1: Register CSR Company (JSON) - Now includes password
+                const res = await companyAPI.register({
                     company_name: formData.name,
                     cin: formData.id_number,
                     pan: formData.secondary_id,
-                    official_email: formData.email
+                    official_email: formData.email,
+                    password: formData.password // ✅ Send password immediately
                 });
 
-                // Step 2: Set Password immediately (JSON)
-                // This is required because registration creates user with password_set=False
-                await authAPI.setPassword(formData.email, formData.password);
+                // Check for "already registered" response without editing backend
+                if (res.message && res.message.toLowerCase().includes("already registered")) {
+                    alert("This company identifier (CIN) is already registered. Please log in.");
+                    navigate('/login/csr');
+                    return;
+                }
+
+                // NO separate setPassword call needed anymore!
 
             } else if (selectedRole === 'ngo') {
                 await ngoAPI.register({
                     ngo_name: formData.name,
                     csr_1_number: formData.id_number,
                     has_80g: true, // Defaulting as UI doesn't have field
-                    official_email: formData.email
+                    official_email: formData.email,
+                    password: formData.password // ✅ Send password immediately
                 });
-                // NGO flow also needs password set, assuming similar requirement:
-                await authAPI.setPassword(formData.email, formData.password);
             } else {
-                throw new Error("Self-registration is only available for Corporate and NGOs. Clinics and Auditors are invited partners.");
+                throw new Error("Invalid Role for Registration.");
             }
-
-            // Note: setPassword call is now integrated inside the if/blocks to be explicit per role flow requirement
-            // removed separate await authAPI.setPassword call that was outside
 
             setCurrentStep(5); // Success UI
         } catch (error) {
             console.error("Registration failed", error);
-            alert(error.message || "Registration failed");
+            const msg = error.message || (typeof error === 'object' ? JSON.stringify(error) : "Registration failed");
+            alert("Registration failed: " + msg);
             setCurrentStep(3); // Go back to step 3
         }
     };
@@ -451,7 +450,6 @@ const RegisterCompany = () => {
                         }
                     }
                 `}</style>
-
             </motion.div>
         </div>
     );

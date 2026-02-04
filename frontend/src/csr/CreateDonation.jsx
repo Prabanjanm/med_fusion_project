@@ -24,7 +24,9 @@ const CreateDonation = () => {
     donationDate: new Date().toISOString().split('T')[0],
     ngoName: '',
     purpose: '',
-
+    boardResolution: '',
+    csrPolicy: false,
+    expiryDate: '',
   });
 
   const [errors, setErrors] = useState({});
@@ -77,6 +79,7 @@ const CreateDonation = () => {
     const newErrors = {};
     if (!formData.quantity || formData.quantity <= 0) newErrors.quantity = 'Valid quantity is required';
     if (!formData.ngoName) newErrors.ngoName = 'Please select an NGO';
+    if (!formData.expiryDate) newErrors.expiryDate = 'Expiry date is required for medical supplies';
     // supportingDocument check removed as per user request
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -89,9 +92,9 @@ const CreateDonation = () => {
         item_name: `${formData.resourceType} (${formData.unit})`,
         quantity: parseInt(formData.quantity, 10),
         purpose: formData.purpose || `Donation to ${formData.ngoName}`,
-        board_resolution_ref: `BR-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
-        csr_policy_declared: true,
-
+        board_resolution_ref: formData.boardResolution || `BR-${Date.now()}`,
+        csr_policy_declared: formData.csrPolicy,
+        expiry_date: formData.expiryDate || null,
       };
 
       // Trigger blockchain block creation with notification
@@ -218,6 +221,47 @@ const CreateDonation = () => {
           required
         />
         {errors.quantity && <span style={{ color: '#ef4444', fontSize: '0.8rem' }}>{errors.quantity}</span>}
+      </div>
+
+      <div className="wizard-field-group">
+        <label className="wizard-label">Board Resolution Ref</label>
+        <input
+          type="text"
+          name="boardResolution"
+          value={formData.boardResolution}
+          onChange={handleChange}
+          placeholder="e.g. BR-CSR-2026-001"
+          className="wizard-input"
+          required
+        />
+      </div>
+
+      <div className="wizard-field-group" style={{ flexDirection: 'row', alignItems: 'center', gap: '0.75rem', marginTop: '0.5rem' }}>
+        <input
+          type="checkbox"
+          name="csrPolicy"
+          checked={formData.csrPolicy}
+          onChange={(e) => setFormData(prev => ({ ...prev, csrPolicy: e.target.checked }))}
+          style={{ width: '18px', height: '18px', cursor: 'pointer' }}
+        />
+        <label style={{ color: '#94a3b8', fontSize: '0.9rem', cursor: 'pointer' }}>
+          I declare this helps meet our CSR policy obligations
+        </label>
+      </div>
+
+      <div className="wizard-field-group">
+        <label className="wizard-label">
+          Expiry Date <span style={{ color: '#ef4444' }}>*</span>
+        </label>
+        <input
+          type="date"
+          name="expiryDate"
+          value={formData.expiryDate}
+          onChange={handleChange}
+          className="wizard-input"
+          required
+        />
+        {errors.expiryDate && <span style={{ color: '#ef4444', fontSize: '0.8rem' }}>{errors.expiryDate}</span>}
       </div>
 
 
@@ -364,7 +408,7 @@ const CreateDonation = () => {
                 setSubmittedHash(null);
                 setFormData({
                   donorName: '', donorOrgName: '', resourceType: 'ppe', quantity: '', unit: 'pieces',
-                  donationDate: new Date().toISOString().split('T')[0], ngoName: '', purpose: ''
+                  donationDate: new Date().toISOString().split('T')[0], ngoName: '', purpose: '', boardResolution: '', csrPolicy: false, expiryDate: ''
                 });
               }}
               style={{
@@ -455,7 +499,7 @@ const CreateDonation = () => {
             All data is verified and hashed on the blockchain for transparency.
           </p>
           <button
-            className="btn-primary"
+            className="btn btn-primary"
             style={{ padding: '1rem 2rem', fontSize: '1.1rem' }}
             onClick={() => setIsWizardOpen(true)}
           >

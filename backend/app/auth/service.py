@@ -54,6 +54,9 @@ async def login_user(db, email: str, password: str):
             organization_verified = clinic.is_active
             print("CLINIC ACTIVE:", organization_verified)
 
+    elif user.role in ["AUDITOR", "ADMIN"]:  # ✅ Allow Auditors/Admins to login
+        organization_verified = True
+
     if not organization_verified:
         raise ValueError(f"{user.role} not verified or not active")
 

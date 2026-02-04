@@ -1,49 +1,81 @@
-import React, { useState } from 'react';
-import { Search, Filter, Download } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Search, Filter, Download, Loader2, Star, MessageSquare } from 'lucide-react';
 import Layout from '../components/Layout';
 import StatusBadge from '../components/StatusBadge';
 import Table from '../components/Table';
-import '../styles/DashboardLayout.css'; // Inherit layout styles
+import { ngoAPI } from '../services/api';
+import '../styles/DashboardLayout.css';
 
-/**
- * AllocationHistory Component
- * Displays comprehensive allocation history with search and filter capabilities
- */
 const AllocationHistory = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
+  const [allocations, setAllocations] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-  // Mock data
-  // No mock data - waiting for backend integration
-  const allocations = [];
+  useEffect(() => {
+    fetchAllocations();
+  }, []);
+
+  const fetchAllocations = async () => {
+    try {
+      const data = await ngoAPI.getAllocationHistory();
+      setAllocations(data || []);
+    } catch (error) {
+      console.error("Failed to fetch allocations", error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const filteredAllocations = allocations.filter(alloc => {
-    const matchesSearch = (alloc.id || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (alloc.donationId || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (alloc.clinicName || '').toLowerCase().includes(searchTerm.toLowerCase());
-
+    const searchStr = `${alloc.id} ${alloc.donation_id} ${alloc.item_name} ${alloc.clinic_name}`.toLowerCase();
+    const matchesSearch = searchStr.includes(searchTerm.toLowerCase());
     const matchesStatus = filterStatus === 'all' || alloc.status === filterStatus;
-
     return matchesSearch && matchesStatus;
   });
 
-  const handleExport = () => {
-    // Export logic
-    alert('Exporting Allocation History...');
-  };
-
   const columns = [
     { key: 'id', label: 'Allocation ID' },
-    { key: 'donationId', label: 'Donation ID' },
-    { key: 'clinicName', label: 'Clinic Name' },
-    { key: 'allocatedQuantity', label: 'Allocated Qty' },
+    { key: 'donation_id', label: 'Donation ID' },
+    { key: 'item_name', label: 'Item Name' },
+    { key: 'clinic_name', label: 'Clinic Name' },
+    { key: 'quantity', label: 'Allocated Qty' },
     {
       key: 'status',
       label: 'Status',
       render: (value) => <StatusBadge status={value} />
     },
-    { key: 'date', label: 'Date' },
+    {
+      key: 'allocated_at',
+      label: 'Date',
+      render: (value) => value ? new Date(value).toLocaleDateString() : 'N/A'
+    },
+    {
+      key: 'quality_rating',
+      label: 'Clinic Rating',
+      render: (value, row) => row.received ? (
+        <div style={{ display: 'flex', gap: '2px' }}>
+          {[1, 2, 3, 4, 5].map(s => (
+            <Star key={s} size={12} fill={s <= value ? '#eab308' : 'none'} color={s <= value ? '#eab308' : '#334155'} />
+          ))}
+        </div>
+      ) : <span style={{ color: 'var(--text-muted)', fontSize: '0.8rem' }}>Pending</span>
+    },
+    {
+      key: 'feedback',
+      label: 'Feedback',
+      render: (value, row) => row.received ? (
+        <div style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '0.8rem', color: 'var(--text-muted)', maxWidth: '150px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={value}>
+          <MessageSquare size={12} />
+          {value || 'No feedback'}
+        </div>
+      ) : '-'
+    }
   ];
+
+  const handleExport = () => {
+    alert('Exporting Allocation History...');
+  };
 
   return (
     <Layout>
@@ -122,7 +154,6 @@ const AllocationHistory = () => {
           columns={columns}
           data={filteredAllocations}
           rowKey="id"
-          renderCell={(row, key) => key === 'status' ? <StatusBadge status={row.status} /> : row[key]}
         />
 
         {filteredAllocations.length === 0 && (

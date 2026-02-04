@@ -1,136 +1,91 @@
 import React from 'react';
-import { NavLink, useLocation } from 'react-router-dom';
-import { LayoutDashboard, PlusCircle, History, Send, Link, Settings, FileText, CheckCircle, Truck, ClipboardCheck, ShieldCheck, Hexagon, Boxes, Activity, Building, Users } from 'lucide-react';
+import { NavLink } from 'react-router-dom';
+import {
+    LayoutDashboard,
+    PlusCircle,
+    History,
+    Activity,
+    FileText,
+    Truck,
+    ClipboardList,
+    CheckSquare,
+    Users,
+    Building2,
+    Settings,
+    ShieldCheck,
+    Package,
+    ShoppingCart
+} from 'lucide-react';
 import '../styles/Sidebar.css';
 
 const Sidebar = ({ role }) => {
-  const location = useLocation();
-  const isActive = (path) => location.pathname === path;
+    // Define menus for each role
+    const menus = {
+        csr: [
+            { path: '/csr', label: 'Dashboard', icon: LayoutDashboard },
+            { path: '/csr/create-donation', label: 'New Donation', icon: PlusCircle },
+            { path: '/csr/history', label: 'History', icon: History },
+            { path: '/csr/status', label: 'Track Status', icon: Activity },
+            { path: '/csr/verify-and-record', label: 'Verify & Record', icon: ShieldCheck },
+            { path: '/settings', label: 'Settings', icon: Settings },
+        ],
+        ngo: [
+            { path: '/ngo', label: 'Dashboard', icon: LayoutDashboard },
+            { path: '/ngo/pending-donations', label: 'Available Donations', icon: Package },
+            { path: '/ngo/allocate', label: 'Allocate Items', icon: Truck },
+            { path: '/ngo/history', label: 'History', icon: History },
+            { path: '/ngo/manage-clinics', label: 'Clinics', icon: Building2 },
+            { path: '/verify', label: 'Verify & Record', icon: ShieldCheck },
+            { path: '/settings', label: 'Settings', icon: Settings },
+        ],
+        clinic: [
+            { path: '/clinic', label: 'Dashboard', icon: LayoutDashboard },
+            { path: '/clinic/request-products', label: 'Request Supply', icon: ShoppingCart },
+            { path: '/clinic/request-status', label: 'My Allocations', icon: Activity },
+            { path: '/clinic/receipts', label: 'Confirm Receipt', icon: CheckSquare },
+            { path: '/verify', label: 'Verify & Record', icon: ShieldCheck },
+            { path: '/settings', label: 'Settings', icon: Settings },
+        ],
+        auditor: [
+            { path: '/auditor', label: 'Dashboard', icon: LayoutDashboard },
+            { path: '/auditor/trail', label: 'Audit Trail', icon: FileText },
+            { path: '/auditor/csr-registry', label: 'CSR Registry', icon: Building2 },
+            { path: '/auditor/ngo-registry', label: 'NGO Registry', icon: Users },
+            { path: '/auditor/pending-requests', label: 'Pending Reviews', icon: ClipboardList },
+            { path: '/settings', label: 'Settings', icon: Settings },
+            { path: '/verify', label: 'Verify & Record', icon: ShieldCheck },
+        ]
+    };
 
-  // Normalize role to lowercase for consistent comparison
-  const normalizedRole = role ? String(role).toLowerCase().trim() : '';
+    const currentMenu = menus[(role || '').toLowerCase()] || [];
 
-  // Debug logging to help identify role issues
-  console.log('=== Sidebar Debug ===');
-  console.log('Raw role prop:', role);
-  console.log('Normalized role:', normalizedRole);
-  console.log('Will show navigation for:', normalizedRole || 'NONE (no role)');
+    return (
+        <aside className="sidebar">
+            <div className="sidebar-header">
+                <ShieldCheck className="logo-icon" />
+                <span className="brand-name">CSR Track</span>
+            </div>
 
-  return (
-    <aside className="sidebar">
-      <div className="sidebar-header">
-        <div className="logo-icon" style={{ position: 'relative', width: '48px', height: '48px', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-          <Hexagon
-            size={48}
-            color="#3b82f6"
-            fill="rgba(59, 130, 246, 0.1)"
-            strokeWidth={1.5}
-          />
-          <div style={{ position: 'absolute' }}>
-            <Boxes
-              size={24}
-              color="#22d3ee"
-              strokeWidth={2}
-            />
-          </div>
-        </div>
-        <span className="brand-name">CSR TRACKER</span>
-      </div>
+            <nav className="sidebar-nav">
+                {currentMenu.map((item) => (
+                    <NavLink
+                        key={item.path}
+                        to={item.path}
+                        className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
+                        end={item.path === `/${role}`} // Only exact match for dashboard home
+                    >
+                        <item.icon size={20} className="nav-icon" />
+                        <span className="nav-label">{item.label}</span>
+                    </NavLink>
+                ))}
+            </nav>
 
-      <nav className="sidebar-nav">
-        {normalizedRole === 'csr' && (
-          <>
-            <NavLink to="/csr" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`} end>
-              <LayoutDashboard size={20} className="nav-icon" />
-              <span className="nav-label">Dashboard</span>
-            </NavLink>
-            <NavLink to="/csr/create-donation" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
-              <PlusCircle size={20} className="nav-icon" />
-              <span className="nav-label">New Donation</span>
-            </NavLink>
-            <NavLink to="/csr/history" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
-              <History size={20} className="nav-icon" />
-              <span className="nav-label">History</span>
-            </NavLink>
-            <NavLink to="/csr/status" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
-              <Activity size={20} className="nav-icon" />
-              <span className="nav-label">Track Status</span>
-            </NavLink>
-          </>
-        )}
-
-        {normalizedRole === 'ngo' && (
-          <>
-            <NavLink to="/ngo" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`} end>
-              <LayoutDashboard size={20} className="nav-icon" />
-              <span className="nav-label">Dashboard</span>
-            </NavLink>
-            <NavLink to="/ngo/allocate" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
-              <Truck size={20} className="nav-icon" />
-              <span className="nav-label">Allocate</span>
-            </NavLink>
-            <NavLink to="/ngo/history" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
-              <History size={20} className="nav-icon" />
-              <span className="nav-label">History</span>
-            </NavLink>
-          </>
-        )}
-
-        {normalizedRole === 'clinic' && (
-          <>
-            <NavLink to="/clinic" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`} end>
-              <LayoutDashboard size={20} className="nav-icon" />
-              <span className="nav-label">Dashboard</span>
-            </NavLink>
-            <NavLink to="/clinic/receipts" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
-              <ClipboardCheck size={20} className="nav-icon" />
-              <span className="nav-label">Confirm Receipt</span>
-            </NavLink>
-          </>
-        )}
-
-        {normalizedRole === 'auditor' && (
-          <>
-            <NavLink to="/auditor" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`} end>
-              <LayoutDashboard size={20} className="nav-icon" />
-              <span className="nav-label">Dashboard</span>
-            </NavLink>
-            <NavLink to="/auditor/trail" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
-              <FileText size={20} className="nav-icon" />
-              <span className="nav-label">Audit Trail</span>
-            </NavLink>
-            <NavLink to="/auditor/csr-registry" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
-              <Building size={20} className="nav-icon" />
-              <span className="nav-label">CSR History</span>
-            </NavLink>
-            <NavLink to="/auditor/ngo-registry" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
-              <Users size={20} className="nav-icon" />
-              <span className="nav-label">NGO History</span>
-            </NavLink>
-            <NavLink to="/auditor/pending-requests" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
-              <ClipboardCheck size={20} className="nav-icon" />
-              <span className="nav-label">Pending Requests</span>
-            </NavLink>
-          </>
-        )}
-
-        <div className="nav-divider"></div>
-
-        <NavLink to="/verify" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
-          <ShieldCheck size={20} className="nav-icon" />
-          <span className="nav-label">Verify Record</span>
-        </NavLink>
-        <NavLink to="/settings" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
-          <Settings size={20} className="nav-icon" />
-          <span className="nav-label">Settings</span>
-        </NavLink>
-      </nav>
-
-      <div className="sidebar-footer">
-        <p>© 2026 CSR Tracker</p>
-      </div>
-    </aside>
-  );
+            <div className="sidebar-footer">
+                <p>SECURE • TRANSPARENT</p>
+                <p style={{ marginTop: '5px' }}>v1.0.0 Beta</p>
+            </div>
+        </aside>
+    );
 };
 
 export default Sidebar;

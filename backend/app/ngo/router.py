@@ -10,6 +10,7 @@ from app.ngo.accept_service import accept_donation_safely
 from app.ngo.service import register_clinic
 from app.models.clinic_requirment import ClinicRequirement
 from app.models.ngo import NGO
+from app.models.clinic import Clinic
 from app.core.security import require_role
 from app.ngo.schema import ClinicNeedCreate
 from app.ngo.service import create_clinic_need , get_current_ngo, get_available_donations , get_accepted_donations, get_clinic_requirements, allocate_donation
@@ -75,6 +76,18 @@ async def check_donation_eligibility(
 #         donation_id=donation_id,
 #         ngo_id=user["ngo_id"]
 #     )
+
+@router.get("/clinics")
+async def get_clinics(
+    db=Depends(get_db),
+    ngo=Depends(require_role("NGO"))
+):
+    """List all clinics registered by this NGO"""
+    result = await db.execute(
+        select(Clinic).where(Clinic.ngo_id == ngo["ngo_id"])
+    )
+    clinics = result.scalars().all()
+    return clinics
 
 @router.post("/clinics")
 async def register_clinic_endpoint(
@@ -142,5 +155,11 @@ async def allocate_donation_endpoint(
         ngo,
         payload.donation_id,
         payload.clinic_requirement_id
-
     )
+
+@router.get("/allocations/history")
+async def allocation_history_endpoint(
+    db: AsyncSession = Depends(get_db),
+    ngo = Depends(require_role("NGO"))
+):
+    return await get_allocation_history(db, ngo)

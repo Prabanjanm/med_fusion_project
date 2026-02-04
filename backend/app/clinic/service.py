@@ -1,4 +1,3 @@
-import token
 from fastapi.concurrency import run_in_threadpool
 from jose import jwt, JWTError
 from sqlalchemy import select
@@ -21,7 +20,7 @@ async def accept_clinic_invitation(
 
     try:
         payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
-        if payload.get("type") != "clinic_invite":
+        if payload.get("type") != "clinic_set_password":
             raise ValueError("Invalid invitation token")
     except JWTError:
         raise ValueError("Invitation expired or invalid")
@@ -51,26 +50,29 @@ async def accept_clinic_invitation(
 
 
 
-from jose import jwt, JWTError
+from jose import jwt, ExpiredSignatureError, JWTError
 from fastapi import HTTPException
 from app.core.config import settings
-
 
 def verify_clinic_invite_token(token: str) -> dict:
     try:
         payload = jwt.decode(
             token,
             settings.SECRET_KEY,
-            algorithms=[settings.ALGORITHM]
+            algorithms=[settings.ALGORITHM],
+            options={"at_hash": False} # Basic options
         )
-        print("Payload in verify function:", payload)
-        if payload.get("type") != "clinic_invite":
-            raise HTTPException(status_code=400, detail="Invalid token type")
+        
+        # Security: Specifically check for the clinic set password type
+        if payload.get("type") != "clinic_set_password":
+            raise HTTPException(status_code=400, detail="Invalid activation link type")
 
-        return payload  # ✅ dict
+        return payload
 
-    except JWTError:
-        raise HTTPException(status_code=400, detail="Invalid or expired token")
+    except ExpiredSignatureError:
+        raise HTTPException(status_code=400, detail="Activation link has expired. Please request a new invitation.")
+    except JWTError as e:
+        raise HTTPException(status_code=400, detail=f"Invalid activation link: {str(e)}")
 
 
 
@@ -111,7 +113,7 @@ async def set_clinic_password(db, token: str, password: str):
     existing_user = result.first()
 
     if existing_user:
-        raise ValueError("Clinic user already exists")
+        raise HTTPException(status_code=400, detail="Clinic account is already active. Please log in.")
 
     # 3️⃣ Create clinic user WITH clinic_id
     print("clinic.id:", clinic_id)
@@ -146,7 +148,8 @@ from app.models.clinic_requirment import ClinicRequirement
 async def confirm_receipt(
     db: AsyncSession,
     clinic_user: dict,
-    allocation_id: int
+    allocation_id: int,
+    data = None
 ):
     """
     Clinic confirms receipt of allocated donation
@@ -189,18 +192,50 @@ async def confirm_receipt(
         )
 
     # 4️⃣ Mark as received
+    print(f"DEBUG: Confirming receipt for allocation {allocation_id}")
     allocation.received = True
     allocation.received_at = datetime.utcnow()
+    
+    if data:
+        print(f"DEBUG: Received feedback: {data.feedback}, Rating: {data.quality_rating}")
+        allocation.feedback = data.feedback
+        allocation.quality_rating = data.quality_rating
 
-    await db.commit()
-    audit = await run_in_threadpool(
-        log_to_blockchain,
-        "DONATION_RECEIVED",
-        str(donation.id)
-    )
+    donation.status = "RECEIVED"  # ✅ Update Donation status for tracking
+
+    try:
+        await db.commit()
+    except Exception as e:
+        print(f"DATABASE ERROR in confirm_receipt: {e}")
+        await db.rollback()
+        raise HTTPException(
+            status_code=500,
+            detail=f"Database error during confirmation: {str(e)}. This might be due to missing database columns 'feedback' or 'quality_rating'."
+        )
+
+    print("DEBUG: Commit successful")
+    # 5️⃣ Log to Blockchain (Audit Trail)
+    # Include item name and quality metrics in the data
+    blockchain_data = {
+        "donation_id": donation.id,
+        "item_name": donation.item_name,
+        "quality_rating": allocation.quality_rating,
+        "feedback": allocation.feedback,
+        "received_at": allocation.received_at.isoformat() if allocation.received_at else None
+    }
+    
+    try:
+        audit = await run_in_threadpool(
+            log_to_blockchain,
+            "DONATION_RECEIVED",
+            str(blockchain_data)
+        )
+    except Exception as e:
+        print(f"Blockchain Error: {e}")
+        audit = {"tx_hash": "PENDING", "status": "OFF_CHAIN_ONLY"}
+    
     print(audit)
-    return {"audit": audit ,"message": "Donation receipt confirmed successfully"
-            }
+    return {"audit": audit ,"message": "Donation receipt confirmed successfully"}
 
 
 from sqlalchemy import select
@@ -225,6 +260,7 @@ async def get_clinic_allocation_history(
     result = await db.execute(
         select(
             DonationAllocation.id,
+            DonationAllocation.donation_id,
             Donation.item_name,
             Donation.quantity,
             Donation.purpose,
@@ -254,6 +290,7 @@ async def get_clinic_allocation_history(
     return [
         {
             "allocation_id": r.id,
+            "donation_id": r.donation_id,
             "item_name": r.item_name,
             "quantity": r.quantity,
             "purpose": r.purpose,
@@ -261,6 +298,52 @@ async def get_clinic_allocation_history(
             "allocated_at": r.allocated_at,
             "received": r.received,
             "received_at": r.received_at,
+            "status": "RECEIVED" if r.received else "ALLOCATED"
         }
         for r in rows
     ]
+
+async def get_clinic_requests(
+    db: AsyncSession,
+    clinic_user: dict
+):
+    """
+    Fetch all requirements submitted for this clinic
+    """
+    clinic_id = clinic_user["clinic_id"]
+    result = await db.execute(
+        select(ClinicRequirement)
+        .where(ClinicRequirement.clinic_id == clinic_id)
+        .order_by(ClinicRequirement.created_at.desc())
+    )
+    return result.scalars().all()
+
+async def create_clinic_requirement(
+    db: AsyncSession,
+    clinic_user: dict,
+    data
+):
+    """
+    Create a new requirement (need) from the clinic side.
+    Sets status as 'CLINIC_REQUESTED' for NGO to approve.
+    """
+    clinic_id = clinic_user["clinic_id"]
+    
+    # Get the NGO associated with this clinic to set the ngo_id
+    clinic = await db.get(Clinic, clinic_id)
+    if not clinic:
+        raise HTTPException(404, "Clinic record not found")
+        
+    requirement = ClinicRequirement(
+        clinic_id=clinic_id,
+        ngo_id=clinic.ngo_id,
+        item_name=data.item_name,
+        quantity=data.quantity,
+        priority=data.priority, 
+        purpose=data.purpose,
+        status="CLINIC_REQUESTED"
+    )
+    db.add(requirement)
+    await db.commit()
+    await db.refresh(requirement)
+    return requirement

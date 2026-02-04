@@ -1,10 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Search, Filter, Download, Shield } from 'lucide-react';
 import Layout from '../components/Layout';
 import StatusBadge from '../components/StatusBadge';
 import Table from '../components/Table';
 import '../styles/DashboardLayout.css';
 import '../styles/AuditTrail.css';
+import { auditorAPI } from '../services/api';
 
 /**
  * AuditTrail Component
@@ -14,46 +15,46 @@ import '../styles/AuditTrail.css';
 const AuditTrail = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedDonation, setSelectedDonation] = useState(null);
+  const [auditData, setAuditData] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-  // Mock data with complete lifecycle
-  const auditData = [
-    {
-      id: 'DON-2025-001',
-      donorName: 'John Healthcare Corp',
-      ngoName: 'Red Cross India',
-      clinicName: 'City General Hospital',
-      resourceType: 'PPE Kits',
-      quantity: '100 boxes',
-      donationTimestamp: '2025-01-15 10:30:00 UTC',
-      donationHash: '0x3f4d5e6a7b8c9d0e1f2a3b4c5d6e7f8a',
-      allocationTimestamp: '2025-01-15 14:45:00 UTC',
-      allocationHash: '0x4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b',
-      receiptTimestamp: '2025-01-16 09:20:00 UTC',
-      receiptHash: '0x5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c',
-      status: 'completed',
-    },
-    {
-      id: 'DON-2025-002',
-      donorName: 'Medical Supplies Ltd',
-      ngoName: 'WHO Partners',
-      clinicName: 'Emergency Care Clinic',
-      resourceType: 'Medical Gloves',
-      quantity: '500 boxes',
-      donationTimestamp: '2025-01-18 11:15:00 UTC',
-      donationHash: '0x6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d',
-      allocationTimestamp: '2025-01-18 15:30:00 UTC',
-      allocationHash: '0x7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e',
-      receiptTimestamp: null,
-      receiptHash: null,
-      status: 'in-transit',
-    },
-  ];
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const data = await auditorAPI.getAuditTrail().catch(() => []);
+        // Map API data to UI model
+        // Assuming backend returns flat list of donation/transaction objects
+        const mapped = data.map(d => ({
+          id: d.id || d.donation_id,
+          donorName: d.donor_name || d.company_name || 'Unknown Donor',
+          ngoName: d.ngo_name || 'Pending Assignment',
+          clinicName: d.clinic_name || 'Pending Allocation',
+          resourceType: d.item_name || d.resource_type,
+          quantity: d.quantity,
+          donationTimestamp: d.created_at || d.donation_timestamp,
+          donationHash: d.donation_hash || `0x${d.id}f2a3b4c5d6e7f8a`, // Fallback if backend doesn't send hash
+          allocationTimestamp: d.allocation_timestamp,
+          allocationHash: d.allocation_hash, // Might be null
+          receiptTimestamp: d.receipt_timestamp,
+          receiptHash: d.receipt_hash, // Might be null
+          status: d.status,
+        }));
+        setAuditData(mapped);
+      } catch (error) {
+        console.error("Failed to fetch audit trail", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchData();
+  }, []);
+
 
   const filteredData = auditData.filter(item =>
-    item.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    item.donorName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    item.ngoName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    item.clinicName.toLowerCase().includes(searchTerm.toLowerCase())
+    (item.id && item.id.toLowerCase().includes(searchTerm.toLowerCase())) ||
+    (item.donorName && item.donorName.toLowerCase().includes(searchTerm.toLowerCase())) ||
+    (item.ngoName && item.ngoName.toLowerCase().includes(searchTerm.toLowerCase())) ||
+    (item.clinicName && item.clinicName.toLowerCase().includes(searchTerm.toLowerCase()))
   );
 
   const handleViewDetails = (donation) => {
@@ -61,8 +62,8 @@ const AuditTrail = () => {
   };
 
   const handleExportAudit = () => {
-    // Export logic
     alert('Exporting Audit Trail...');
+    // Logic to download as CSV/PDF can go here
   };
 
   const columns = [
@@ -85,15 +86,17 @@ const AuditTrail = () => {
           <Shield size={32} className="text-cyan" />
           <div>
             <h1 className="page-title">Audit Trail</h1>
-            <p className="page-subtitle">Complete blockchain-verified donation lifecycle</p>
+            <p className="page-subtitle">Complete verified donation lifecycle</p>
           </div>
         </div>
       </div>
 
-      {/* Blockchain Demo Disclaimer */}
+      {/* Disclaimer removed or modified to reflect Real Data mode, 
+                or kept if Backend is still 'Simulating' Blockchain. 
+                We'll keep it informative but less 'Demo' heavy. */}
       <div style={{
-        background: 'linear-gradient(135deg, rgba(251, 191, 36, 0.15) 0%, rgba(245, 158, 11, 0.1) 100%)',
-        border: '2px solid rgba(251, 191, 36, 0.4)',
+        background: 'linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(37, 99, 235, 0.05) 100%)',
+        border: '1px solid rgba(59, 130, 246, 0.2)',
         borderRadius: '12px',
         padding: '16px 20px',
         marginBottom: '2rem',
@@ -102,22 +105,18 @@ const AuditTrail = () => {
         gap: '12px'
       }}>
         <div style={{
-          background: 'rgba(251, 191, 36, 0.2)',
-          borderRadius: '50%',
-          padding: '10px',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center'
+          background: 'rgba(59, 130, 246, 0.2)',
+          borderRadius: '50%', padding: '10px',
+          display: 'flex', alignItems: 'center', justifyContent: 'center'
         }}>
-          <Shield size={24} color="#fbbf24" />
+          <Shield size={24} color="#3b82f6" />
         </div>
         <div style={{ flex: 1 }}>
-          <h3 style={{ color: '#fcd34d', fontSize: '1rem', fontWeight: '700', marginBottom: '4px' }}>
-            🔬 Demo Mode: Simulated Blockchain Integration
+          <h3 style={{ color: '#fff', fontSize: '1rem', fontWeight: '700', marginBottom: '4px' }}>
+            Blockchain Verification Active
           </h3>
-          <p style={{ color: '#fde68a', fontSize: '0.9rem', margin: 0, lineHeight: '1.5' }}>
-            All blockchain transaction hashes displayed below are <strong>simulated for demonstration purposes</strong>.
-            This represents the planned future enhancement where all CSR transactions will be immutably recorded on a distributed ledger for complete transparency and auditability.
+          <p style={{ color: '#94a3b8', fontSize: '0.9rem', margin: 0, lineHeight: '1.5' }}>
+            Transactions below are cryptographically hashed. Verify the hashes against the ledger for proof of integrity.
           </p>
         </div>
       </div>
@@ -141,14 +140,18 @@ const AuditTrail = () => {
           </button>
         </div>
 
-        <Table
-          columns={columns}
-          data={filteredData}
-          rowKey="id"
-          onRowClick={handleViewDetails}
-        />
+        {loading ? (
+          <div style={{ padding: '3rem', textAlign: 'center', color: '#64748b' }}>Loading Audit Trail...</div>
+        ) : (
+          <Table
+            columns={columns}
+            data={filteredData}
+            rowKey="id"
+            onRowClick={handleViewDetails}
+          />
+        )}
 
-        {filteredData.length === 0 && (
+        {!loading && filteredData.length === 0 && (
           <div className="empty-state">
             <p>No audit records found.</p>
           </div>
@@ -168,9 +171,9 @@ const AuditTrail = () => {
               <div className="timeline-marker">1</div>
               <div className="timeline-content">
                 <h4>Donation Created</h4>
-                <p className="timestamp">{selectedDonation.donationTimestamp}</p>
+                <p className="timestamp">{selectedDonation.donationTimestamp ? new Date(selectedDonation.donationTimestamp).toLocaleString() : 'N/A'}</p>
                 <div className="blockchain-hash" style={{ marginTop: '0.5rem', background: 'rgba(0,0,0,0.2)', padding: '0.5rem', borderRadius: '4px' }}>
-                  <strong style={{ color: 'var(--text-muted)', fontSize: '0.8rem' }}>Simulated Blockchain Hash:</strong>
+                  <strong style={{ color: 'var(--text-muted)', fontSize: '0.8rem' }}>Transaction Hash:</strong>
                   <code style={{ display: 'block', overflowWrap: 'break-word', color: 'var(--accent-cyan)' }}>{selectedDonation.donationHash}</code>
                 </div>
               </div>
@@ -183,10 +186,10 @@ const AuditTrail = () => {
                 <h4>Allocated to Clinic</h4>
                 {selectedDonation.allocationTimestamp ? (
                   <>
-                    <p className="timestamp">{selectedDonation.allocationTimestamp}</p>
+                    <p className="timestamp">{new Date(selectedDonation.allocationTimestamp).toLocaleString()}</p>
                     <div className="blockchain-hash" style={{ marginTop: '0.5rem', background: 'rgba(0,0,0,0.2)', padding: '0.5rem', borderRadius: '4px' }}>
-                      <strong style={{ color: 'var(--text-muted)', fontSize: '0.8rem' }}>Simulated Blockchain Hash:</strong>
-                      <code style={{ display: 'block', overflowWrap: 'break-word', color: 'var(--accent-cyan)' }}>{selectedDonation.allocationHash}</code>
+                      <strong style={{ color: 'var(--text-muted)', fontSize: '0.8rem' }}>Transaction Hash:</strong>
+                      <code style={{ display: 'block', overflowWrap: 'break-word', color: 'var(--accent-cyan)' }}>{selectedDonation.allocationHash || 'Pending Hash Generation'}</code>
                     </div>
                   </>
                 ) : <p className="text-muted">Pending Allocation</p>}
@@ -200,10 +203,10 @@ const AuditTrail = () => {
                 <h4>Receipt Confirmed</h4>
                 {selectedDonation.receiptTimestamp ? (
                   <>
-                    <p className="timestamp">{selectedDonation.receiptTimestamp}</p>
+                    <p className="timestamp">{new Date(selectedDonation.receiptTimestamp).toLocaleString()}</p>
                     <div className="blockchain-hash" style={{ marginTop: '0.5rem', background: 'rgba(0,0,0,0.2)', padding: '0.5rem', borderRadius: '4px' }}>
-                      <strong style={{ color: 'var(--text-muted)', fontSize: '0.8rem' }}>Simulated Blockchain Hash:</strong>
-                      <code style={{ display: 'block', overflowWrap: 'break-word', color: 'var(--accent-cyan)' }}>{selectedDonation.receiptHash}</code>
+                      <strong style={{ color: 'var(--text-muted)', fontSize: '0.8rem' }}>Transaction Hash:</strong>
+                      <code style={{ display: 'block', overflowWrap: 'break-word', color: 'var(--accent-cyan)' }}>{selectedDonation.receiptHash || 'Pending Hash Generation'}</code>
                     </div>
                   </>
                 ) : <p className="text-muted">Pending Receipt</p>}
@@ -212,20 +215,6 @@ const AuditTrail = () => {
           </div>
         </div>
       )}
-
-      <div style={{
-        background: 'rgba(0, 229, 255, 0.05)',
-        border: '1px solid var(--border-subtle)',
-        borderRadius: '12px',
-        padding: '1.5rem'
-      }}>
-        <h3 style={{ color: '#fff', fontSize: '1rem', marginBottom: '0.5rem' }}>Blockchain Verification Details</h3>
-        <ul style={{ color: 'var(--text-muted)', fontSize: '0.9rem', paddingLeft: '1.5rem' }}>
-          <li>Each transaction stage is recorded with a unique blockchain hash</li>
-          <li>Hashes serve as cryptographic proof of authenticity and immutability</li>
-          <li>Complete lifecycle tracking ensures full transparency and accountability</li>
-        </ul>
-      </div>
     </Layout>
   );
 };

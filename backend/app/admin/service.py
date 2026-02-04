@@ -9,17 +9,46 @@ from app.models.admin_audit_log import AdminAuditLog
 from collections import defaultdict
 from app.models.donation_allocation import DonationAllocation
 
+    # Fetch pending companies (Requests)
 async def get_pending_companies(db: AsyncSession):
-    result = await db.execute(
-        select(Company).where(Company.is_verified == None)
+
+
+    # 1. Get Rejected IDs separately
+    rejected_logs = await db.execute(
+        select(AdminAuditLog.entity_id).where(
+            AdminAuditLog.action == "REJECT_COMPANY"
+        )
     )
+    rejected_ids = rejected_logs.scalars().all()
+
+    # 2. Build Query
+    query = select(Company).where(
+        (Company.is_verified == None) | (Company.is_verified == False)
+    )
+    
+    if rejected_ids:
+        query = query.where(Company.id.not_in(rejected_ids))
+
+    result = await db.execute(query)
     return result.scalars().all()
 
 
 async def get_pending_ngos(db: AsyncSession):
-    result = await db.execute(
-        select(NGO).where(NGO.is_verified == None)
+    rejected_logs = await db.execute(
+        select(AdminAuditLog.entity_id).where(
+            AdminAuditLog.action == "REJECT_NGO"
+        )
     )
+    rejected_ids = rejected_logs.scalars().all()
+
+    query = select(NGO).where(
+        (NGO.is_verified == None) | (NGO.is_verified == False)
+    )
+
+    if rejected_ids:
+        query = query.where(NGO.id.not_in(rejected_ids))
+
+    result = await db.execute(query)
     return result.scalars().all()
 
 

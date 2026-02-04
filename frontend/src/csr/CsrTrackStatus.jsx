@@ -153,7 +153,7 @@ const CsrTrackStatus = () => {
                                             {item.status}
                                         </span>
                                         <span style={{ fontSize: '0.75rem', color: '#64748b', fontFamily: 'monospace' }}>
-                                            #{item.id.slice(-6)}
+                                            #{String(item.id).padStart(6, '0')}
                                         </span>
                                     </div>
                                 </motion.div>

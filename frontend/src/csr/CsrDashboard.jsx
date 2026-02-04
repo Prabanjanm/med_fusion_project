@@ -27,8 +27,6 @@ const CsrDashboard = () => {
     completed: 0,
     inTransit: 0,
     pending: 0,
-    totalQuantity: 0,
-    pending: 0,
     rejected: 0,
     totalQuantity: 0,
     recentHistory: []
@@ -55,13 +53,14 @@ const CsrDashboard = () => {
         const lastActivity = sortedData.length > 0 ? sortedData[0] : null;
 
         setStats({
-          // Force Dummy Data for Visualization if real data is sparse (User Request)
-          total: total || 12,
-          completed: completed || 4,
-          inTransit: inTransit || 5, // Avoid redeclaration issue by using computed value
-          pending: pending || 3,
+          // Real Data Visualization
+          total: total || 0,
+          completed: completed || 0,
+          // Avoid redeclaration issue by using computed value
+          inTransit: inTransit || 0,
+          pending: pending || 0,
           rejected: rejected || 0,
-          totalQuantity: totalQuantity || 1200,
+          totalQuantity: totalQuantity || 0,
           recentHistory: sortedData.slice(0, 4)
         });
       } catch (error) {

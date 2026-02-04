@@ -1,8 +1,6 @@
-
 import React, { useState, useEffect } from 'react';
 import { CheckCircle, XCircle, Clock, ShieldAlert } from 'lucide-react';
 import { auditorAPI } from '../services/api';
-import StatusBadge from '../components/StatusBadge';
 
 const UserApprovals = ({ roleFilter }) => {
     const [requests, setRequests] = useState([]);
@@ -15,8 +13,36 @@ const UserApprovals = ({ roleFilter }) => {
 
     const fetchRequests = async () => {
         try {
-            const data = await auditorAPI.getPendingRegistrations();
-            const filtered = roleFilter ? data.filter(r => r.role === roleFilter) : data;
+            // Fetch both lists because backend has separate endpoints
+            const [companies, ngos] = await Promise.all([
+                auditorAPI.getPendingCompanies().catch(e => { console.error(e); return []; }),
+                auditorAPI.getPendingNGOs().catch(e => { console.error(e); return []; })
+            ]);
+
+            // Map to unified structure for UI
+            const mappedCompanies = companies.map(c => ({
+                id: c.id,
+                name: c.company_name,
+                email: c.official_email,
+                role: 'csr',
+                id_number: c.cin, // or pan
+                type: 'company',
+                // schema doesn't have created_at, using mocked or omitted
+                created_at: new Date().toISOString()
+            }));
+
+            const mappedNGOs = ngos.map(n => ({
+                id: n.id,
+                name: n.ngo_name,
+                email: n.official_email,
+                role: 'ngo',
+                id_number: n.csr_1_number,
+                type: 'ngo',
+                created_at: new Date().toISOString()
+            }));
+
+            const allData = [...mappedCompanies, ...mappedNGOs];
+            const filtered = roleFilter ? allData.filter(r => r.role === roleFilter) : allData;
             setRequests(filtered);
         } catch (error) {
             console.error("Failed to load registrations", error);
@@ -25,12 +51,17 @@ const UserApprovals = ({ roleFilter }) => {
         }
     };
 
-    const handleDecision = async (email, decision) => {
-        setActionLoading(email);
+    const handleDecision = async (req, decision) => {
+        setActionLoading(req.id);
+        const isApprove = decision === 'approve';
         try {
-            await auditorAPI.processRegistration(email, decision);
-            // Remove from list or update locally
-            setRequests(prev => prev.filter(r => r.email !== email));
+            if (req.type === 'company') {
+                await auditorAPI.reviewCompany(req.id, isApprove, isApprove ? 'Approved' : 'Rejected');
+            } else {
+                await auditorAPI.reviewNGO(req.id, isApprove, isApprove ? 'Approved' : 'Rejected');
+            }
+            // Remove from list
+            setRequests(prev => prev.filter(r => r.id !== req.id || r.type !== req.type));
         } catch (error) {
             alert("Failed to process request: " + error.message);
         } finally {
@@ -90,13 +121,13 @@ const UserApprovals = ({ roleFilter }) => {
                             <th style={{ padding: '1rem' }}>ENTITY</th>
                             <th style={{ padding: '1rem' }}>ROLE</th>
                             <th style={{ padding: '1rem' }}>ID / REG NO</th>
-                            <th style={{ padding: '1rem' }}>SUBMITTED</th>
+                            <th style={{ padding: '1rem' }}>STATUS</th>
                             <th style={{ padding: '1rem', textAlign: 'right' }}>ACTIONS</th>
                         </tr>
                     </thead>
                     <tbody>
                         {requests.map((req) => (
-                            <tr key={req.email} style={{ borderBottom: '1px solid rgba(255,255,255,0.02)' }}>
+                            <tr key={`${req.type}-${req.id}`} style={{ borderBottom: '1px solid rgba(255,255,255,0.02)' }}>
                                 <td style={{ padding: '1rem' }}>
                                     <div style={{ fontWeight: '500', color: '#f8fafc' }}>{req.name}</div>
                                     <div style={{ fontSize: '0.8rem', color: '#94a3b8' }}>{req.email}</div>
@@ -117,14 +148,14 @@ const UserApprovals = ({ roleFilter }) => {
                                 <td style={{ padding: '1rem', color: '#94a3b8', fontSize: '0.85rem' }}>
                                     <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
                                         <Clock size={14} />
-                                        {new Date(req.created_at).toLocaleDateString()}
+                                        Pending
                                     </div>
                                 </td>
                                 <td style={{ padding: '1rem', textAlign: 'right' }}>
                                     <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
                                         <button
-                                            disabled={actionLoading === req.email}
-                                            onClick={() => handleDecision(req.email, 'reject')}
+                                            disabled={actionLoading === req.id}
+                                            onClick={() => handleDecision(req, 'reject')}
                                             style={{
                                                 background: 'transparent',
                                                 border: '1px solid #ef4444',
@@ -134,14 +165,14 @@ const UserApprovals = ({ roleFilter }) => {
                                                 cursor: 'pointer',
                                                 fontSize: '0.8rem',
                                                 display: 'flex', alignItems: 'center', gap: '5px',
-                                                opacity: actionLoading === req.email ? 0.5 : 1
+                                                opacity: actionLoading === req.id ? 0.5 : 1
                                             }}
                                         >
                                             <XCircle size={14} /> Reject
                                         </button>
                                         <button
-                                            disabled={actionLoading === req.email}
-                                            onClick={() => handleDecision(req.email, 'approve')}
+                                            disabled={actionLoading === req.id}
+                                            onClick={() => handleDecision(req, 'approve')}
                                             style={{
                                                 background: '#22c55e',
                                                 border: 'none',
@@ -152,7 +183,7 @@ const UserApprovals = ({ roleFilter }) => {
                                                 fontWeight: '600',
                                                 fontSize: '0.8rem',
                                                 display: 'flex', alignItems: 'center', gap: '5px',
-                                                opacity: actionLoading === req.email ? 0.5 : 1
+                                                opacity: actionLoading === req.id ? 0.5 : 1
                                             }}
                                         >
                                             <CheckCircle size={14} /> Approve

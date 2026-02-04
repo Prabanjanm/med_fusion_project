@@ -22,6 +22,21 @@ async def seed_trusted_companies():
                 "cin": "L67890MH2019PLC000002",
                 "pan": "FGHIJ5678K",
             },
+            {
+                "company_name": "Tesla India Motors",
+                "cin": "L99999KA2024PLC123456",
+                "pan": "TESLA8899X",
+            },
+            {
+                "company_name": "HealthCare Innovations Ltd",
+                "cin": "L55555KA2025PLC999999",
+                "pan": "HEALTH999P",
+            },
+            {
+                "company_name": "Global Pharma Care",
+                "cin": "L11111TN2025PLC000000",
+                "pan": "PHARMA123G",
+            },
         ]
 
         for data in trusted_companies:

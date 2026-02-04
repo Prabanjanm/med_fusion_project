@@ -27,6 +27,7 @@ import AllocateToClinic from './ngo/AllocateToClinic';
 import AllocationHistory from './ngo/AllocationHistory';
 import ProductVerification from './ngo/ProductVerification';
 import RequestValidation from './ngo/RequestValidation';
+import NgoManageClinics from './ngo/NgoManageClinics';
 
 // Clinic Components
 import ClinicDashboard from './clinic/ClinicDashboard';
@@ -98,7 +99,7 @@ function App() {
             element={<ProtectedRoutes element={<DonationDetails />} allowedRoles={['csr']} />}
           />
           <Route
-            path="/csr/declare-product"
+            path="/csr/verify-and-record"
             element={<ProtectedRoutes element={<ProductDeclaration />} allowedRoles={['csr']} />}
           />
 
@@ -131,6 +132,10 @@ function App() {
           <Route
             path="/ngo/validate-requests"
             element={<ProtectedRoutes element={<RequestValidation />} allowedRoles={['ngo']} />}
+          />
+          <Route
+            path="/ngo/manage-clinics"
+            element={<ProtectedRoutes element={<NgoManageClinics />} allowedRoles={['ngo']} />}
           />
 
           {/* Clinic Routes */}

@@ -74,4 +74,12 @@ async def set_clinic_password_endpoint(
     data: SetPasswordRequest,
     db: AsyncSession = Depends(get_db)
 ):
-    return await set_clinic_password(db, data.token, data.password)
+    try:
+        return await set_clinic_password(db, data.token, data.password)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        # Re-raise HTTPExceptions, but catch others
+        if isinstance(e, HTTPException):
+            raise e
+        raise HTTPException(status_code=400, detail=str(e))

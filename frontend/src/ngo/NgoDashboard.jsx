@@ -1,15 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Inbox, Send, FileSearch, Activity, Package, AlertTriangle } from 'lucide-react';
+import { Inbox, Send, FileSearch, Activity, Package, AlertTriangle, UserPlus } from 'lucide-react';
 import Layout from '../components/Layout';
 import Table from '../components/Table';
 import SummaryCard from '../components/SummaryCard';
 import StatusBadge from '../components/StatusBadge';
 import { ngoAPI } from '../services/api';
 import '../styles/DashboardLayout.css';
-
-const MOCK_DONATIONS_KEY = 'csr_tracker_mock_donations';
-const CLINIC_REQUESTS_KEY = 'csr_tracker_clinic_requests';
 
 const NgoDashboard = () => {
   const navigate = useNavigate();
@@ -29,64 +26,41 @@ const NgoDashboard = () => {
 
   const fetchData = async () => {
     try {
-      // Load donations from localStorage
-      const allDonations = JSON.parse(localStorage.getItem(MOCK_DONATIONS_KEY) || '[]');
-      const pending = allDonations.filter(d => d.status === 'PENDING');
-      const accepted = allDonations.filter(d => d.status === 'ACCEPTED');
+      // 1. Fetch Donations (Listing from CSR)
+      const availableDonations = await ngoAPI.getAvailableDonations().catch(() => []);
+
+      // 2. Fetch Dashboard Data (Includes requests, accepted donations, inventory)
+      const dashboardData = await ngoAPI.getDashboardData().catch(() => ({}));
+
+      const accepted = dashboardData.accepted_donations || [];
+      const requests = dashboardData.clinic_requirements || [];
+
+      // Combine info if needed, or just use what we have
+      // Available donations are "Pending NGO Action"
+      const pending = availableDonations; // Assuming getAvailable returns only pending/authorized
 
       setDonations(pending.map(d => ({
-        id: d.id,
-        donor_name: d.donor_name || 'CSR Partner',
+        id: d.id || d.donation_id,
+        donor_name: d.company_name || d.donor_name || 'CSR Partner',
         resource_type: d.item_name,
         quantity: d.quantity,
         status: d.status,
         created_at: d.created_at
       })));
 
-      // Load clinic requests from localStorage
-      // Load clinic requests from localStorage
-      let allRequests = JSON.parse(localStorage.getItem(CLINIC_REQUESTS_KEY) || '[]');
-      let pendingRequests = allRequests.filter(r => r.status === 'PENDING');
-
-      // Inject Dummy Data if empty (User Request)
-      if (pendingRequests.length === 0) {
-        pendingRequests = [
-          {
-            id: 'REQ-001-DEMO',
-            clinic_name: 'Hope Community Clinic',
-            priority: 'emergency',
-            items: ['PPE Kits', 'Gloves'],
-            created_at: new Date().toISOString(),
-            status: 'PENDING'
-          },
-          {
-            id: 'REQ-002-DEMO',
-            clinic_name: 'Urban Health Center',
-            priority: 'high',
-            items: ['Syringes'],
-            created_at: new Date(Date.now() - 86400000).toISOString(),
-            status: 'PENDING'
-          },
-          {
-            id: 'REQ-003-DEMO',
-            clinic_name: 'Metro Relief Camp',
-            priority: 'medium',
-            items: ['Masks', 'Sanitizers'],
-            created_at: new Date(Date.now() - 172800000).toISOString(),
-            status: 'PENDING'
-          }
-        ];
-      }
-
-      const emergencyRequests = pendingRequests.filter(r => r.priority === 'emergency');
-
-      setClinicRequests(pendingRequests);
+      const pendingReqs = requests.filter(r =>
+        r.status === 'PENDING' ||
+        r.status === 'CLINIC_REQUESTED' ||
+        r.status === 'NGO_APPROVED' ||
+        r.status === 'PARTIALLY_ALLOCATED'
+      );
+      setClinicRequests(pendingReqs);
 
       setStats({
         pendingDonations: pending.length,
         acceptedDonations: accepted.length,
-        pendingRequests: pendingRequests.length,
-        emergencyRequests: emergencyRequests.length
+        pendingRequests: pendingReqs.length,
+        emergencyRequests: pendingReqs.filter(r => r.priority === 1).length
       });
 
     } catch (error) {
@@ -108,13 +82,7 @@ const NgoDashboard = () => {
             className="btn-secondary"
             onClick={() => navigate('/ngo/pending-donations')}
             style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '0.5rem',
-              minWidth: '200px',
-              justifyContent: 'center',
-              borderRadius: '12px',
-              fontFamily: "'Orbitron', sans-serif"
+              display: 'flex', alignItems: 'center', gap: '0.5rem', minWidth: '200px', justifyContent: 'center', borderRadius: '12px', fontFamily: "'Orbitron', sans-serif"
             }}
           >
             <Inbox size={18} />
@@ -124,17 +92,21 @@ const NgoDashboard = () => {
             className="btn-submit"
             onClick={() => navigate('/ngo/clinic-requests')}
             style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '0.5rem',
-              minWidth: '200px',
-              justifyContent: 'center',
-              letterSpacing: '0.05em',
-              borderRadius: '12px'
+              display: 'flex', alignItems: 'center', gap: '0.5rem', minWidth: '200px', justifyContent: 'center', letterSpacing: '0.05em', borderRadius: '12px'
             }}
           >
             <Package size={18} />
             CLINIC REQUESTS
+          </button>
+          <button
+            className="btn-secondary"
+            onClick={() => navigate('/ngo/manage-clinics')}
+            style={{
+              display: 'flex', alignItems: 'center', gap: '0.5rem', minWidth: '200px', justifyContent: 'center', borderRadius: '12px', fontFamily: "'Orbitron', sans-serif"
+            }}
+          >
+            <UserPlus size={18} />
+            MANAGE CLINICS
           </button>
         </div>
       </div>
@@ -174,14 +146,7 @@ const NgoDashboard = () => {
           <button
             onClick={() => navigate('/ngo/pending-donations')}
             style={{
-              background: 'rgba(59, 130, 246, 0.1)',
-              border: '1px solid rgba(59, 130, 246, 0.3)',
-              borderRadius: '8px',
-              padding: '0.5rem 1rem',
-              color: '#3b82f6',
-              cursor: 'pointer',
-              fontSize: '0.9rem',
-              fontWeight: 600
+              background: 'rgba(59, 130, 246, 0.1)', border: '1px solid rgba(59, 130, 246, 0.3)', borderRadius: '8px', padding: '0.5rem 1rem', color: '#3b82f6', cursor: 'pointer', fontSize: '0.9rem', fontWeight: 600
             }}
           >
             Review All
@@ -220,14 +185,7 @@ const NgoDashboard = () => {
           <button
             onClick={() => navigate('/ngo/clinic-requests')}
             style={{
-              background: 'rgba(59, 130, 246, 0.1)',
-              border: '1px solid rgba(59, 130, 246, 0.3)',
-              borderRadius: '8px',
-              padding: '0.5rem 1rem',
-              color: '#3b82f6',
-              cursor: 'pointer',
-              fontSize: '0.9rem',
-              fontWeight: 600
+              background: 'rgba(59, 130, 246, 0.1)', border: '1px solid rgba(59, 130, 246, 0.3)', borderRadius: '8px', padding: '0.5rem 1rem', color: '#3b82f6', cursor: 'pointer', fontSize: '0.9rem', fontWeight: 600
             }}
           >
             Review All
@@ -254,49 +212,28 @@ const NgoDashboard = () => {
                     ? '2px solid rgba(239, 68, 68, 0.5)'
                     : '1px solid rgba(255,255,255,0.1)',
                   borderRadius: '12px',
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center'
+                  display: 'flex', justifyContent: 'space-between', alignItems: 'center'
                 }}
               >
                 <div style={{ flex: 1 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '0.5rem' }}>
-                    <h4 style={{ color: '#fff', margin: 0 }}>{request.clinic_name}</h4>
-                    {request.priority === 'emergency' && (
+                    <h4 style={{ color: '#fff', margin: 0 }}>{request.item_name}</h4>
+                    {request.priority === 1 && (
                       <div style={{
-                        padding: '0.25rem 0.75rem',
-                        background: 'rgba(239, 68, 68, 0.1)',
-                        border: '1px solid rgba(239, 68, 68, 0.3)',
-                        borderRadius: '12px',
-                        color: '#ef4444',
-                        fontSize: '0.75rem',
-                        fontWeight: 600,
-                        textTransform: 'uppercase',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '0.25rem'
+                        padding: '0.25rem 0.75rem', background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.3)', borderRadius: '12px', color: '#ef4444', fontSize: '0.75rem', fontWeight: 600, textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: '0.25rem'
                       }}>
-                        <AlertTriangle size={12} />
-                        EMERGENCY
+                        <AlertTriangle size={12} /> EMERGENCY
                       </div>
                     )}
                   </div>
                   <p style={{ color: '#64748b', fontSize: '0.9rem', margin: 0 }}>
-                    {request.items.length} item{request.items.length !== 1 ? 's' : ''} •
-                    Submitted {new Date(request.created_at).toLocaleDateString()}
+                    Qty: {request.quantity} • Submitted {request.created_at ? new Date(request.created_at).toLocaleDateString() : 'Recently'}
                   </p>
                 </div>
                 <button
                   onClick={() => navigate('/ngo/clinic-requests')}
                   style={{
-                    background: 'rgba(59, 130, 246, 0.1)',
-                    border: '1px solid rgba(59, 130, 246, 0.3)',
-                    borderRadius: '8px',
-                    padding: '0.5rem 1rem',
-                    color: '#3b82f6',
-                    cursor: 'pointer',
-                    fontSize: '0.85rem',
-                    fontWeight: 600
+                    background: 'rgba(59, 130, 246, 0.1)', border: '1px solid rgba(59, 130, 246, 0.3)', borderRadius: '8px', padding: '0.5rem 1rem', color: '#3b82f6', cursor: 'pointer', fontSize: '0.85rem', fontWeight: 600
                   }}
                 >
                   Review

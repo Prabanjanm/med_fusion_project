@@ -3,6 +3,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.models.company import Company
 from app.models.user import User
 from app.models.trusted_company import TrustedCompany
+from app.auth.utils import hash_password
 
 
 async def register_company(db: AsyncSession, data):
@@ -34,12 +35,12 @@ async def register_company(db: AsyncSession, data):
             "company_id": company.id
         }
 
-    # 3️⃣ Create new verified company
+    # 3️⃣ Create new company (Pending Verification)
     company = Company(
         company_name=data.company_name,
         cin=data.cin,
         pan=data.pan,
-        is_verified=True
+        is_verified=None  # ✅ Changed from True to None (Pending Auditor Review)
     )
     db.add(company)
     await db.commit()
@@ -53,13 +54,14 @@ async def register_company(db: AsyncSession, data):
         user = User(
             email=data.official_email,
             company_id=company.id,
-            password_set=False,
+            password_set=bool(data.password),  # Set to True if password provided
+            password_hash=hash_password(data.password) if data.password else None,
             role="CSR"
         )
         db.add(user)
         await db.commit()
 
     return {
-        "message": "Company verified successfully",
-        "next_step": "Please set your password to login"
+        "message": "Registration successful. Pending Auditor Approval.",
+        "next_step": "You will be notified once the Auditor approves your account."
     }

@@ -1,4 +1,4 @@
-from sqlalchemy import Boolean, Column, Integer, DateTime, ForeignKey, UniqueConstraint
+from sqlalchemy import Boolean, Column, Integer, DateTime, ForeignKey, String
 from sqlalchemy.sql import func
 from app.db.base import Base
 
@@ -16,3 +16,7 @@ class DonationAllocation(Base):
     # 🔐 Clinic confirmation
     received = Column(Boolean, default=False)
     received_at = Column(DateTime(timezone=True), nullable=True)
+
+    # 🏥 Clinic Feedback
+    feedback = Column(String, nullable=True)
+    quality_rating = Column(Integer, nullable=True) # 1-5 Scale

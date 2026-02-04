@@ -1,5 +1,6 @@
 from pydantic import BaseModel, Field
 from typing import Optional
+from datetime import datetime
 
 
 class DonationCreate(BaseModel):
@@ -25,4 +26,9 @@ class DonationCreate(BaseModel):
         ...,
         example=True,
         description="Confirms donation aligns with declared CSR policy"
+    )
+    
+    expiry_date: datetime = Field(
+        ...,
+        example="2026-12-31T00:00:00Z"
     )

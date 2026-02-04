@@ -9,8 +9,6 @@ import { clinicAPI } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import '../styles/DashboardLayout.css';
 
-const CLINIC_REQUESTS_KEY = 'csr_tracker_clinic_requests';
-
 const ClinicDashboard = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -32,8 +30,13 @@ const ClinicDashboard = () => {
 
   const fetchData = async () => {
     try {
-      // Fetch allocations
-      const allocData = await clinicAPI.getReceipts().catch(() => []);
+      // 1. Fetch Allocations (Pending Receipts)
+      // Note: getPendingAllocations returns only pending. 
+      // getHistory returns all. We probably want All for statistics.
+      // But let's use getHistory for dashboard general stats, or pending for the table.
+      // We'll try getHistory first if it exists, otherwise getPending.
+      const allocData = await clinicAPI.getHistory().catch(() => []);
+
       setAllocations(allocData.map(d => ({
         id: d.allocation_id || d.id,
         donation_id: d.donation_id,
@@ -43,19 +46,20 @@ const ClinicDashboard = () => {
         status: d.status
       })));
 
-      // Fetch clinic requests from localStorage
-      const allRequests = JSON.parse(localStorage.getItem(CLINIC_REQUESTS_KEY) || '[]');
-      const clinicRequests = allRequests.filter(r => r.clinic_name === user?.companyName);
-      setRequests(clinicRequests);
+      // 2. Fetch Requests (Tracking)
+      const requestsData = await clinicAPI.getRequests().catch(() => []);
+
+      const myRequests = requestsData || [];
+      setRequests(myRequests);
 
       // Compute stats
       setStats({
         incoming: allocData.length,
         received: allocData.filter(d => ['RECEIVED', 'COMPLETED'].includes(d.status)).length,
-        transit: allocData.filter(d => ['IN_TRANSIT', 'ALLOCATED'].includes(d.status)).length,
+        transit: allocData.filter(d => ['IN_TRANSIT', 'ALLOCATED', 'ACCEPTED'].includes(d.status)).length,
         pending: allocData.filter(d => d.status === 'PENDING').length,
-        requestsPending: clinicRequests.filter(r => r.status === 'PENDING').length,
-        requestsApproved: clinicRequests.filter(r => r.status === 'APPROVED').length
+        requestsPending: myRequests.filter(r => r.status === 'PENDING').length,
+        requestsApproved: myRequests.filter(r => r.status === 'APPROVED' || r.status === 'ALLOCATED').length
       });
 
     } catch (error) {
@@ -65,34 +69,29 @@ const ClinicDashboard = () => {
     }
   };
 
-  const getRequestStatusColor = (status) => {
-    switch (status) {
-      case 'APPROVED': return '#10b981';
-      case 'DENIED': return '#ef4444';
-      case 'PENDING': return '#f59e0b';
-      default: return '#64748b';
-    }
-  };
-
   return (
     <Layout>
       <div className="page-header">
         <div>
-          <h1 className="page-title">Clinic Dashboard</h1>
-          <p className="page-subtitle">Track incoming supplies and manage product requests</p>
+          <h1 className="page-title">Clinic Inventory Portal</h1>
+          <p className="page-subtitle">Confirm receipt of NGO-allocated supplies and track requirements</p>
         </div>
         <div style={{ display: 'flex', gap: '1rem' }}>
+          <button
+            className="btn-secondary"
+            onClick={() => navigate('/clinic/request-status')}
+            style={{
+              display: 'flex', alignItems: 'center', gap: '0.5rem', minWidth: '200px', justifyContent: 'center', borderRadius: '12px', fontFamily: "'Orbitron', sans-serif"
+            }}
+          >
+            <Clock size={18} />
+            VIEW REQUEST STATUS
+          </button>
           <button
             className="btn-submit"
             onClick={() => navigate('/clinic/receipts')}
             style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '0.5rem',
-              minWidth: '200px',
-              justifyContent: 'center',
-              borderRadius: '12px',
-              letterSpacing: '0.05em'
+              display: 'flex', alignItems: 'center', gap: '0.5rem', minWidth: '200px', justifyContent: 'center', borderRadius: '12px', letterSpacing: '0.05em'
             }}
           >
             <CheckSquare size={18} />
@@ -115,13 +114,17 @@ const ClinicDashboard = () => {
           color="#00ff88"
           icon={CheckSquare}
         />
+        <SummaryCard
+          label="Pending Requests"
+          value={loading ? "-" : stats.requestsPending}
+          color="#f59e0b"
+          icon={Clock}
+        />
       </div>
-
-
 
       {/* Incoming Allocations */}
       <div className="table-card">
-        <h2 className="table-header-title">Incoming Allocations</h2>
+        <h2 className="table-header-title">Incoming Allocations (History)</h2>
         {loading ? (
           <div style={{ padding: '3rem', textAlign: 'center', color: '#64748b' }}>Loading data...</div>
         ) : allocations.length === 0 ? (

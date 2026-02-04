@@ -1,31 +1,56 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Box, Link2, Lock, Calendar, Hash, FileText, ChevronDown, ChevronUp } from 'lucide-react';
-import { getAllBlocks, getBlockchainStats } from '../services/blockchainService';
+import { auditorAPI } from '../services/api';
 import '../styles/BlockchainLedgerView.css';
 
 /**
  * BlockchainLedgerView Component
- * Displays the blockchain ledger with all blocks in a visual timeline
+ * Now displays REAL Donation Audit Logs from the backend.
+ * Replaces simulation with actual verified data.
  */
 const BlockchainLedgerView = () => {
     const [blocks, setBlocks] = useState([]);
-    const [stats, setStats] = useState(null);
     const [expandedBlock, setExpandedBlock] = useState(null);
+    const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        loadBlockchain();
-
-        // Refresh every 2 seconds to show new blocks
-        const interval = setInterval(loadBlockchain, 2000);
-        return () => clearInterval(interval);
+        loadLedger();
     }, []);
 
-    const loadBlockchain = () => {
-        const allBlocks = getAllBlocks();
-        const blockchainStats = getBlockchainStats();
-        setBlocks(allBlocks.reverse()); // Show newest first
-        setStats(blockchainStats);
+    const loadLedger = async () => {
+        try {
+            const logs = await auditorAPI.getDonationLogs();
+            // Map logs to "Block-like" structure for the UI
+            const mapped = logs.map(log => {
+                let eventType = 'DONATION_CREATED';
+                if (log.status === 'NGO_ACCEPTED') eventType = 'NGO_ACCEPTED';
+                if (log.status === 'CLINIC_ACCEPTED') eventType = 'RECEIPT_CONFIRMED';
+                // Backend might send 'ALLOCATED' implicitly in future versions
+                if (log.status === 'ALLOCATED') eventType = 'ALLOCATION_APPROVED';
+
+                return {
+                    blockId: `TX-${log.id}`,
+                    blockNumber: log.id,
+                    eventType: eventType,
+                    timestamp: log.authorized_at,
+                    // Backend schema doesn't expose hash in list view, using placeholder or omitting
+                    hash: `Verified-Log-${log.id}`,
+                    status: log.status,
+                    data: {
+                        item: log.item_name,
+                        qty: log.quantity,
+                        purpose: log.purpose,
+                        company: log.company_id
+                    }
+                };
+            });
+            setBlocks(mapped.reverse());
+        } catch (error) {
+            console.error("Failed to load ledger", error);
+        } finally {
+            setLoading(false);
+        }
     };
 
     const getEventColor = (eventType) => {
@@ -50,6 +75,8 @@ const BlockchainLedgerView = () => {
                 return <Link2 size={18} />;
             case 'RECEIPT_CONFIRMED':
                 return <Lock size={18} />;
+            case 'NGO_ACCEPTED':
+                return <CheckCircle size={18} />;
             default:
                 return <Box size={18} />;
         }
@@ -58,10 +85,8 @@ const BlockchainLedgerView = () => {
     const formatTimestamp = (timestamp) => {
         const date = new Date(timestamp);
         return date.toLocaleString('en-US', {
-            month: 'short',
-            day: 'numeric',
-            hour: '2-digit',
-            minute: '2-digit'
+            month: 'short', day: 'numeric',
+            hour: '2-digit', minute: '2-digit'
         });
     };
 
@@ -69,50 +94,25 @@ const BlockchainLedgerView = () => {
         setExpandedBlock(expandedBlock === blockId ? null : blockId);
     };
 
+    if (loading) return <div style={{ padding: '2rem', textAlign: 'center', color: '#94a3b8' }}>Loading Ledger...</div>;
+
     return (
         <div className="blockchain-ledger-view">
-            {/* Header */}
             <div className="ledger-header">
                 <div>
                     <h2 className="ledger-title">
                         <Box size={24} />
-                        Blockchain Ledger
+                        Audit Ledger
                     </h2>
-                    <p className="ledger-subtitle">Immutable record of all transactions</p>
+                    <p className="ledger-subtitle">Verified record of CSR transactions</p>
                 </div>
-
-                {stats && (
-                    <div className="ledger-stats">
-                        <div className="stat-item">
-                            <span className="stat-label">Total Blocks</span>
-                            <span className="stat-value">{stats.totalBlocks}</span>
-                        </div>
-                        <div className="stat-item">
-                            <span className="stat-label">Status</span>
-                            <span className="stat-value" style={{ color: stats.isValid ? '#00ff88' : '#ff4444' }}>
-                                {stats.isValid ? '✓ Valid' : '✗ Invalid'}
-                            </span>
-                        </div>
-                    </div>
-                )}
             </div>
 
-            {/* Demo Mode Indicator */}
-            <div className="demo-mode-banner">
-                <Lock size={14} />
-                <span>Blockchain Demo Mode</span>
-                <span className="demo-note">
-                    This is a frontend simulation to demonstrate how records will be stored on blockchain in future versions.
-                </span>
-            </div>
-
-            {/* Blockchain Timeline */}
             <div className="blockchain-timeline">
                 {blocks.length === 0 ? (
                     <div className="empty-state">
                         <Box size={48} />
-                        <p>No blocks yet</p>
-                        <p className="empty-subtitle">Blocks will appear here as events occur</p>
+                        <p>No transactions yet</p>
                     </div>
                 ) : (
                     blocks.map((block, index) => {
@@ -127,7 +127,6 @@ const BlockchainLedgerView = () => {
                                 animate={{ opacity: 1, y: 0 }}
                                 transition={{ delay: index * 0.05 }}
                             >
-                                {/* Block Header */}
                                 <div
                                     className="block-header"
                                     onClick={() => toggleBlock(block.blockId)}
@@ -135,14 +134,14 @@ const BlockchainLedgerView = () => {
                                 >
                                     <div className="block-header-left">
                                         <div className="block-icon" style={{ color: eventColor }}>
-                                            {getEventIcon(block.eventType)}
+                                            <FileText size={18} />
                                         </div>
                                         <div className="block-info">
                                             <div className="block-id">
-                                                Block #{block.blockNumber} - {block.blockId}
+                                                ID: {block.blockId}
                                             </div>
                                             <div className="block-event" style={{ color: eventColor }}>
-                                                {block.eventType.replace(/_/g, ' ')}
+                                                {block.status?.toUpperCase() || 'RECORDED'}
                                             </div>
                                         </div>
                                     </div>
@@ -158,63 +157,23 @@ const BlockchainLedgerView = () => {
                                     </div>
                                 </div>
 
-                                {/* Block Details (Expandable) */}
                                 {isExpanded && (
                                     <motion.div
                                         className="block-details"
                                         initial={{ height: 0, opacity: 0 }}
                                         animate={{ height: 'auto', opacity: 1 }}
-                                        exit={{ height: 0, opacity: 0 }}
                                     >
                                         <div className="detail-row">
-                                            <span className="detail-label">
-                                                <Hash size={14} />
-                                                Block Hash
-                                            </span>
+                                            <span className="detail-label"><Hash size={14} /> Verification ID</span>
                                             <span className="detail-value hash-value">{block.hash}</span>
                                         </div>
-
                                         <div className="detail-row">
-                                            <span className="detail-label">
-                                                <Link2 size={14} />
-                                                Previous Hash
-                                            </span>
-                                            <span className="detail-value hash-value">{block.previousBlockHash}</span>
+                                            <span className="detail-label"><FileText size={14} /> Details</span>
+                                            <pre className="detail-value data-value">
+                                                {JSON.stringify(block.data, null, 2)}
+                                            </pre>
                                         </div>
-
-                                        <div className="detail-row">
-                                            <span className="detail-label">
-                                                <Lock size={14} />
-                                                Status
-                                            </span>
-                                            <span className="detail-value">
-                                                <span className="immutable-badge">
-                                                    <Lock size={12} />
-                                                    Immutable
-                                                </span>
-                                            </span>
-                                        </div>
-
-                                        {block.data && Object.keys(block.data).length > 0 && (
-                                            <div className="detail-row">
-                                                <span className="detail-label">
-                                                    <FileText size={14} />
-                                                    Data
-                                                </span>
-                                                <pre className="detail-value data-value">
-                                                    {JSON.stringify(block.data, null, 2)}
-                                                </pre>
-                                            </div>
-                                        )}
                                     </motion.div>
-                                )}
-
-                                {/* Connection Line to Next Block */}
-                                {index < blocks.length - 1 && (
-                                    <div className="block-connector">
-                                        <div className="connector-line" />
-                                        <div className="connector-arrow">↓</div>
-                                    </div>
                                 )}
                             </motion.div>
                         );

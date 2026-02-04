@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { Lock, ShieldCheck, Key, ArrowRight } from 'lucide-react';
 import PasswordInput from '../components/PasswordInput';
+import { authAPI } from '../services/api';
 import '../styles/Auth.css';
 
 const SetPassword = () => {
@@ -18,25 +19,40 @@ const SetPassword = () => {
         setFormData({ ...formData, [e.target.name]: e.target.value });
     };
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
         if (formData.password !== formData.confirmPassword) {
             alert("Passwords do not match");
             return;
         }
 
+        const params = new URLSearchParams(window.location.search);
+        const email = params.get('email');
+        const token = params.get('token');
+
         setLoading(true);
 
-        // Simulate API call to set password
-        setTimeout(() => {
-            setLoading(false);
-            setSuccess(true);
+        try {
+            if (token) {
+                // Clinic flow
+                await authAPI.setClinicPassword(token, formData.password);
+            } else if (email) {
+                // CSR/NGO flow
+                await authAPI.setPassword(email, formData.password);
+            } else {
+                throw new Error("Missing email or activation token.");
+            }
 
-            // Auto redirect after success
+            setSuccess(true);
             setTimeout(() => {
                 navigate('/login');
             }, 2000);
-        }, 1500);
+        } catch (error) {
+            console.error("Failed to set password", error);
+            alert("Error: " + error.message);
+        } finally {
+            setLoading(false);
+        }
     };
 
     return (

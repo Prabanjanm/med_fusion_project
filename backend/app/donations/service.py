@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 from sys import audit
 from fastapi.concurrency import run_in_threadpool
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -30,8 +30,9 @@ async def create_donation(
         purpose=data.purpose,
         board_resolution_ref=data.board_resolution_ref,
         csr_policy_declared=data.csr_policy_declared,
+        expiry_date=data.expiry_date,
         status="AUTHORIZED",
-        authorized_at=datetime.utcnow()
+        authorized_at=datetime.now(timezone.utc)
     )
 
     db.add(donation)

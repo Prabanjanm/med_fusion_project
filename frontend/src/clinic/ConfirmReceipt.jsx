@@ -1,295 +1,296 @@
-import React, { useState } from 'react';
-import { Send, CheckCircle, ClipboardCheck } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Send, CheckCircle, ClipboardCheck, Loader, Star, MessageSquare, Package, ArrowLeft } from 'lucide-react';
 import Layout from '../components/Layout';
-import WizardModal, { ReviewSummary } from '../components/WizardModal';
-import { BlockchainToastContainer } from '../components/BlockchainToast';
-import { useBlockchainToast } from '../hooks/useBlockchainToast';
-import { simulateBlockchainTransaction, BlockchainEventTypes, getBlockchainEventMessage } from '../utils/blockchainService';
+import { clinicAPI } from '../services/api';
 import '../styles/FormStyles.css';
+import { useNavigate } from 'react-router-dom';
 
-/**
- * ConfirmReceipt Component
- * Clinic form to confirm receipt of allocated donations via Wizard.
- */
 const ConfirmReceipt = () => {
-  const [isWizardOpen, setIsWizardOpen] = useState(false);
-  const { toasts, showToast, removeToast } = useBlockchainToast();
-
-  const [formData, setFormData] = useState({
-    allocationId: '',
-    receivedQuantity: '',
-    receivedDate: new Date().toISOString().split('T')[0],
-    conditionStatus: 'good',
-    remarks: '',
-  });
-
-  const [errors, setErrors] = useState({});
+  const navigate = useNavigate();
+  const [allocations, setAllocations] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [selectedAllocation, setSelectedAllocation] = useState('');
+  const [feedback, setFeedback] = useState('');
+  const [rating, setRating] = useState(0);
+  const [hover, setHover] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [submittedHash, setSubmittedHash] = useState(null);
+  const [successMessage, setSuccessMessage] = useState(null);
+  const [error, setError] = useState(null);
 
-  const allocationOptions = [
-    { value: 'ALLOC-2025-001', label: 'ALLOC-2025-001 - PPE Kits' },
-    { value: 'ALLOC-2025-002', label: 'ALLOC-2025-002 - Medical Gloves' },
-    { value: 'ALLOC-2025-003', label: 'ALLOC-2025-003 - Syringes' },
-  ];
+  useEffect(() => {
+    fetchAllocations();
+  }, []);
 
-  const conditionOptions = [
-    { value: 'good', label: 'Good Condition' },
-    { value: 'damaged', label: 'Partially Damaged' },
-    { value: 'partial', label: 'Partial Receipt' },
-  ];
-
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
-    if (errors[name]) setErrors(prev => ({ ...prev, [name]: '' }));
-  };
-
-  const validateStep1 = () => {
-    const newErrors = {};
-    if (!formData.allocationId) newErrors.allocationId = 'Allocation ID is required';
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
-
-  const validateStep2 = () => {
-    const newErrors = {};
-    if (!formData.receivedQuantity || formData.receivedQuantity <= 0) {
-      newErrors.receivedQuantity = 'Valid quantity is required';
-    }
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
-
-  const handleSubmit = async () => {
-    setIsSubmitting(true);
+  const fetchAllocations = async () => {
     try {
-      // Simulate blockchain transaction
-      const blockchainResult = await simulateBlockchainTransaction(formData, 1800);
-
-      // Show blockchain notification toast (60s for demo visibility)
-      const message = getBlockchainEventMessage(BlockchainEventTypes.RECEIPT_CONFIRMED);
-      showToast(message, blockchainResult.hash, 'success', 60000);
-
-      // Simulate API call
-      console.log('Receipt confirmation submitted:', formData);
-      console.log('Mock blockchain transaction:', blockchainResult);
-
-      setSubmittedHash(blockchainResult.hash);
-      setIsSubmitting(false);
-      setIsWizardOpen(false);
+      const data = await clinicAPI.getPendingAllocations();
+      setAllocations(data || []);
     } catch (error) {
-      console.error('Receipt confirmation failed:', error);
+      console.error("Failed to load allocations", error);
+      setError("Could not load your pending shipments. Please try again later.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!selectedAllocation) return;
+    if (rating === 0) {
+      setError("Please provide a quality rating.");
+      return;
+    }
+
+    setIsSubmitting(true);
+    setError(null);
+    try {
+      await clinicAPI.confirmReceipt(selectedAllocation, {
+        feedback,
+        quality_rating: rating
+      });
+      setSuccessMessage('Shipment receipt and feedback submitted successfully.');
+      setSelectedAllocation('');
+      setFeedback('');
+      setRating(0);
+
+      // Refresh list after success
+      setTimeout(() => {
+        setSuccessMessage(null);
+        fetchAllocations();
+      }, 3000);
+
+    } catch (err) {
+      setError(err.message || "Failed to confirm receipt. Technical error occurred.");
+    } finally {
       setIsSubmitting(false);
     }
   };
 
-  const Step1Selection = (
-    <div>
-      <div className="wizard-field-group">
-        <label className="wizard-label">Allocation ID</label>
-        <select
-          name="allocationId"
-          value={formData.allocationId}
-          onChange={handleChange}
-          className="wizard-select"
-        >
-          <option value="">Select an allocation</option>
-          {allocationOptions.map(opt => (
-            <option key={opt.value} value={opt.value}>{opt.label}</option>
-          ))}
-        </select>
-        {errors.allocationId && <span style={{ color: '#ef4444', fontSize: '0.8rem' }}>{errors.allocationId}</span>}
-      </div>
-
-      <div style={{ background: 'rgba(67, 97, 238, 0.1)', border: '1px dashed #4361EE', padding: '1rem', borderRadius: '8px', marginTop: '2rem' }}>
-        <p style={{ fontSize: '0.9rem', color: '#CBD5E1', display: 'flex', gap: '10px', alignItems: 'center' }}>
-          <CheckCircle size={18} color="#4361EE" />
-          Please ensure you have physically inspected the package before proceeding.
-        </p>
-      </div>
-    </div>
-  );
-
-  const Step2Verification = (
-    <div>
-      <div className="wizard-field-group">
-        <label className="wizard-label">Received Quantity</label>
-        <input
-          type="number"
-          name="receivedQuantity"
-          value={formData.receivedQuantity}
-          onChange={handleChange}
-          placeholder="Enter quantity count"
-          min="1"
-          className="wizard-input"
-        />
-        {errors.receivedQuantity && (
-          <span style={{ color: '#ef4444', fontSize: '0.8rem' }}>{errors.receivedQuantity}</span>
-        )}
-      </div>
-
-      <div className="wizard-field-group">
-        <label className="wizard-label">Receipt Date</label>
-        <input
-          type="date"
-          name="receivedDate"
-          value={formData.receivedDate}
-          onChange={handleChange}
-          className="wizard-input"
-        />
-      </div>
-
-      <div className="wizard-field-group">
-        <label className="wizard-label">Condition Status</label>
-        <select
-          name="conditionStatus"
-          value={formData.conditionStatus}
-          onChange={handleChange}
-          className="wizard-select"
-        >
-          {conditionOptions.map(opt => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
-        </select>
-      </div>
-
-      <div className="wizard-field-group">
-        <label className="wizard-label">Remarks (Optional)</label>
-        <textarea
-          name="remarks"
-          value={formData.remarks}
-          onChange={handleChange}
-          placeholder="Observations, damage report, or notes"
-          rows="3"
-          className="wizard-textarea"
-        />
-      </div>
-    </div>
-  );
-
-  const wizardSteps = [
-    {
-      id: 'step1',
-      label: 'Identify',
-      title: 'Select Allocation Shipment',
-      component: Step1Selection,
-      validate: validateStep1
-    },
-    {
-      id: 'step2',
-      label: 'Verify',
-      title: 'Inspect & Verify Contents',
-      component: Step2Verification,
-      validate: validateStep2
-    },
-    {
-      id: 'step3',
-      label: 'Sign',
-      title: 'Sign Receipt Transaction',
-      component: <ReviewSummary data={formData} />,
-    }
-  ];
-
-  if (submittedHash) {
+  if (loading) {
     return (
       <Layout>
-        <div style={{ height: '80vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center' }}>
-          <div style={{ fontSize: '4rem', color: '#00ff94', marginBottom: '1rem', animation: 'bounce 1s' }}>
-            <CheckCircle size={80} />
+        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '60vh' }}>
+          <div style={{ textAlign: 'center' }}>
+            <Loader className="animate-spin" color="#00e5ff" size={48} style={{ marginBottom: '1rem' }} />
+            <p style={{ color: '#94a3b8', fontFamily: 'Orbitron' }}>Scanning Inventory...</p>
           </div>
-          <h1 style={{ fontSize: '2.5rem', marginBottom: '0.5rem' }}>Receipt Confirmed</h1>
-          <p style={{ color: 'var(--text-muted)', maxWidth: '500px', margin: '0 auto 2rem' }}>
-            Your signature has been written to the ledger. Transfer of custody is complete.
-          </p>
-
-          <div style={{ background: 'rgba(0,0,0,0.3)', padding: '1rem 2rem', borderRadius: '8px', border: '1px dashed #334155', fontFamily: 'monospace', color: '#00ff94', marginBottom: '1rem' }}>
-            {submittedHash}
-          </div>
-
-          <div style={{
-            background: 'rgba(251, 191, 36, 0.1)',
-            border: '1px solid rgba(251, 191, 36, 0.3)',
-            borderRadius: '8px',
-            padding: '12px 20px',
-            marginBottom: '2rem',
-            maxWidth: '500px'
-          }}>
-            <p style={{ color: '#fbbf24', fontSize: '0.85rem', margin: 0 }}>
-              ⚠️ <strong>Simulated Blockchain Hash</strong> - Immutable logging simulated for demo
-            </p>
-          </div>
-
-          <button
-            className="btn-primary"
-            onClick={() => {
-              setSubmittedHash(null);
-              setFormData({
-                allocationId: '', receivedQuantity: '', receivedDate: new Date().toISOString().split('T')[0], conditionStatus: 'good', remarks: ''
-              });
-            }}
-          >
-            Confirm Another
-          </button>
         </div>
-        <style>{`
-         @keyframes bounce {
-           0%, 20%, 50%, 80%, 100% {transform: translateY(0);}
-           40% {transform: translateY(-20px);}
-           60% {transform: translateY(-10px);}
-         }
-       `}</style>
       </Layout>
     );
   }
 
   return (
     <Layout>
-      <BlockchainToastContainer toasts={toasts} removeToast={removeToast} />
+      <div style={{ maxWidth: '750px', margin: '0 auto', padding: '1rem' }}>
+        <button
+          onClick={() => navigate('/clinic')}
+          style={{
+            background: 'none', border: 'none', color: '#64748b',
+            display: 'flex', alignItems: 'center', gap: '8px',
+            cursor: 'pointer', marginBottom: '1rem', fontSize: '0.85rem'
+          }}
+        >
+          <ArrowLeft size={14} /> Back
+        </button>
 
-      <div className="page-header">
-        <div>
-          <h1 className="page-title">Receipt Confirmation</h1>
-          <p className="page-subtitle">Verify & Sign Incoming Shipments</p>
-        </div>
-      </div>
-
-      <div style={{
-        minHeight: '60vh',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        background: 'rgba(255,255,255,0.02)',
-        borderRadius: '16px',
-        border: '1px solid rgba(255,255,255,0.05)',
-        padding: '2rem'
-      }}>
-        <div style={{ textAlign: 'center', maxWidth: '500px' }}>
-          <div style={{ background: 'linear-gradient(135deg, #00B4D8 0%, #0077B6 100%)', width: '80px', height: '80px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1.5rem', boxShadow: '0 10px 25px rgba(0, 180, 216, 0.4)' }}>
-            <ClipboardCheck size={40} color="#fff" />
+        <div className="page-header" style={{ marginBottom: '1.5rem', paddingBottom: '1rem' }}>
+          <div>
+            <h1 className="page-title" style={{ color: '#00e5ff', fontSize: '1.5rem', marginBottom: '0.2rem' }}>Shipment Confirmation</h1>
+            <p className="page-subtitle" style={{ fontSize: '0.9rem' }}>Acknowledge receipt and provide quality metrics</p>
           </div>
-          <h2 style={{ fontSize: '2rem', marginBottom: '1rem', color: '#fff' }}>Incoming Shipment?</h2>
-          <p style={{ color: '#94A3B8', marginBottom: '2rem', lineHeight: '1.6' }}>
-            Verify the contents and condition of received goods to complete the chain of custody.
-            Blockchain signature required.
-          </p>
-          <button
-            className="btn-primary"
-            style={{ padding: '1rem 2rem', fontSize: '1.1rem' }}
-            onClick={() => setIsWizardOpen(true)}
-          >
-            Start Receipt Wizard
-          </button>
+        </div>
+
+        {successMessage && (
+          <div className="success-message" style={{
+            background: 'rgba(16, 185, 129, 0.1)',
+            border: '1px solid #10b981',
+            borderRadius: '10px',
+            padding: '1rem',
+            marginBottom: '1.5rem',
+            display: 'flex', alignItems: 'center', gap: '10px', color: '#10b981',
+            animation: 'fadeIn 0.3s ease-out'
+          }}>
+            <CheckCircle size={20} />
+            <div style={{ fontSize: '0.9rem' }}>
+              <p style={{ fontWeight: 600, margin: 0 }}>Confirmed!</p>
+              <p style={{ margin: 0, opacity: 0.8 }}>{successMessage}</p>
+            </div>
+          </div>
+        )}
+
+        {error && (
+          <div className="error-message" style={{
+            background: 'rgba(239, 68, 68, 0.08)',
+            border: '1px solid rgba(239, 68, 68, 0.3)',
+            borderRadius: '10px',
+            padding: '1rem',
+            marginBottom: '1.5rem',
+            display: 'flex', alignItems: 'center', gap: '12px', color: '#f87171',
+            fontSize: '0.85rem'
+          }}>
+            <Package size={20} />
+            <div>
+              <strong>Connection Issue:</strong> {error}
+              {error.includes("Failed to fetch") && <p style={{ marginTop: '4px', opacity: 0.8 }}>Tip: Make sure the backend server (FastAPI) is running.</p>}
+            </div>
+          </div>
+        )}
+
+        <div className="form-card" style={{
+          background: 'rgba(15, 23, 42, 0.7)',
+          backdropFilter: 'blur(10px)',
+          border: '1px solid rgba(255,255,255,0.06)',
+          padding: '1.5rem 2rem',
+          borderRadius: '20px'
+        }}>
+          <div style={{ textAlign: 'center', marginBottom: '1.5rem' }}>
+            <div style={{
+              width: '48px', height: '48px', background: 'rgba(0, 229, 255, 0.1)',
+              borderRadius: '12px', display: 'inline-flex', alignItems: 'center',
+              justifyContent: 'center', marginBottom: '1rem'
+            }}>
+              <ClipboardCheck size={24} color="#00e5ff" />
+            </div>
+            <h2 style={{ color: '#fff', fontSize: '1.3rem', fontFamily: 'Orbitron', marginBottom: '0.25rem' }}>Confirm Allocated Items</h2>
+          </div>
+
+          {allocations.length === 0 ? (
+            <div style={{
+              textAlign: 'center', padding: '2.5rem 1.5rem', color: '#64748b',
+              background: 'rgba(0,0,0,0.15)', borderRadius: '16px',
+              border: '1px dashed rgba(255,255,255,0.08)'
+            }}>
+              <Package size={36} style={{ opacity: 0.2, marginBottom: '1rem' }} />
+              <p style={{ fontSize: '0.85rem' }}>No pending allocated items found.</p>
+            </div>
+          ) : (
+            <form onSubmit={handleSubmit}>
+              <div className="form-group" style={{ marginBottom: '1.5rem' }}>
+                <label className="input-label" style={{ fontSize: '0.8rem', color: '#94a3b8', marginBottom: '0.5rem', display: 'block' }}>
+                  Select Allocated Item
+                </label>
+                <select
+                  value={selectedAllocation}
+                  onChange={(e) => setSelectedAllocation(e.target.value)}
+                  className="form-input"
+                  style={{
+                    height: '48px',
+                    background: '#1e293b', // Solid dark background
+                    borderRadius: '10px',
+                    border: '1px solid rgba(255,255,255,0.1)',
+                    color: '#f8fafc',
+                    padding: '0 0.75rem',
+                    fontSize: '0.9rem',
+                    width: '100%',
+                    colorScheme: 'dark'
+                  }}
+                  required
+                >
+                  <option value="" style={{ backgroundColor: '#0f172a', color: '#f8fafc' }}>-- Select Allocated Item --</option>
+                  {allocations.map(alloc => (
+                    <option key={alloc.id} value={alloc.id} style={{ backgroundColor: '#0f172a', color: '#f8fafc' }}>
+                      {alloc.item_name} ({alloc.quantity} units) - {alloc.ngo_name} (Ref #{alloc.id})
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {selectedAllocation && (
+                <div style={{
+                  marginTop: '1.5rem', paddingTop: '1.5rem',
+                  borderTop: '1px solid rgba(255,255,255,0.05)',
+                  animation: 'slideUp 0.3s ease-out'
+                }}>
+                  <div className="form-group" style={{ marginBottom: '1.5rem', textAlign: 'center' }}>
+                    <label className="input-label" style={{ display: 'block', marginBottom: '0.75rem', color: '#00e5ff', fontSize: '0.85rem' }}>
+                      Rate Product Quality
+                    </label>
+                    <div style={{ display: 'flex', justifyContent: 'center', gap: '8px' }}>
+                      {[1, 2, 3, 4, 5].map((star) => (
+                        <button
+                          key={star}
+                          type="button"
+                          onMouseEnter={() => setHover(star)}
+                          onMouseLeave={() => setHover(0)}
+                          onClick={() => setRating(star)}
+                          style={{
+                            background: 'none', border: 'none', cursor: 'pointer',
+                            transition: 'transform 0.2s', padding: '4px'
+                          }}
+                        >
+                          <Star
+                            size={star <= (hover || rating) ? 32 : 28}
+                            fill={star <= (hover || rating) ? '#eab308' : 'none'}
+                            color={star <= (hover || rating) ? '#eab308' : '#334155'}
+                            strokeWidth={star <= (hover || rating) ? 0 : 2}
+                            style={{ transition: 'all 0.15s ease' }}
+                          />
+                        </button>
+                      ))}
+                    </div>
+                    {rating > 0 && (
+                      <p style={{ marginTop: '0.5rem', fontSize: '0.75rem', color: '#64748b' }}>
+                        {rating === 1 && "Poor"}
+                        {rating === 2 && "Fair"}
+                        {rating === 3 && "Average"}
+                        {rating === 4 && "Good"}
+                        {rating === 5 && "Excellent"}
+                      </p>
+                    )}
+                  </div>
+
+                  <div className="form-group" style={{ marginBottom: '2rem' }}>
+                    <label className="input-label" style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '0.5rem', fontSize: '0.85rem' }}>
+                      <MessageSquare size={16} color="#00e5ff" />
+                      Feedback
+                    </label>
+                    <textarea
+                      placeholder="Condition notes..."
+                      value={feedback}
+                      onChange={(e) => setFeedback(e.target.value)}
+                      className="form-input"
+                      style={{
+                        minHeight: '80px', background: 'rgba(0,0,0,0.2)',
+                        borderRadius: '10px', border: '1px solid rgba(255,255,255,0.1)',
+                        color: '#fff', padding: '0.75rem', fontSize: '0.9rem', width: '100%'
+                      }}
+                      required
+                    />
+                  </div>
+
+                  <button
+                    type="submit"
+                    disabled={isSubmitting}
+                    className="btn btn-primary"
+                    style={{
+                      width: '100%', height: '48px', borderRadius: '12px',
+                      background: isSubmitting ? '#1e293b' : 'linear-gradient(90deg, #3b82f6, #00e5ff)',
+                      border: 'none', color: '#fff'
+                    }}
+                  >
+                    {isSubmitting ? (
+                      <>
+                        <Loader className="animate-spin" size={18} />
+                        Confirming...
+                      </>
+                    ) : (
+                      <>
+                        Confirm Receipt
+                        <Send size={16} />
+                      </>
+                    )}
+                  </button>
+                </div>
+              )}
+            </form>
+          )}
         </div>
       </div>
 
-      <WizardModal
-        isOpen={isWizardOpen}
-        onClose={() => setIsWizardOpen(false)}
-        title="Confirm Receipt (Trust Protocol)"
-        steps={wizardSteps}
-        onComplete={handleSubmit}
-        isSubmitting={isSubmitting}
-      />
-    </Layout>
+      <style>{`
+                @keyframes slideUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+            `}</style>
+    </Layout >
   );
 };
 
