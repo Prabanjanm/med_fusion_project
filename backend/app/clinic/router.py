@@ -1,5 +1,3 @@
-# app/clinic/router.py
-from fastapi import APIRouter, Depends
 from app.db.deps import get_db
 from app.core.security import require_role
 from app.clinic.service import confirm_receipt, get_clinic_requests, create_clinic_requirement, get_clinic_allocation_history
@@ -8,6 +6,10 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from app.models.donation_allocation import DonationAllocation   
 from app.models.clinic_requirment import ClinicRequirement
+from app.models.donation import Donation
+from app.models.ngo import NGO
+from app.models.clinic import Clinic
+from fastapi import APIRouter, Depends, HTTPException, status
 
 router = APIRouter(prefix="/clinic", tags=["Clinic"])
 
@@ -18,13 +20,14 @@ async def get_pending_allocations(
     db: AsyncSession = Depends(get_db)
 ):
     clinic_id = user.get("clinic_id")
-    print(f"DEBUG: get_pending_allocations for clinic_id={clinic_id}")
-    
-    from app.models.donation import Donation
-    from app.models.ngo import NGO
+    if not clinic_id:
+        print("DEBUG: clinic_id missing from user token payload")
+        return []
 
-    print("DEBUG: Executing query...")
-    result = await db.execute(
+    print(f"DEBUG: Fetching pending allocations for clinic_id={clinic_id}")
+    
+    # Improved query with explicit joining and filtering
+    query = (
         select(
             DonationAllocation.id,
             Donation.item_name,
@@ -40,8 +43,11 @@ async def get_pending_allocations(
         .order_by(DonationAllocation.allocated_at.desc())
     )
 
+    result = await db.execute(query)
     rows = result.all()
-    print(f"DEBUG: Found {len(rows)} pending allocations")
+    
+    print(f"DEBUG: Found {len(rows)} pending allocations in database")
+    
     return [
         {
             "id": r.id,
@@ -91,3 +97,20 @@ async def create_requirement(
     clinic_user: dict = Depends(require_role("CLINIC"))
 ):
     return await create_clinic_requirement(db, clinic_user, payload)
+
+@router.delete("/requirements/{requirement_id}")
+async def delete_requirement_endpoint(
+    requirement_id: int,
+    db: AsyncSession = Depends(get_db),
+    clinic_user: dict = Depends(require_role("CLINIC"))
+):
+    from app.clinic.service import delete_clinic_requirement
+    return await delete_clinic_requirement(db, clinic_user, requirement_id)
+
+@router.get("/ngo-inventory")
+async def get_ngo_inventory_endpoint(
+    db: AsyncSession = Depends(get_db),
+    clinic_user: dict = Depends(require_role("CLINIC"))
+):
+    from app.clinic.service import get_supervising_ngo_inventory
+    return await get_supervising_ngo_inventory(db, clinic_user)

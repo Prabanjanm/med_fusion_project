@@ -79,13 +79,23 @@ const ClinicDashboard = () => {
         <div style={{ display: 'flex', gap: '1rem' }}>
           <button
             className="btn-secondary"
+            onClick={() => navigate('/clinic/request-products')}
+            style={{
+              display: 'flex', alignItems: 'center', gap: '0.5rem', minWidth: '200px', justifyContent: 'center', borderRadius: '12px', fontFamily: "'Orbitron', sans-serif", border: '1px solid #00e5ff'
+            }}
+          >
+            <Package size={18} />
+            REQUEST REQUIREMENTS
+          </button>
+          <button
+            className="btn-secondary"
             onClick={() => navigate('/clinic/request-status')}
             style={{
               display: 'flex', alignItems: 'center', gap: '0.5rem', minWidth: '200px', justifyContent: 'center', borderRadius: '12px', fontFamily: "'Orbitron', sans-serif"
             }}
           >
             <Clock size={18} />
-            VIEW REQUEST STATUS
+            MY ALLOCATIONS
           </button>
           <button
             className="btn-submit"

@@ -1,13 +1,16 @@
 from datetime import datetime
-from sqlalchemy import select
+from sqlalchemy import select, func, distinct, case
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.company import Company
 from app.models.ngo import NGO
 from app.models.donation import Donation
 from app.models.admin_audit_log import AdminAuditLog
-from collections import defaultdict
 from app.models.donation_allocation import DonationAllocation
+from app.models.clinic import Clinic
+from app.models.clinic_requirment import ClinicRequirement
+from app.models.user import User
+from collections import defaultdict
 
     # Fetch pending companies (Requests)
 async def get_pending_companies(db: AsyncSession):
@@ -144,7 +147,7 @@ async def review_ngo(
     }
 
 
-from sqlalchemy import case, func
+from sqlalchemy import case, func, distinct
 async def get_donation_logs(db: AsyncSession):
     result = await db.execute(
         select(
@@ -177,10 +180,28 @@ async def get_donation_logs(db: AsyncSession):
                 ),
                 else_="AUTHORIZED"
             ).label("status"),
+            
+            # ✅ Clinic Name for filtering
+            Clinic.clinic_name,
+            
+            # ✅ Company Name for Entity ID
+            Company.company_name
+        )
+        .outerjoin(
+            Company,
+            Company.id == Donation.company_id
         )
         .outerjoin(
             DonationAllocation,
             DonationAllocation.donation_id == Donation.id
+        )
+        .outerjoin(
+            ClinicRequirement, 
+            DonationAllocation.clinic_requirement_id == ClinicRequirement.id
+        )
+        .outerjoin(
+            Clinic, 
+            ClinicRequirement.clinic_id == Clinic.id
         )
         .order_by(
             func.coalesce(
@@ -188,7 +209,7 @@ async def get_donation_logs(db: AsyncSession):
                 Donation.authorized_at
             ).desc()
         )
-        .limit(10)
+        .limit(50)  # Increased limit for better audit visibility
     )
 
     return result.mappings().all()
@@ -196,21 +217,67 @@ async def get_donation_logs(db: AsyncSession):
 
 
 async def get_verified_companies(db: AsyncSession):
+    # Join with User for email and Donation for count
+    # Company model does NOT have official_email, it's in User
     result = await db.execute(
-        select(Company)
+        select(
+            Company.id,
+            Company.company_name,
+            Company.cin,
+            User.email.label("official_email"),
+            Company.is_verified,
+            func.count(distinct(Donation.id)).label("total_donations")
+        )
+        .outerjoin(User, User.company_id == Company.id)
+        .outerjoin(Donation, Donation.company_id == Company.id)
         .where(Company.is_verified.is_(True))
+        .group_by(Company.id, User.email)
         .order_by(Company.id.desc())
     )
-    return result.scalars().all()
+    return result.mappings().all()
+
+
+async def get_verified_clinics(db: AsyncSession):
+    # Join with User for email and ClinicRequirement for count
+    result = await db.execute(
+        select(
+            Clinic.id,
+            Clinic.clinic_name,
+            Clinic.address,
+            User.email.label("official_email"),
+            Clinic.is_active,
+            func.count(distinct(ClinicRequirement.id)).label("total_requirements"),
+            func.count(distinct(case((DonationAllocation.received == True, DonationAllocation.id), else_=None))).label("confirmed_receipts")
+        )
+        .outerjoin(User, User.clinic_id == Clinic.id)
+        .outerjoin(ClinicRequirement, ClinicRequirement.clinic_id == Clinic.id)
+        .outerjoin(DonationAllocation, DonationAllocation.clinic_requirement_id == ClinicRequirement.id)
+        .where(Clinic.is_active.is_(True))
+        .group_by(Clinic.id, User.email)
+        .order_by(Clinic.id.desc())
+    )
+    return result.mappings().all()
 
 
 async def get_verified_ngos(db: AsyncSession):
+    # NGO has official_email in its model
     result = await db.execute(
-        select(NGO)
+        select(
+            NGO.id,
+            NGO.ngo_name,
+            NGO.csr_1_number,
+            NGO.official_email,
+            NGO.is_verified,
+            func.count(distinct(Donation.id)).label("pending_donations"),
+            func.count(distinct(DonationAllocation.id)).label("allocations_made")
+        )
+        .outerjoin(Donation, Donation.ngo_id == NGO.id)
+        .outerjoin(DonationAllocation, DonationAllocation.donation_id == Donation.id)
         .where(NGO.is_verified.is_(True))
+        .group_by(NGO.id)
         .order_by(NGO.id.desc())
     )
-    return result.scalars().all()
+    return result.mappings().all()
 
 
 async def get_company_with_donations(
@@ -293,10 +360,13 @@ async def get_ngo_with_donations_and_allocations(
             Donation.authorized_at,
             Donation.created_at,
 
+            DonationAllocation.id.label("allocation_id"),
             DonationAllocation.clinic_requirement_id,
             DonationAllocation.allocated_at,
             DonationAllocation.received,
             DonationAllocation.received_at,
+            DonationAllocation.feedback,
+            DonationAllocation.quality_rating,
         )
         .join(Donation, Donation.ngo_id == NGO.id, isouter=True)
         .join(
@@ -333,11 +403,109 @@ async def get_ngo_with_donations_and_allocations(
                 "authorized_at": row["authorized_at"],
                 "created_at": row["created_at"],
                 "allocation": {
-                    "clinic_requirement_id": row["clinic_requirement_id"],
-                    "allocated_at": row["allocated_at"],
+                    "id": row["allocation_id"],
                     "received": row["received"],
                     "received_at": row["received_at"],
-                } if row["clinic_requirement_id"] is not None else None
+                    "feedback": row["feedback"],
+                    "quality_rating": row["quality_rating"]
+                } if row["allocation_id"] else None
             })
 
     return ngo
+
+
+async def get_clinic_with_requirements(
+    db: AsyncSession,
+    clinic_id: int
+):
+    result = await db.execute(
+        select(
+            Clinic.id,
+            Clinic.clinic_name,
+            Clinic.is_active,
+            Clinic.address,
+
+            ClinicRequirement.id.label("requirement_id"),
+            ClinicRequirement.item_name,
+            ClinicRequirement.quantity,
+            ClinicRequirement.urgency,
+            ClinicRequirement.created_at,
+
+            DonationAllocation.id.label("allocation_id"),
+            DonationAllocation.received,
+            DonationAllocation.received_at,
+            DonationAllocation.feedback,
+            DonationAllocation.quality_rating
+        )
+        .join(ClinicRequirement, ClinicRequirement.clinic_id == Clinic.id, isouter=True)
+        .join(DonationAllocation, DonationAllocation.clinic_requirement_id == ClinicRequirement.id, isouter=True)
+        .where(Clinic.id == clinic_id)
+        .order_by(ClinicRequirement.created_at.desc())
+    )
+
+    rows = result.mappings().all()
+    if not rows:
+        return None
+
+    clinic = {
+        "id": rows[0]["id"],
+        "clinic_name": rows[0]["clinic_name"],
+        "address": rows[0]["address"],
+        "is_active": rows[0]["is_active"],
+        "requirements": []
+    }
+
+    for row in rows:
+        if row["requirement_id"] is not None:
+            clinic["requirements"].append({
+                "id": row["requirement_id"],
+                "item_name": row["item_name"],
+                "quantity": row["quantity"],
+                "urgency": row["urgency"],
+                "created_at": row["created_at"],
+                "allocation": {
+                    "id": row["allocation_id"],
+                    "received": row["received"],
+                    "received_at": row["received_at"],
+                    "feedback": row["feedback"],
+                    "quality_rating": row["quality_rating"]
+                } if row["allocation_id"] else None
+            })
+
+    return clinic
+
+async def get_system_stats(db: AsyncSession):
+    """
+    Calculate global aggregated stats for the dashboard.
+    Requirements: Aggregated donation totals, item counts.
+    """
+    # 1. Total items donated (sum of all quantities)
+    total_qty_result = await db.execute(select(func.sum(Donation.quantity)))
+    total_qty = total_qty_result.scalar() or 0
+
+    # 2. Aggregated items (e.g. Total PPE Kits: 50, Total Masks: 100)
+    items_result = await db.execute(
+        select(Donation.item_name, func.sum(Donation.quantity))
+        .group_by(Donation.item_name)
+    )
+    aggregated_items = [
+        {"item": row[0], "total": row[1]} for row in items_result.all()
+    ]
+
+    # 3. Fulfillment Rate
+    alloc_result = await db.execute(
+        select(
+            func.count(DonationAllocation.id),
+            func.sum(case((DonationAllocation.received == True, 1), else_=0))
+        )
+    )
+    res = alloc_result.first()
+    total_alloc = res[0] or 0
+    total_received = res[1] or 0
+    rate = (total_received / total_alloc * 100) if total_alloc > 0 else 0
+
+    return {
+        "total_donated_items": total_qty,
+        "aggregated_items": aggregated_items,
+        "fulfillment_rate": round(rate, 1)
+    }

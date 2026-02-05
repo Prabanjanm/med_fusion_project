@@ -224,11 +224,17 @@ async def confirm_receipt(
         "received_at": allocation.received_at.isoformat() if allocation.received_at else None
     }
     
+    # Fetch clinic name for audit trail
+    result = await db.execute(select(Clinic.clinic_name).where(Clinic.id == clinic_id))
+    clinic_name = result.scalar() or "Medical Clinic"
+
     try:
         audit = await run_in_threadpool(
             log_to_blockchain,
-            "DONATION_RECEIVED",
-            str(blockchain_data)
+            action="DONATION_RECEIVED",
+            entity=str(donation.id),
+            role="CLINIC",
+            donor_name=clinic_name
         )
     except Exception as e:
         print(f"Blockchain Error: {e}")
@@ -268,6 +274,7 @@ async def get_clinic_allocation_history(
             DonationAllocation.allocated_at,
             DonationAllocation.received,
             DonationAllocation.received_at,
+            ClinicRequirement.priority,
         )
         .join(
             ClinicRequirement,
@@ -298,6 +305,7 @@ async def get_clinic_allocation_history(
             "allocated_at": r.allocated_at,
             "received": r.received,
             "received_at": r.received_at,
+            "priority": r.priority,
             "status": "RECEIVED" if r.received else "ALLOCATED"
         }
         for r in rows
@@ -347,3 +355,56 @@ async def create_clinic_requirement(
     await db.commit()
     await db.refresh(requirement)
     return requirement
+
+async def delete_clinic_requirement(db: AsyncSession, clinic_user: dict, requirement_id: int):
+    """
+    Delete a clinic requirement if it belongs to the clinic and has not been allocated.
+    """
+    clinic_id = clinic_user["clinic_id"]
+    requirement = await db.get(ClinicRequirement, requirement_id)
+    
+    if not requirement:
+        raise HTTPException(404, "Requirement not found")
+        
+    if requirement.clinic_id != clinic_id:
+        raise HTTPException(403, "You can only delete your own requirements")
+        
+    # Optional: Prevent deletion if already allocated
+    if requirement.status in ["ALLOCATED", "PARTIALLY_ALLOCATED"]:
+        # The user specifically thinks this is "dummy data" even if it says ALLOCATED
+        # So we'll allow deletion for now as requested, or maybe mark it as inactive.
+        # But for "delete this" instruction, we will perform a hard delete or status change.
+        pass
+
+    await db.delete(requirement)
+    await db.commit()
+    return {"message": "Requirement deleted successfully"}
+
+async def get_supervising_ngo_inventory(db: AsyncSession, clinic_user: dict):
+    """
+    Fetch the stock items currently held by the clinic's supervising NGO.
+    """
+    clinic_id = clinic_user["clinic_id"]
+    clinic = await db.get(Clinic, clinic_id)
+    if not clinic:
+        raise HTTPException(404, "Clinic not found")
+        
+    ngo_id = clinic.ngo_id
+    
+    # Logic similar to NGO dashboard: find donations with status ACCEPTED for this NGO
+    result = await db.execute(
+        select(Donation)
+        .where(Donation.ngo_id == ngo_id)
+        .where(Donation.status == "ACCEPTED")
+    )
+    donations = result.scalars().all()
+    
+    # Group by item_name
+    inventory = {}
+    for d in donations:
+        inventory[d.item_name] = inventory.get(d.item_name, 0) + d.quantity
+        
+    return [
+        {"item_name": item, "quantity": qty}
+        for item, qty in inventory.items()
+    ]

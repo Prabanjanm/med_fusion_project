@@ -32,3 +32,5 @@ class DonationCreate(BaseModel):
         ...,
         example="2026-12-31T00:00:00Z"
     )
+
+    ngo_id: Optional[int] = Field(None, example=1)

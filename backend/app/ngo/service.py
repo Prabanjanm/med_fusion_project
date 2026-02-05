@@ -352,16 +352,21 @@ async def accept_csr_donation(db, payload, donation_id: int):
 
     await db.commit()
     await db.refresh(donation)
+    # Fetch NGO name for audit trail
+    result = await db.execute(select(NGO.ngo_name).where(NGO.id == ngo_id))
+    ngo_name = result.scalar() or "NGO Partner"
+
     try:
         audit = await run_in_threadpool(
             log_to_blockchain,
-            "DONATION_ACCEPTED",
-            str(donation.id)
+            action="DONATION_ACCEPTED",
+            entity=str(donation.id),
+            role="NGO",
+            donor_name=ngo_name
         )
     except Exception as e:
         print(f"Blockchain Error: {e}")
         audit = {"tx_hash": "PENDING", "status": "OFF_CHAIN_ONLY"}
-
 
     return {
         "message": "Donation accepted successfully",
@@ -496,11 +501,17 @@ async def allocate_donation(db, payload, donation_id, clinic_requirement_id):
     db.add(allocation)
     await db.commit()
     await db.refresh(allocation)
+    # Fetch NGO name for audit trail
+    result = await db.execute(select(NGO.ngo_name).where(NGO.id == ngo_id))
+    ngo_name = result.scalar() or "NGO Partner"
+
     try:
         audit = await run_in_threadpool(
             log_to_blockchain,
-            "DONATION_ALLOCATED",
-            str(donation.id)
+            action="DONATION_ALLOCATED",
+            entity=str(donation.id),
+            role="NGO",
+            donor_name=ngo_name
         )
     except Exception as e:
         print(f"Blockchain Error: {e}")

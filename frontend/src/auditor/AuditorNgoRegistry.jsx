@@ -4,7 +4,6 @@ import Layout from '../components/Layout';
 import StatusBadge from '../components/StatusBadge';
 import SummaryCard from '../components/SummaryCard';
 import '../styles/DashboardLayout.css';
-import UserApprovals from './UserApprovals';
 import { auditorAPI } from '../services/api';
 
 const AuditorNgoRegistry = () => {
@@ -19,14 +18,14 @@ const AuditorNgoRegistry = () => {
                 const data = await auditorAPI.getNgoRegistry().catch(() => []);
                 // Map Backend Data to UI Model
                 setNgos(data.map(n => ({
-                    id: n.ngo_id || n.id || `NGO-${Math.random().toString(36).substr(2, 5)}`,
-                    name: n.ngo_name || n.name || 'Unknown NGO',
-                    details: `${n.location || 'Global'} • ${n.sector || 'Humanitarian'}`,
-                    contact: n.official_email || n.email,
+                    id: n.ngo_id || n.id,
+                    name: n.ngo_name || n.name || 'Unregistered NGO',
+                    details: n.csr_1_number ? `CSR1: ${n.csr_1_number}` : 'Awaiting Documentation',
+                    contact: n.official_email || n.email || 'No Contact Data',
                     pending_donations: n.pending_donations || 0,
                     allocations_made: n.allocations_made || 0,
                     status: n.is_verified ? 'ACTIVE' : (n.status || 'UNDER_REVIEW'),
-                    history: n.history || []
+                    history: []
                 })));
             } catch (error) {
                 console.error("Failed to fetch NGO registry", error);
@@ -38,8 +37,34 @@ const AuditorNgoRegistry = () => {
     }, []);
 
 
-    const toggleRow = (id) => {
-        setExpandedRow(expandedRow === id ? null : id);
+    const toggleRow = async (id) => {
+        if (expandedRow === id) {
+            setExpandedRow(null);
+            return;
+        }
+        setExpandedRow(id);
+
+        // Fetch real-time activity and clinic allocations when expanded
+        try {
+            const detail = await auditorAPI.getNgoActivity(id);
+            setNgos(prev => prev.map(n => {
+                if (n.id === id) {
+                    return {
+                        ...n,
+                        allocations_made: detail.donations.filter(d => d.allocation).length,
+                        pending_donations: detail.donations.length,
+                        history: detail.donations.map(d => ({
+                            action: d.allocation?.received ? 'DELIVERED TO CLINIC' : (d.allocation ? 'ALLOCATED TO CLINIC' : 'ACCEPTED BY NGO'),
+                            target: d.item_name,
+                            date: new Date(d.allocation?.allocated_at || d.authorized_at || d.created_at).toLocaleDateString()
+                        }))
+                    };
+                }
+                return n;
+            }));
+        } catch (error) {
+            console.error("Failed to fetch NGO activity", error);
+        }
     };
 
     const stats = {
@@ -74,8 +99,7 @@ const AuditorNgoRegistry = () => {
                 </div>
             </div>
 
-            {/* PENDING APPROVALS */}
-            <UserApprovals roleFilter="ngo" />
+
 
             {/* Stats Grid */}
             <div className="stats-grid" style={{ marginBottom: '2rem' }}>
@@ -109,6 +133,7 @@ const AuditorNgoRegistry = () => {
                         {ngos.filter(ngo =>
                             ngo.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                             (ngo.details || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+                            (ngo.contact || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
                             (ngo.id && ngo.id.toString().toLowerCase().includes(searchTerm.toLowerCase()))
                         ).map(ngo => (
                             <div key={ngo.id} style={{

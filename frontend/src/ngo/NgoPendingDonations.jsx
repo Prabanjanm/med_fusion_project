@@ -7,6 +7,7 @@ import '../styles/DashboardLayout.css';
 
 const NgoPendingDonations = () => {
     const [donations, setDonations] = useState([]);
+    const [acceptedStocks, setAcceptedStocks] = useState({});
     const [loading, setLoading] = useState(true);
     const [selectedDonation, setSelectedDonation] = useState(null);
     const [showModal, setShowModal] = useState(false);
@@ -20,10 +21,20 @@ const NgoPendingDonations = () => {
         setLoading(true);
         try {
             // Fetch real available donations from backend
-            const data = await ngoAPI.getAvailableDonations();
-            // Backend returns list of donations suitable for acceptance
-            // They typically have status 'AUTHORIZED' or 'CSR_APPROVED'
+            const [data, dashboardData] = await Promise.all([
+                ngoAPI.getAvailableDonations(),
+                ngoAPI.getDashboardData()
+            ]);
+
             setDonations(data || []);
+
+            // Calculate accepted stocks
+            const accepted = dashboardData.accepted_donations || [];
+            const counts = accepted.reduce((acc, d) => {
+                acc[d.item_name] = (acc[d.item_name] || 0) + (d.quantity || 0);
+                return acc;
+            }, {});
+            setAcceptedStocks(counts);
         } catch (error) {
             console.error("Failed to fetch pending donations", error);
         } finally {
@@ -79,6 +90,44 @@ const NgoPendingDonations = () => {
                         </p>
                     </div>
                 </div>
+
+                {/* Accepted Stocks Summary */}
+                {!loading && Object.keys(acceptedStocks).length > 0 && (
+                    <div style={{
+                        display: 'grid',
+                        gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))',
+                        gap: '1rem',
+                        marginBottom: '2.5rem'
+                    }}>
+                        {Object.entries(acceptedStocks).map(([item, count]) => (
+                            <div key={item} style={{
+                                background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.1) 0%, rgba(5, 150, 105, 0.05) 100%)',
+                                border: '1px solid rgba(16, 185, 129, 0.2)',
+                                padding: '1.25rem',
+                                borderRadius: '16px',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '1rem'
+                            }}>
+                                <div style={{
+                                    width: '40px', height: '40px', borderRadius: '10px',
+                                    background: '#10b981', display: 'flex',
+                                    alignItems: 'center', justifyContent: 'center'
+                                }}>
+                                    <Package size={20} color="#000" />
+                                </div>
+                                <div>
+                                    <span style={{ fontSize: '0.7rem', color: '#10b981', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '1px' }}>
+                                        Accepted {item}
+                                    </span>
+                                    <div style={{ fontSize: '1.25rem', color: '#fff', fontWeight: 700 }}>
+                                        {count.toLocaleString()} <span style={{ fontSize: '0.8rem', color: '#64748b' }}>units</span>
+                                    </div>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                )}
 
                 {loading ? (
                     <div style={{ padding: '3rem', textAlign: 'center' }}>

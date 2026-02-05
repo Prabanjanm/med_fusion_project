@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import { Package, CheckCircle, XCircle, AlertTriangle, FileText, Download } from 'lucide-react';
 import Layout from '../components/Layout';
 import { ngoAPI } from '../services/api'; // Import API
@@ -13,6 +14,9 @@ const NgoClinicRequests = () => {
     const [modalType, setModalType] = useState('approve'); // 'approve' or 'deny'
     const [selectedDonationIds, setSelectedDonationIds] = useState([]); // Now an array for multi-batch
     const [denialReason, setDenialReason] = useState('');
+    const { state } = useLocation();
+    const filterClinicId = state?.clinicId;
+    const filterClinicName = state?.clinicName;
 
     useEffect(() => {
         fetchData();
@@ -28,7 +32,13 @@ const NgoClinicRequests = () => {
             ]);
 
             // Clinic Requirements from Dashboard Data
-            const requirements = dashboardData.clinic_requirements || [];
+            let requirements = dashboardData.clinic_requirements || [];
+
+            // Filter by navigation state if provided
+            if (filterClinicId) {
+                requirements = requirements.filter(r => r.clinic_id === filterClinicId);
+            }
+
             // Filter only pending if backend returns all history
             setRequests(requirements.filter(r =>
                 r.status === 'PENDING' ||
@@ -157,11 +167,22 @@ const NgoClinicRequests = () => {
             <div style={{ maxWidth: '1400px', margin: '0 auto', padding: '2rem' }}>
                 <div className="page-header">
                     <div>
-                        <h1 className="page-title">Clinic Requests</h1>
+                        <h1 className="page-title">
+                            {filterClinicName ? `Requirements: ${filterClinicName}` : 'Clinic Requests'}
+                        </h1>
                         <p className="page-subtitle">
                             {loading ? 'Loading...' : `${requests.length} pending request${requests.length !== 1 ? 's' : ''}`}
+                            {filterClinicName && ' for this clinic'}
                         </p>
                     </div>
+                    {filterClinicName && (
+                        <button
+                            onClick={() => window.history.replaceState({}, document.title)} // Clear state
+                            style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: '#fff', padding: '0.5rem 1rem', borderRadius: '8px', cursor: 'pointer' }}
+                        >
+                            Show All Clinics
+                        </button>
+                    )}
                 </div>
 
                 {/* Requests List */}

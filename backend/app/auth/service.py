@@ -18,17 +18,13 @@ async def login_user(db, email: str, password: str):
     user = result.scalar_one_or_none()
 
     if not user:
-        raise ValueError("Invalid email or password")
-
-    print("LOGIN ATTEMPT:", email)
-    print("PASSWORD SET:", user.password_set)
-    print("USER ROLE:", user.role)
+        raise ValueError("Email not registered")
 
     if not user.password_set:
-        raise ValueError("Password not set. Please set password first.")
+        raise ValueError("Account inactive / not verified. Please set password first.")
 
     if not verify_password(password, user.password_hash):
-        raise ValueError("Invalid email or password")
+        raise ValueError("Incorrect password")
 
     # Verify organization based on role
     organization_verified = False

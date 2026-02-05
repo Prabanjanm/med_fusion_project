@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 import Layout from '../components/Layout';
 import SummaryCard from '../components/SummaryCard';
+import StatusBadge from '../components/StatusBadge';
 import { donationAPI } from '../services/api';
 import '../styles/DashboardLayout.css';
 
@@ -257,7 +258,7 @@ const CsrDashboard = () => {
             paddingBottom: '4rem'
           }}>
 
-            {/* Impact Distribution Card */}
+            {/* Supply Lifecycle Tracking (Requirement 5) */}
             <motion.div
               variants={itemVariants}
               style={{
@@ -268,85 +269,52 @@ const CsrDashboard = () => {
                 border: '1px solid rgba(255,255,255,0.04)',
                 boxShadow: '0 20px 60px -20px rgba(0, 0, 0, 0.3)',
                 width: '100%',
-                maxWidth: '800px'
+                maxWidth: '1200px',
+                marginTop: '2rem'
               }}
             >
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '3rem' }}>
-                <h3 style={{ fontSize: '1.25rem', color: '#f8fafc', fontWeight: '600' }}>Impact Distribution</h3>
-                <BarChart3 size={20} color="#64748b" />
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+                <h3 style={{ fontSize: '1.25rem', color: '#f8fafc', fontWeight: '600' }}>Supply Allocation Status</h3>
+                <Package size={20} color="#64748b" />
               </div>
 
-              {/* Premium Segmented Bar */}
-              <div style={{
-                position: 'relative',
-                height: '32px',
-                width: '100%',
-                background: 'rgba(10, 15, 30, 0.6)',
-                borderRadius: '12px',
-                overflow: 'hidden',
-                display: 'flex',
-                marginBottom: '1.5rem',
-                boxShadow: 'inset 0 2px 8px rgba(0,0,0,0.4)',
-                border: '1px solid rgba(255, 255, 255, 0.02)'
-              }}>
-                {getPercentage(stats.completed) > 0 && (
-                  <motion.div
-                    initial={{ width: 0 }}
-                    animate={{ width: `${getPercentage(stats.completed)}%` }}
-                    transition={{ duration: 1, ease: 'circOut' }}
-                    style={{
-                      background: 'linear-gradient(90deg, #00e5ff 0%, #22d3ee 100%)',
-                      height: '100%',
-                      position: 'relative',
-                      boxShadow: '0 0 20px rgba(0, 229, 255, 0.4)'
-                    }}
-                  >
-                    <div style={{ position: 'absolute', right: 0, top: 0, bottom: 0, width: '2px', background: 'rgba(255,255,255,0.4)', zIndex: 10 }} />
-                  </motion.div>
-                )}
-                {getPercentage(stats.inTransit) > 0 && (
-                  <motion.div
-                    initial={{ width: 0 }}
-                    animate={{ width: `${getPercentage(stats.inTransit)}%` }}
-                    transition={{ duration: 1, delay: 0.2, ease: 'circOut' }}
-                    style={{
-                      background: 'linear-gradient(90deg, #3b82f6 0%, #60a5fa 100%)',
-                      height: '100%',
-                      position: 'relative',
-                      boxShadow: '0 0 20px rgba(59, 130, 246, 0.4)'
-                    }}
-                  >
-                    <div style={{ position: 'absolute', right: 0, top: 0, bottom: 0, width: '2px', background: 'rgba(255,255,255,0.4)', zIndex: 10 }} />
-                  </motion.div>
-                )}
-                {getPercentage(stats.pending) > 0 && (
-                  <motion.div
-                    initial={{ width: 0 }}
-                    animate={{ width: `${getPercentage(stats.pending)}%` }}
-                    transition={{ duration: 1, delay: 0.4, ease: 'circOut' }}
-                    style={{
-                      background: 'linear-gradient(90deg, #8b5cf6 0%, #a78bfa 100%)',
-                      height: '100%',
-                      boxShadow: '0 0 20px rgba(139, 92, 246, 0.4)'
-                    }}
-                  />
-                )}
-              </div>
+              <div style={{ overflowX: 'auto' }}>
+                <table style={{ width: '100%', borderCollapse: 'separate', borderSpacing: '0 8px' }}>
+                  <thead>
+                    <tr style={{ color: '#64748b', fontSize: '0.85rem', textAlign: 'left', textTransform: 'uppercase' }}>
+                      <th style={{ padding: '0 1rem 1rem' }}>Supply Name</th>
+                      <th style={{ padding: '0 1rem 1rem' }}>Total Donated</th>
+                      <th style={{ padding: '0 1rem 1rem' }}>Allocated</th>
+                      <th style={{ padding: '0 1rem 1rem' }}>Remaining</th>
+                      <th style={{ padding: '0 1rem 1rem' }}>Latest Status</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {stats.recentHistory.map((item, idx) => {
+                      const isAllocated = ['ALLOCATED', 'RECEIVED', 'COMPLETED', 'IN_TRANSIT'].includes(item.status);
+                      const total = item.quantity || 0;
+                      const allocated = isAllocated ? total : 0;
+                      const remaining = total - allocated;
 
-              {/* Legend with Metrics */}
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-                {[
-                  { label: 'Accepted', count: stats.completed, color: '#00e5ff' },
-                  { label: 'Pending', count: stats.pending, color: '#8b5cf6' }
-                ].map((item, idx) => (
-                  <div key={idx} style={{ textAlign: 'center' }}>
-                    <p style={{ fontSize: '1.5rem', fontWeight: '700', color: '#fff', marginBottom: '0.25rem' }}>{item.count}</p>
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}>
-                      <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: item.color, boxShadow: `0 0 8px ${item.color}` }} />
-                      <span style={{ fontSize: '0.85rem', color: '#94a3b8' }}>{item.label}</span>
-                    </div>
-                  </div>
-                ))}
+                      return (
+                        <tr key={item.id || idx} style={{ background: 'rgba(255,255,255,0.02)', borderRadius: '12px', transition: 'transform 0.2s' }}>
+                          <td style={{ padding: '1rem', color: '#fff', fontWeight: 600, borderTopLeftRadius: '12px', borderBottomLeftRadius: '12px' }}>
+                            {item.item_name}
+                          </td>
+                          <td style={{ padding: '1rem', color: '#94a3b8' }}>{total}</td>
+                          <td style={{ padding: '1rem', color: allocated > 0 ? '#00ff88' : '#64748b' }}>{allocated}</td>
+                          <td style={{ padding: '1rem', color: remaining > 0 ? '#f59e0b' : '#64748b' }}>{remaining}</td>
+                          <td style={{ padding: '1rem', borderTopRightRadius: '12px', borderBottomRightRadius: '12px' }}>
+                            <StatusBadge status={item.status} />
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+                {stats.recentHistory.length === 0 && (
+                  <div style={{ textAlign: 'center', padding: '2rem', color: '#64748b' }}>No active donations found.</div>
+                )}
               </div>
             </motion.div>
 

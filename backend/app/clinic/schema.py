@@ -23,6 +23,7 @@ class ClinicAllocationHistory(BaseModel):
     item_name: str
     quantity: int
     purpose: str
+    priority: int
     status: str
 
     ngo_name: str

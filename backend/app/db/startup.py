@@ -1,5 +1,7 @@
-from sqlalchemy import select, text
+from sqlalchemy import select, text, case, func
 from app.models.trusted_company import TrustedCompany
+from app.models.ngo import NGO
+from app.models.clinic import Clinic
 
 from app.models.trusted_ngo import TrustedNGO
 from app.models.user import User
@@ -133,6 +135,9 @@ async def fix_missing_columns(db):
         await db.execute(text("ALTER TABLE donation_allocations ADD COLUMN IF NOT EXISTS feedback TEXT;"))
         await db.execute(text("ALTER TABLE donation_allocations ADD COLUMN IF NOT EXISTS quality_rating INTEGER;"))
         
+        # Sync for clinics table
+        await db.execute(text("ALTER TABLE clinics ADD COLUMN IF NOT EXISTS address TEXT;"))
+        
         # Sync for donations table
         await db.execute(text("ALTER TABLE donations ADD COLUMN IF NOT EXISTS expiry_date TIMESTAMP WITH TIME ZONE;"))
         
@@ -140,4 +145,55 @@ async def fix_missing_columns(db):
     except Exception as e:
         print(f"Schema update notice: {e}")
         await db.rollback()
+
+
+async def seed_clinics(db):
+    """Seed some clinics for the auditor to see data"""
+    # 1. We need at least one NGO to own these clinics
+    # Check if any NGO exists, if not, create one
+    res = await db.execute(select(NGO))
+    ngo = res.scalars().first()
+    
+    if not ngo:
+        ngo = NGO(
+            ngo_name="Health Reach Foundation",
+            csr_1_number="CSR00012345",
+            has_80g=True,
+            official_email="contact@healthreach.org",
+            is_verified=True
+        )
+        db.add(ngo)
+        await db.commit()
+        await db.refresh(ngo)
+
+    # 2. Add clinics
+    clinics_data = [
+        {
+            "clinic_name": "City Hope Medical Center",
+            "address": "123 Healthcare Blvd, Chennai",
+            "facility_id": "CEA-998811",
+            "facility_id_type": "CEA",
+            "pincode": "600001",
+            "official_email": "admin@cityhope.med",
+            "ngo_id": ngo.id,
+            "is_active": True
+        },
+        {
+            "clinic_name": "Rural Wellness Clinic",
+            "address": "45 Village Road, Coimbatore",
+            "facility_id": "ABHA-776655",
+            "facility_id_type": "ABHA",
+            "pincode": "641001",
+            "official_email": "contact@ruralwell.org",
+            "ngo_id": ngo.id,
+            "is_active": True
+        }
+    ]
+
+    for data in clinics_data:
+        res = await db.execute(select(Clinic).where(Clinic.official_email == data["official_email"]))
+        if not res.scalar_one_or_none():
+            db.add(Clinic(**data))
+            
+    await db.commit()
 

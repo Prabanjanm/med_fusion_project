@@ -14,7 +14,8 @@ import {
     Settings,
     ShieldCheck,
     Package,
-    ShoppingCart
+    ShoppingCart,
+    Stethoscope
 } from 'lucide-react';
 import '../styles/Sidebar.css';
 
@@ -23,10 +24,9 @@ const Sidebar = ({ role }) => {
     const menus = {
         csr: [
             { path: '/csr', label: 'Dashboard', icon: LayoutDashboard },
-            { path: '/csr/create-donation', label: 'New Donation', icon: PlusCircle },
-            { path: '/csr/history', label: 'History', icon: History },
-            { path: '/csr/status', label: 'View Timeline', icon: Activity },
-            { path: '/csr/verify-and-record', label: 'Audit Trail', icon: ShieldCheck },
+            { path: '/csr/create-donation', label: 'Create Donation', icon: PlusCircle },
+            { path: '/csr/history', label: 'Donation History', icon: History },
+            { path: '/auditor/trail', label: 'Audit Trail', icon: ShieldCheck },
             { path: '/settings', label: 'Settings', icon: Settings },
         ],
         ngo: [
@@ -35,15 +35,15 @@ const Sidebar = ({ role }) => {
             { path: '/ngo/allocate', label: 'Allocate Items', icon: Truck },
             { path: '/ngo/history', label: 'History', icon: History },
             { path: '/ngo/manage-clinics', label: 'Clinics', icon: Building2 },
-            { path: '/verify', label: 'Verify & Record', icon: ShieldCheck },
+            { path: '/auditor/trail', label: 'Audit Trail', icon: ShieldCheck },
             { path: '/settings', label: 'Settings', icon: Settings },
         ],
         clinic: [
             { path: '/clinic', label: 'Dashboard', icon: LayoutDashboard },
-            { path: '/clinic/request-products', label: 'Request Supply', icon: ShoppingCart },
+            { path: '/clinic/request-products', label: 'Request Requirements', icon: ShoppingCart },
             { path: '/clinic/request-status', label: 'My Allocations', icon: Activity },
             { path: '/clinic/receipts', label: 'Confirm Receipt', icon: CheckSquare },
-            { path: '/verify', label: 'Verify & Record', icon: ShieldCheck },
+            { path: '/auditor/trail', label: 'Audit Trail', icon: ShieldCheck },
             { path: '/settings', label: 'Settings', icon: Settings },
         ],
         auditor: [
@@ -51,19 +51,25 @@ const Sidebar = ({ role }) => {
             { path: '/auditor/trail', label: 'Audit Trail', icon: FileText },
             { path: '/auditor/csr-registry', label: 'CSR Registry', icon: Building2 },
             { path: '/auditor/ngo-registry', label: 'NGO Registry', icon: Users },
+            { path: '/auditor/clinic-registry', label: 'Clinic Registry', icon: Stethoscope },
             { path: '/auditor/pending-requests', label: 'Pending Reviews', icon: ClipboardList },
-            { path: '/settings', label: 'Settings', icon: Settings },
-            { path: '/verify', label: 'Verify & Record', icon: ShieldCheck },
+            { path: '/auditor/settings', label: 'Settings', icon: Settings },
         ]
     };
 
-    const currentMenu = menus[(role || '').toLowerCase()] || [];
+    const currentRole = (role || '').toLowerCase();
+
+    // Update simple /settings to role-prefixed settings for consistency across all roles
+    const currentMenu = (menus[currentRole] || []).map(item => {
+        if (item.path === '/settings') return { ...item, path: `/${currentRole}/settings` };
+        return item;
+    });
 
     return (
         <aside className="sidebar">
             <div className="sidebar-header">
                 <ShieldCheck className="logo-icon" />
-                <span className="brand-name">CSR Track</span>
+                <span className="brand-name">CSR HealthTrace</span>
             </div>
 
             <nav className="sidebar-nav">

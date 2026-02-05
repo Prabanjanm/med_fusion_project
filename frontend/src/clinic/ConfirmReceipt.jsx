@@ -156,12 +156,22 @@ const ConfirmReceipt = () => {
 
           {allocations.length === 0 ? (
             <div style={{
-              textAlign: 'center', padding: '2.5rem 1.5rem', color: '#64748b',
-              background: 'rgba(0,0,0,0.15)', borderRadius: '16px',
-              border: '1px dashed rgba(255,255,255,0.08)'
+              textAlign: 'center', padding: '3.5rem 2rem', color: '#64748b',
+              background: 'rgba(0,0,0,0.2)', borderRadius: '24px',
+              border: '2px dashed rgba(255,255,255,0.05)'
             }}>
-              <Package size={36} style={{ opacity: 0.2, marginBottom: '1rem' }} />
-              <p style={{ fontSize: '0.85rem' }}>No pending allocated items found.</p>
+              <Package size={48} style={{ opacity: 0.2, marginBottom: '1.5rem' }} />
+              <h3 style={{ color: '#fff', fontSize: '1.1rem', marginBottom: '0.5rem' }}>No Shipments Found</h3>
+              <p style={{ fontSize: '0.85rem', maxWidth: '300px', margin: '0 auto 1.5rem auto', lineHeight: '1.6' }}>
+                When your supervising NGO allocates items from their inventory to your clinic, they will appear here for confirmation.
+              </p>
+              <button
+                onClick={fetchAllocations}
+                className="btn-secondary"
+                style={{ padding: '0.6rem 1.2rem', borderRadius: '10px', fontSize: '0.8rem' }}
+              >
+                Refresh Inventory
+              </button>
             </div>
           ) : (
             <form onSubmit={handleSubmit}>

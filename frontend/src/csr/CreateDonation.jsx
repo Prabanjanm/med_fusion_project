@@ -1,40 +1,47 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { donationAPI } from '../services/api';
-import { Upload, Plus, FileText, CheckCircle } from 'lucide-react';
+import {
+  Plus, CheckCircle, Search, ShieldCheck,
+  Calendar, Package, Building2, Briefcase,
+  ArrowRight, Info, Heart, ChevronDown
+} from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 import Layout from '../components/Layout';
 import WizardModal, { ReviewSummary } from '../components/WizardModal';
 import BlockchainNotification from '../components/BlockchainNotification';
 import { useBlockchainNotification } from '../hooks/useBlockchainNotification';
 import '../styles/FormStyles.css';
 
-/**
- * CreateDonation Component
- * Uses the WizardModal to guide users through the donation process.
- */
 const CreateDonation = () => {
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  // Page starts with landing screen, clicking button opens wizard
   const [isWizardOpen, setIsWizardOpen] = useState(false);
   const { notification, triggerBlockCreation, hideNotification } = useBlockchainNotification();
+
+  const [availableNgos, setAvailableNgos] = useState([]);
+  const [ngoSearch, setNgoSearch] = useState('');
+  const [isNgoDropdownOpen, setIsNgoDropdownOpen] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submittedHash, setSubmittedHash] = useState(null);
+  const [errors, setErrors] = useState({});
 
   const [formData, setFormData] = useState({
     donorName: '',
     donorOrgName: '',
-    resourceType: 'ppe',
+    item_name: '',
     quantity: '',
-    unit: 'pieces',
-    donationDate: new Date().toISOString().split('T')[0],
-    ngoName: '',
+    ngo_id: '',
+    ngo_name: '',
     purpose: '',
-    boardResolution: '',
-    csrPolicy: false,
+    board_resolution_ref: '',
+    csr_policy_declared: true,
     expiryDate: '',
   });
 
-  const [errors, setErrors] = useState({});
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [submittedHash, setSubmittedHash] = useState(null);
-  const [availableNgos, setAvailableNgos] = useState([]);
-
-  React.useEffect(() => {
+  useEffect(() => {
     const fetchNgos = async () => {
       try {
         const ngos = await donationAPI.getVerifiedNgos();
@@ -44,481 +51,397 @@ const CreateDonation = () => {
       }
     };
     fetchNgos();
-  }, []);
 
-  const resourceOptions = [
-    { value: 'ppe', label: 'PPE Kits' },
-    { value: 'gloves', label: 'Medical Gloves' },
-    { value: 'syringes', label: 'Syringes' },
-    { value: 'masks', label: 'N95 Masks' },
-    { value: 'medications', label: 'Medications' },
-    { value: 'equipment', label: 'Medical Equipment' },
-    { value: 'other', label: 'Other' },
-  ];
+    if (location.state) {
+      const { item_name, quantity, requirement_id, clinic_name } = location.state;
+      setFormData(prev => ({
+        ...prev,
+        item_name: item_name || '',
+        quantity: quantity || '',
+        purpose: `Fulfillment: ${item_name} for ${clinic_name}`,
+      }));
+      // If redirected with state, maybe auto-open? 
+      // The user said "page can start with symbol and clicking button goes to form"
+      // So I'll keep it closed by default.
+    }
+  }, [location.state]);
 
-  const unitOptions = [
-    { value: 'pieces', label: 'Pieces' },
-    { value: 'boxes', label: 'Boxes' },
-    { value: 'cartons', label: 'Cartons' },
-    { value: 'units', label: 'Units' },
-  ];
-
-  const handleChange = (e) => {
+  const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
     if (errors[name]) setErrors(prev => ({ ...prev, [name]: '' }));
   };
 
-
-
-  // Step 1: Validation
   const validateStep1 = () => {
-    const newErrors = {};
-    if (!formData.donorName.trim()) newErrors.donorName = 'Donor name is required';
-    if (!formData.donorOrgName.trim()) newErrors.donorOrgName = 'Organization name is required';
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
+    const errs = {};
+    if (!formData.donorName) errs.donorName = 'Donor name is required';
+    if (!formData.donorOrgName) errs.donorOrgName = 'Organization is required';
+    setErrors(errs);
+    return Object.keys(errs).length === 0;
   };
 
-  // Step 2: Validation
   const validateStep2 = () => {
-    const newErrors = {};
-    if (!formData.quantity || formData.quantity <= 0) newErrors.quantity = 'Valid quantity is required';
-    if (!formData.ngoName) newErrors.ngoName = 'Please select an NGO';
-    if (!formData.expiryDate) newErrors.expiryDate = 'Expiry date is required for medical supplies';
-    // supportingDocument check removed as per user request
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
+    const errs = {};
+    if (!formData.item_name) errs.item_name = 'Product name is required';
+    if (!formData.quantity || formData.quantity <= 0) errs.quantity = 'Valid quantity is required';
+    if (!formData.ngo_id) errs.ngo_id = 'Please select a recipient NGO';
+    if (!formData.expiryDate) errs.expiryDate = 'Expiry date is required';
+    setErrors(errs);
+    return Object.keys(errs).length === 0;
   };
 
   const handleSubmit = async () => {
     setIsSubmitting(true);
     try {
       const payload = {
-        item_name: `${formData.resourceType} (${formData.unit})`,
+        item_name: formData.item_name,
         quantity: parseInt(formData.quantity, 10),
-        ngo_id: formData.ngoName ? parseInt(formData.ngoName, 10) : null,
-        purpose: formData.purpose || `Donation to selected NGO`,
-        board_resolution_ref: formData.boardResolution || `BR-${Date.now()}`,
-        csr_policy_declared: formData.csrPolicy,
-        expiry_date: formData.expiryDate || null,
+        ngo_id: parseInt(formData.ngo_id, 10),
+        purpose: formData.purpose || 'Direct Corporate Donation',
+        board_resolution_ref: formData.board_resolution_ref || `BR-${Date.now()}`,
+        csr_policy_declared: true,
+        expiry_date: formData.expiryDate
       };
 
-      // Trigger blockchain block creation with notification
-      const block = await triggerBlockCreation('DONATION_CREATED', payload);
+      await triggerBlockCreation('DONATION_CREATED', payload);
+      const response = await donationAPI.create(payload);
 
-      // Call API (in demo mode this will use mock data)
-      const response = await donationAPI.create(payload).catch(() => ({
-        id: `DON-${Date.now()}`,
-        ...payload,
-        status: 'PENDING'
-      }));
-
-      console.log('Donation submitted:', response);
-      console.log('Blockchain block created:', block);
-
-      setSubmittedHash(block?.hash || 'DEMO-HASH-' + Date.now());
+      setSubmittedHash(response.audit?.tx_hash || 'TX-HASH-' + Date.now());
       setIsSubmitting(false);
 
-      // Close wizard after notification completes
       setTimeout(() => {
         setIsWizardOpen(false);
-      }, 3500);
+      }, 3000);
     } catch (error) {
-      console.error("Donation creation failed", error);
-      alert("Failed to create donation: " + error.message);
+      console.error("Donation failed", error);
+      alert("Submission error: " + error.message);
       setIsSubmitting(false);
     }
   };
 
-  // Step Components
+  const filteredNgos = availableNgos.filter(n =>
+    n.name.toLowerCase().includes(ngoSearch.toLowerCase())
+  );
+
   const Step1Identity = (
-    <div>
+    <div className="wizard-form-container">
       <div className="wizard-field-group">
-        <label className="wizard-label">Donor Name</label>
-        <input
-          type="text"
-          name="donorName"
-          value={formData.donorName}
-          onChange={handleChange}
-          placeholder="e.g. John Doe"
-          className="wizard-input"
-          required
-        />
-        {errors.donorName && <span style={{ color: '#ef4444', fontSize: '0.8rem' }}>{errors.donorName}</span>}
+        <label className="wizard-label">Authorizing Official</label>
+        <div style={{ position: 'relative' }}>
+          <Briefcase size={18} style={{ position: 'absolute', right: '1rem', top: '1rem', color: '#64748b' }} />
+          <input
+            type="text"
+            name="donorName"
+            value={formData.donorName}
+            onChange={handleInputChange}
+            placeholder="e.g. Director of Finance"
+            className="wizard-input"
+          />
+        </div>
+        {errors.donorName && <span className="error-text">{errors.donorName}</span>}
       </div>
+
       <div className="wizard-field-group">
-        <label className="wizard-label">Organization Name</label>
-        <input
-          type="text"
-          name="donorOrgName"
-          value={formData.donorOrgName}
-          onChange={handleChange}
-          placeholder="e.g. Health Corp Global"
-          className="wizard-input"
-          required
-        />
-        {errors.donorOrgName && <span style={{ color: '#ef4444', fontSize: '0.8rem' }}>{errors.donorOrgName}</span>}
-      </div>
-      <div className="wizard-field-group">
-        <label className="wizard-label">Donation Date</label>
-        <input
-          type="date"
-          name="donationDate"
-          value={formData.donationDate}
-          onChange={handleChange}
-          className="wizard-input"
-        />
+        <label className="wizard-label">Company / Department</label>
+        <div style={{ position: 'relative' }}>
+          <Building2 size={18} style={{ position: 'absolute', right: '1rem', top: '1rem', color: '#64748b' }} />
+          <input
+            type="text"
+            name="donorOrgName"
+            value={formData.donorOrgName}
+            onChange={handleInputChange}
+            placeholder="e.g. Acme Health Biotech"
+            className="wizard-input"
+          />
+        </div>
+        {errors.donorOrgName && <span className="error-text">{errors.donorOrgName}</span>}
       </div>
     </div>
   );
 
-  const Step2Details = (
-    <div>
-      <div className="wizard-field-group">
-        <label className="wizard-label">Target NGO</label>
-        <select
-          name="ngoName"
-          value={formData.ngoName}
-          onChange={handleChange}
-          className="wizard-select"
-          required
+  const Step2Allocation = (
+    <div className="wizard-form-container">
+      <div className="wizard-field-group" style={{ position: 'relative' }}>
+        <label className="wizard-label">Recipient NGO</label>
+
+        {/* Dropdown Toggle / Selection Bar */}
+        <div
+          onClick={() => setIsNgoDropdownOpen(!isNgoDropdownOpen)}
+          style={{
+            background: 'rgba(15, 23, 42, 0.6)',
+            border: `1px solid ${isNgoDropdownOpen ? '#00e5ff' : 'rgba(255,255,255,0.1)'}`,
+            borderRadius: '12px',
+            padding: '1rem',
+            cursor: 'pointer',
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            transition: 'all 0.3s ease'
+          }}
         >
-          <option value="" disabled>Select Receiver NGO</option>
-          {availableNgos.map(ngo => <option key={ngo.id} value={ngo.id}>{ngo.name}</option>)}
-        </select>
-        {errors.ngoName && <span style={{ color: '#ef4444', fontSize: '0.8rem' }}>{errors.ngoName}</span>}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            {formData.ngo_id ? (
+              <>
+                <div style={{
+                  width: '32px',
+                  height: '32px',
+                  borderRadius: '8px',
+                  background: '#00e5ff',
+                  color: '#000',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontWeight: 700,
+                  fontSize: '0.8rem'
+                }}>
+                  {formData.ngo_name?.charAt(0)}
+                </div>
+                <span style={{ color: '#fff', fontWeight: 600 }}>{formData.ngo_name}</span>
+              </>
+            ) : (
+              <span style={{ color: '#64748b' }}>Select NGO from directory...</span>
+            )}
+          </div>
+          <ChevronDown
+            size={20}
+            color="#64748b"
+            style={{
+              transform: isNgoDropdownOpen ? 'rotate(180deg)' : 'rotate(0)',
+              transition: 'transform 0.3s'
+            }}
+          />
+        </div>
+
+        {/* Dropdown Content */}
+        <AnimatePresence>
+          {isNgoDropdownOpen && (
+            <motion.div
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              style={{
+                position: 'absolute',
+                top: '100%',
+                left: 0,
+                right: 0,
+                zIndex: 100,
+                background: '#0f172a',
+                border: '1px solid rgba(0, 229, 255, 0.2)',
+                borderRadius: '16px',
+                marginTop: '0.5rem',
+                padding: '1rem',
+                boxShadow: '0 20px 40px rgba(0,0,0,0.4)',
+                backdropFilter: 'blur(10px)'
+              }}
+            >
+              <div style={{ position: 'relative', marginBottom: '1rem' }}>
+                <Search size={16} style={{ position: 'absolute', left: '1rem', top: '0.9rem', color: '#64748b' }} />
+                <input
+                  type="text"
+                  placeholder="Filter by name..."
+                  value={ngoSearch}
+                  onChange={(e) => setNgoSearch(e.target.value)}
+                  onClick={(e) => e.stopPropagation()}
+                  className="wizard-input"
+                  style={{ paddingLeft: '2.5rem', height: '44px', fontSize: '0.9rem' }}
+                />
+              </div>
+
+              <div style={{
+                maxHeight: '200px',
+                overflowY: 'auto',
+                padding: '4px'
+              }} className="custom-scrollbar">
+                {filteredNgos.length > 0 ? filteredNgos.map(ngo => (
+                  <div
+                    key={ngo.id}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setFormData({ ...formData, ngo_id: ngo.id, ngo_name: ngo.name });
+                      setIsNgoDropdownOpen(false);
+                    }}
+                    style={{
+                      padding: '0.75rem 1rem',
+                      borderRadius: '10px',
+                      cursor: 'pointer',
+                      background: formData.ngo_id === ngo.id ? 'rgba(0, 229, 255, 0.1)' : 'transparent',
+                      border: formData.ngo_id === ngo.id ? '1px solid rgba(0, 229, 255, 0.3)' : '1px solid transparent',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '12px',
+                      transition: 'all 0.2s',
+                      marginBottom: '4px'
+                    }}
+                  >
+                    <div style={{
+                      width: '32px',
+                      height: '32px',
+                      borderRadius: '6px',
+                      background: 'rgba(255,255,255,0.05)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      color: '#64748b',
+                      fontSize: '0.8rem'
+                    }}>
+                      {ngo.name.charAt(0)}
+                    </div>
+                    <span style={{ color: formData.ngo_id === ngo.id ? '#00e5ff' : '#fff', fontSize: '0.9rem' }}>{ngo.name}</span>
+                  </div>
+                )) : (
+                  <div style={{ padding: '2rem', textAlign: 'center', color: '#64748b', fontSize: '0.85rem' }}>No matching NGOs</div>
+                )}
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+        {errors.ngo_id && <span className="error-text" style={{ marginTop: '0.5rem', display: 'block' }}>{errors.ngo_id}</span>}
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+      <div className="wizard-field-group">
+        <label className="wizard-label">Product Name & Batch</label>
+        <div style={{ position: 'relative' }}>
+          <Package size={18} style={{ position: 'absolute', right: '1rem', top: '1rem', color: '#64748b' }} />
+          <input
+            type="text"
+            name="item_name"
+            value={formData.item_name}
+            onChange={handleInputChange}
+            placeholder="e.g. Surgical Masks"
+            className="wizard-input"
+          />
+        </div>
+        {errors.item_name && <span className="error-text">{errors.item_name}</span>}
+      </div>
+
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
         <div className="wizard-field-group">
-          <label className="wizard-label">Resource Type</label>
-          <select
-            name="resourceType"
-            value={formData.resourceType}
-            onChange={handleChange}
-            className="wizard-select"
-          >
-            {resourceOptions.map(opt => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
-          </select>
+          <label className="wizard-label">Total Quantity</label>
+          <input
+            type="number"
+            name="quantity"
+            value={formData.quantity}
+            onChange={handleInputChange}
+            placeholder="0"
+            className="wizard-input"
+          />
+          {errors.quantity && <span className="error-text">{errors.quantity}</span>}
         </div>
         <div className="wizard-field-group">
-          <label className="wizard-label">Unit</label>
-          <select
-            name="unit"
-            value={formData.unit}
-            onChange={handleChange}
-            className="wizard-select"
-          >
-            {unitOptions.map(opt => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
-          </select>
+          <label className="wizard-label">Expiry Date</label>
+          <div style={{ position: 'relative' }}>
+            <Calendar size={18} style={{
+              position: 'absolute',
+              right: '1rem',
+              top: '1rem',
+              color: '#64748b',
+              pointerEvents: 'none',
+              zIndex: 1
+            }} />
+            <input
+              type="date"
+              name="expiryDate"
+              value={formData.expiryDate}
+              onChange={handleInputChange}
+              className="wizard-input date-input-field"
+              style={{ paddingRight: '3rem' }}
+            />
+          </div>
+          {errors.expiryDate && <span className="error-text">{errors.expiryDate}</span>}
         </div>
       </div>
-
-      <div className="wizard-field-group">
-        <label className="wizard-label">Quantity</label>
-        <input
-          type="number"
-          name="quantity"
-          value={formData.quantity}
-          onChange={handleChange}
-          placeholder="0"
-          className="wizard-input"
-          min="1"
-          required
-        />
-        {errors.quantity && <span style={{ color: '#ef4444', fontSize: '0.8rem' }}>{errors.quantity}</span>}
-      </div>
-
-      <div className="wizard-field-group">
-        <label className="wizard-label">Board Resolution Ref</label>
-        <input
-          type="text"
-          name="boardResolution"
-          value={formData.boardResolution}
-          onChange={handleChange}
-          placeholder="e.g. BR-CSR-2026-001"
-          className="wizard-input"
-          required
-        />
-      </div>
-
-      <div className="wizard-field-group" style={{ flexDirection: 'row', alignItems: 'center', gap: '0.75rem', marginTop: '0.5rem' }}>
-        <input
-          type="checkbox"
-          name="csrPolicy"
-          checked={formData.csrPolicy}
-          onChange={(e) => setFormData(prev => ({ ...prev, csrPolicy: e.target.checked }))}
-          style={{ width: '18px', height: '18px', cursor: 'pointer' }}
-        />
-        <label style={{ color: '#94a3b8', fontSize: '0.9rem', cursor: 'pointer' }}>
-          I declare this helps meet our CSR policy obligations
-        </label>
-      </div>
-
-      <div className="wizard-field-group">
-        <label className="wizard-label">
-          Expiry Date <span style={{ color: '#ef4444' }}>*</span>
-        </label>
-        <input
-          type="date"
-          name="expiryDate"
-          value={formData.expiryDate}
-          onChange={handleChange}
-          className="wizard-input"
-          required
-        />
-        {errors.expiryDate && <span style={{ color: '#ef4444', fontSize: '0.8rem' }}>{errors.expiryDate}</span>}
-      </div>
-
-
     </div>
   );
 
   const wizardSteps = [
-    {
-      id: 'step1',
-      label: 'Identity',
-      title: 'Donor Identification',
-      component: Step1Identity,
-      validate: validateStep1
-    },
-    {
-      id: 'step2',
-      label: 'Details',
-      title: 'Resource Allocation',
-      component: Step2Details,
-      validate: validateStep2
-    },
-    {
-      id: 'step3',
-      label: 'Review',
-      title: 'Blockchain Verification',
-      component: <ReviewSummary data={formData} />,
-      validate: () => true
-    }
+    { id: 'identity', label: 'Auth', title: 'Internal Authorization', component: Step1Identity, validate: validateStep1 },
+    { id: 'allocation', label: 'Details', title: 'Resource Allocation', component: Step2Allocation, validate: validateStep2 },
+    { id: 'review', label: 'Blockchain', title: 'Ledger Confirmation', component: <ReviewSummary data={{ ...formData, verified: 'Cryptographic Check' }} />, validate: () => true }
   ];
 
   if (submittedHash) {
     return (
       <Layout>
         <div style={{ height: '80vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center' }}>
-          <div style={{ fontSize: '4rem', color: '#00ff94', marginBottom: '1rem', animation: 'bounce 1s' }}>
-            <CheckCircle size={80} />
+          <div style={{
+            width: '100px', height: '100px', borderRadius: '50%', background: 'rgba(0, 255, 148, 0.1)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '2rem',
+            boxShadow: '0 0 50px rgba(0, 255, 148, 0.2)'
+          }}>
+            <ShieldCheck size={60} color="#00ff94" />
           </div>
-          <h1 style={{ fontSize: '2.5rem', marginBottom: '0.5rem' }}>Transaction Recorded</h1>
-          <p style={{ color: 'var(--text-muted)', maxWidth: '500px', margin: '0 auto 2rem' }}>
-            The donation has been successfully written to the blockchain ledger.
-            Immutable hash generated.
+          <h1 style={{ fontSize: '2.5rem', marginBottom: '1rem', background: 'linear-gradient(to right, #00ff94, #00e5ff)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+            Record Authorized
+          </h1>
+          <p style={{ color: '#94a3b8', maxWidth: '600px', marginBottom: '2rem' }}>
+            The transaction has been successfully synced with the blockchain ledger.
           </p>
-
-          <div style={{ background: 'rgba(0,0,0,0.3)', padding: '1rem 2rem', borderRadius: '8px', border: '1px dashed #334155', fontFamily: 'monospace', color: '#00ff94', marginBottom: '1rem' }}>
+          <div style={{
+            background: 'rgba(15, 23, 42, 0.8)', padding: '1.5rem', borderRadius: '12px',
+            border: '1px solid rgba(0, 255, 148, 0.3)', fontFamily: 'monospace',
+            fontSize: '0.9rem', color: '#00ff94', marginBottom: '2rem', maxWidth: '90%'
+          }}>
             {submittedHash}
           </div>
-
-          <div style={{
-            background: 'rgba(251, 191, 36, 0.1)',
-            border: '1px solid rgba(251, 191, 36, 0.3)',
-            borderRadius: '8px',
-            padding: '12px 20px',
-            marginBottom: '2rem',
-            maxWidth: '500px'
-          }}>
-            <p style={{ color: '#fbbf24', fontSize: '0.85rem', margin: 0 }}>
-              ⚠️ <strong>Simulated Blockchain Hash</strong> - This represents planned future blockchain integration for demonstration purposes
-            </p>
-          </div>
-
-          <div style={{
-            display: 'flex',
-            gap: '1.5rem',
-            justifyContent: 'center',
-            flexWrap: 'wrap',
-            background: 'rgba(15, 23, 42, 0.6)',
-            padding: '2rem',
-            borderRadius: '24px',
-            border: '1px solid rgba(255,255,255,0.08)',
-            backdropFilter: 'blur(12px)',
-            boxShadow: '0 10px 30px -10px rgba(0,0,0,0.5)',
-            margin: '0 auto'
-          }}>
-            <button
-              onClick={() => navigate(`/csr/history?refresh=${Date.now()}`)}
-              style={{
-                background: 'transparent',
-                color: '#4361EE',
-                padding: '12px 32px',
-                borderRadius: '8px',
-                border: '1px solid #4361EE',
-                fontWeight: '700',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '12px',
-                cursor: 'pointer',
-                boxShadow: '0 0 15px rgba(67, 97, 238, 0.15)',
-                textTransform: 'uppercase',
-                letterSpacing: '1px',
-                fontFamily: "'Orbitron', sans-serif",
-                transition: 'all 0.3s',
-              }}
-              onMouseOver={(e) => {
-                e.currentTarget.style.background = 'rgba(67, 97, 238, 0.1)';
-                e.currentTarget.style.boxShadow = '0 0 25px rgba(67, 97, 238, 0.4)';
-                e.currentTarget.style.transform = 'translateY(-2px)';
-              }}
-              onMouseOut={(e) => {
-                e.currentTarget.style.background = 'transparent';
-                e.currentTarget.style.boxShadow = '0 0 15px rgba(67, 97, 238, 0.15)';
-                e.currentTarget.style.transform = 'translateY(0)';
-              }}
-            >
-              <div style={{ color: '#4361EE' }}>📋</div>
-              View History
-            </button>
-
-            <button
-              onClick={() => navigate('/verify')}
-              style={{
-                background: 'transparent',
-                color: '#00f2ff',
-                padding: '12px 32px',
-                borderRadius: '8px',
-                border: '1px solid #00f2ff',
-                fontWeight: '700',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '12px',
-                cursor: 'pointer',
-                boxShadow: '0 0 15px rgba(0, 242, 255, 0.15)',
-                textTransform: 'uppercase',
-                letterSpacing: '1px',
-                fontFamily: "'Orbitron', sans-serif",
-                transition: 'all 0.3s',
-              }}
-              onMouseOver={(e) => {
-                e.currentTarget.style.background = 'rgba(0, 242, 255, 0.1)';
-                e.currentTarget.style.boxShadow = '0 0 25px rgba(0, 242, 255, 0.4)';
-                e.currentTarget.style.transform = 'translateY(-2px)';
-              }}
-              onMouseOut={(e) => {
-                e.currentTarget.style.background = 'transparent';
-                e.currentTarget.style.boxShadow = '0 0 15px rgba(0, 242, 255, 0.15)';
-                e.currentTarget.style.transform = 'translateY(0)';
-              }}
-            >
-              <div style={{ color: '#00f2ff' }}>📊</div>
-              Verify on Blockchain
-            </button>
-
-            <button
-              onClick={() => {
-                setSubmittedHash(null);
-                setFormData({
-                  donorName: '', donorOrgName: '', resourceType: 'ppe', quantity: '', unit: 'pieces',
-                  donationDate: new Date().toISOString().split('T')[0], ngoName: '', purpose: '', boardResolution: '', csrPolicy: false, expiryDate: ''
-                });
-              }}
-              style={{
-                background: 'transparent',
-                color: '#94a3b8',
-                padding: '12px 32px',
-                borderRadius: '8px',
-                border: '1px solid #94a3b8',
-                fontWeight: '700',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '12px',
-                cursor: 'pointer',
-                boxShadow: '0 0 15px rgba(148, 163, 184, 0.1)',
-                textTransform: 'uppercase',
-                letterSpacing: '1px',
-                fontFamily: "'Orbitron', sans-serif",
-                transition: 'all 0.3s',
-              }}
-              onMouseOver={(e) => {
-                e.currentTarget.style.background = 'rgba(148, 163, 184, 0.1)';
-                e.currentTarget.style.borderColor = '#fff';
-                e.currentTarget.style.color = '#fff';
-                e.currentTarget.style.boxShadow = '0 0 20px rgba(255, 255, 255, 0.2)';
-                e.currentTarget.style.transform = 'translateY(-2px)';
-              }}
-              onMouseOut={(e) => {
-                e.currentTarget.style.background = 'transparent';
-                e.currentTarget.style.borderColor = '#94a3b8';
-                e.currentTarget.style.color = '#94a3b8';
-                e.currentTarget.style.boxShadow = '0 0 15px rgba(148, 163, 184, 0.1)';
-                e.currentTarget.style.transform = 'translateY(0)';
-              }}
-            >
-              <div style={{ color: '#94a3b8' }}>➕</div>
-              Make Another
-            </button>
+          <div style={{ display: 'flex', gap: '1rem' }}>
+            <button className="btn btn-primary" onClick={() => navigate('/csr/history')}>View History</button>
+            <button className="btn-secondary" onClick={() => window.location.reload()} style={{ padding: '0 2rem' }}>Record Another</button>
           </div>
         </div>
-        <style>{`
-             @keyframes bounce {
-               0%, 20%, 50%, 80%, 100% {transform: translateY(0);}
-               40% {transform: translateY(-20px);}
-               60% {transform: translateY(-10px);}
-             }
-           `}</style>
       </Layout>
-    )
+    );
   }
 
   return (
     <Layout>
-      <BlockchainNotification
-        show={notification.show}
-        eventType={notification.eventType}
-        onComplete={hideNotification}
-      />
+      <BlockchainNotification show={notification.show} eventType={notification.eventType} onComplete={hideNotification} />
 
-      <div className="page-header">
-        <div>
-          <h1 className="page-title">Donation Portal</h1>
-          <p className="page-subtitle">Secure Blockchain Record Management</p>
+      <div style={{ maxWidth: '900px', margin: '0 auto', padding: '2rem' }}>
+        <div style={{ textAlign: 'center', marginBottom: '3rem' }}>
+          <h1 className="page-title">Resource Authorization</h1>
+          <p className="page-subtitle">Initiate a secure donation protocol on the blockchain</p>
         </div>
-      </div>
 
-      <div style={{
-        minHeight: '60vh',
-        width: '100%',
-        maxWidth: '800px',
-        margin: '0 auto',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        background: 'rgba(15, 23, 42, 0.70)', /* Glass Theme */
-        backdropFilter: 'blur(24px)',
-        borderRadius: '24px',
-        border: '1px solid rgba(255, 255, 255, 0.08)',
-        boxShadow: '0 20px 40px -12px rgba(0, 0, 0, 0.6)',
-        padding: '3rem'
-      }}>
-        <div style={{ textAlign: 'center', maxWidth: '500px' }}>
-          <div style={{ background: 'linear-gradient(135deg, #4361EE 0%, #7209B7 100%)', width: '80px', height: '80px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1.5rem', boxShadow: '0 10px 25px rgba(67, 97, 238, 0.5)' }}>
-            <Plus size={40} color="#fff" />
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          style={{
+            background: 'rgba(15, 23, 42, 0.4)',
+            backdropFilter: 'blur(24px)',
+            borderRadius: '24px',
+            border: '1px solid rgba(255,255,255,0.05)',
+            padding: '4rem 3rem',
+            textAlign: 'center',
+            boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)'
+          }}>
+          <div style={{
+            width: '100px', height: '100px', borderRadius: '50%',
+            background: 'linear-gradient(135deg, rgba(59, 130, 246, 0.2) 0%, rgba(37, 99, 235, 0.2) 100%)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            margin: '0 auto 2rem', border: '1px solid rgba(59, 130, 246, 0.3)',
+            boxShadow: '0 0 30px rgba(59, 130, 246, 0.1)'
+          }}>
+            <Heart size={48} color="#3b82f6" fill="rgba(59, 130, 246, 0.1)" />
           </div>
-          <h2 style={{ fontSize: '2rem', marginBottom: '1rem', color: '#fff' }}>New Donation Record</h2>
-          <p style={{ color: '#94A3B8', marginBottom: '2rem', lineHeight: '1.6' }}>
-            Start a secure, step-by-step process to record a new resource donation.
-            All data is verified and hashed on the blockchain for transparency.
+          <h2 style={{ color: '#fff', fontSize: '2rem', marginBottom: '1rem' }}>New Donation Record</h2>
+          <p style={{ color: '#94a3b8', marginBottom: '3rem', maxWidth: '500px', margin: '0 auto 3rem', lineHeight: '1.6' }}>
+            Authorizing a donation creates an immutable record on the HealthTrace blockchain,
+            ensuring transparency for auditors and receiving clinics.
           </p>
           <button
             className="btn btn-primary"
-            style={{ padding: '1rem 2rem', fontSize: '1.1rem' }}
             onClick={() => setIsWizardOpen(true)}
+            style={{ padding: '1.2rem 4rem', fontSize: '1.2rem', display: 'flex', alignItems: 'center', gap: '12px', margin: '0 auto' }}
           >
-            Start Donation Wizard
+            START FORM <ArrowRight size={20} />
           </button>
-        </div>
+        </motion.div>
       </div>
 
       <WizardModal
         isOpen={isWizardOpen}
         onClose={() => setIsWizardOpen(false)}
-        title="Create New Donation (Secure)"
+        title="Donation Wizard"
         steps={wizardSteps}
         onComplete={handleSubmit}
         isSubmitting={isSubmitting}

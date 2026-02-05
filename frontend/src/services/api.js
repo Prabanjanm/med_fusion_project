@@ -20,7 +20,8 @@ const apiCall = async (endpoint, options = {}) => {
     const response = await fetch(`${API_BASE_URL}${endpoint}`, { ...options, headers });
 
     if (!response.ok) {
-      if (response.status === 401) {
+      // Don't auto-redirect if it's a login attempt (invalid credentials)
+      if (response.status === 401 && !endpoint.includes('/auth/login')) {
         window.location.href = '/auth/select';
       }
       const errorData = await response.json().catch(() => ({ detail: response.statusText }));
@@ -53,7 +54,8 @@ export const authAPI = {
   setClinicPassword: (token, password) => apiCall('/auth/clinic/set-password', {
     method: 'POST',
     body: JSON.stringify({ token, password })
-  })
+  }),
+  getMe: () => apiCall('/auth/me')
 };
 
 // ===== CSR (COMPANY) =====
@@ -69,6 +71,7 @@ export const donationAPI = {
     body: JSON.stringify({
       item_name: data.item_name,
       quantity: parseInt(data.quantity),
+      ngo_id: data.ngo_id ? parseInt(data.ngo_id) : null,
       purpose: data.purpose,
       board_resolution_ref: data.board_resolution_ref || 'N/A',
       csr_policy_declared: true,
@@ -140,8 +143,13 @@ export const clinicAPI = {
     body: JSON.stringify(data)
   }),
 
-  // Removed: register, submitRequirement, getProducts
-  // Reason: These endpoints do not exist in backend. Clinic onboarding is via NGO.
+  // 6. Delete Requirement
+  deleteRequirement: (id) => apiCall(`/clinic/requirements/${id}`, {
+    method: 'DELETE'
+  }),
+
+  // 7. Get NGO Inventory (Real-time stock of supervising NGO)
+  getNgoInventory: () => apiCall('/clinic/ngo-inventory'),
 };
 
 // ===== AUDITOR (Mapped to ADMIN Backend Routes) =====
@@ -168,13 +176,22 @@ export const auditorAPI = {
   }),
 
   // Backend: GET /admin/companies/verified
-  getVerifiedCompanies: () => apiCall('/admin/companies/verified'),
+  getCsrRegistry: () => apiCall('/admin/companies/verified'),
 
   // Backend: GET /admin/ngos/verified
+  getNgoRegistry: () => apiCall('/admin/ngos/verified'),
+
+  getVerifiedCompanies: () => apiCall('/admin/companies/verified'),
   getVerifiedNGOs: () => apiCall('/admin/ngos/verified'),
 
-  // Removed: verifyDonation, verifyAllocation, register, getPendingRegistrations, processRegistration
-  // Reason: Backend uses specific Admin Review endpoints and auto-logging.
+  // Detail endpoints
+  getCsrActivity: (id) => apiCall(`/admin/companies/${id}/activity`),
+  getNgoActivity: (id) => apiCall(`/admin/ngos/${id}/activity`),
+  getClinicRegistry: () => apiCall('/admin/clinics/verified'),
+  getClinicActivity: (id) => apiCall(`/admin/clinics/${id}/activity`),
+  getSystemStats: () => apiCall('/admin/stats'),
+
+  getUnifiedAuditTrail: () => apiCall('/admin/audit-trail'),
 };
 
 export default {

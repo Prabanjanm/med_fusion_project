@@ -23,6 +23,7 @@ from app.db.startup import (
     seed_trusted_ngos,
     seed_admin,
     fix_missing_columns,
+    seed_clinics,
 )
 
 # 🔹 Import models so SQLAlchemy registers them
@@ -128,6 +129,7 @@ async def startup():
         await seed_trusted_ngos(db)
         await seed_admin(db)
         await fix_missing_columns(db)
+        await seed_clinics(db)
 
 # --------------------------------------------------
 # 🔹 Routers

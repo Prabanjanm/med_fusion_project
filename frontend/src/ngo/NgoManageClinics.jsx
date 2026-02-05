@@ -241,10 +241,10 @@ const NgoManageClinics = () => {
                             <form onSubmit={handleNeedSubmit} style={{ display: 'grid', gap: '1.25rem' }}>
                                 <div className="form-group">
                                     <label style={{ color: '#94a3b8', fontSize: '0.85rem', marginBottom: '0.5rem', display: 'block' }}>Product Selection (From Inventory)</label>
-                                    <select 
-                                        required 
-                                        value={needData.item_name} 
-                                        onChange={e => setNeedData({...needData, item_name: e.target.value, quantity: ''})} // Reset quantity on item change
+                                    <select
+                                        required
+                                        value={needData.item_name}
+                                        onChange={e => setNeedData({ ...needData, item_name: e.target.value, quantity: '' })} // Reset quantity on item change
                                         style={{ width: '100%', background: 'rgba(15, 23, 42, 1)', border: '1px solid rgba(255,255,255,0.1)', color: '#fff', padding: '0.75rem', borderRadius: '8px' }}
                                     >
                                         <option value="">-- Select Product --</option>
@@ -270,15 +270,15 @@ const NgoManageClinics = () => {
                                             </span>
                                         )}
                                     </div>
-                                    <input 
-                                        type="number" 
-                                        required 
+                                    <input
+                                        type="number"
+                                        required
                                         min="1"
                                         max={stockMap[needData.item_name] || 999999}
-                                        value={needData.quantity} 
-                                        onChange={e => setNeedData({ ...needData, quantity: e.target.value })} 
+                                        value={needData.quantity}
+                                        onChange={e => setNeedData({ ...needData, quantity: e.target.value })}
                                         placeholder={needData.item_name ? `Max ${stockMap[needData.item_name]}` : "Enter quantity"}
-                                        style={{ width: '100%', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: '#fff', padding: '0.75rem', borderRadius: '8px' }} 
+                                        style={{ width: '100%', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: '#fff', padding: '0.75rem', borderRadius: '8px' }}
                                     />
                                     {needData.item_name && parseInt(needData.quantity) > stockMap[needData.item_name] && (
                                         <p style={{ color: '#ef4444', fontSize: '0.7rem', marginTop: '4px' }}>
@@ -386,7 +386,7 @@ const NgoManageClinics = () => {
                                 <div style={{ marginTop: '1.5rem', paddingTop: '1.5rem', borderTop: '1px solid rgba(255,255,255,0.05)', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
                                     <button
                                         disabled={!clinic.is_active}
-                                        onClick={() => { setSelectedClinic(clinic); setShowNeedForm(true); }}
+                                        onClick={() => { navigate('/ngo/clinic-requests', { state: { clinicId: clinic.id, clinicName: clinic.clinic_name } }); }}
                                         style={{
                                             background: clinic.is_active ? 'rgba(0, 229, 255, 0.1)' : 'rgba(100, 116, 139, 0.1)',
                                             border: `1px solid ${clinic.is_active ? '#00e5ff' : '#64748b'}`,
@@ -394,7 +394,7 @@ const NgoManageClinics = () => {
                                             padding: '0.5rem', borderRadius: '8px', fontSize: '0.8rem', fontWeight: 600, cursor: clinic.is_active ? 'pointer' : 'not-allowed'
                                         }}
                                     >
-                                        RAISE REQUIREMENT
+                                        VIEW REQUIREMENTS
                                     </button>
                                     <button
                                         style={{ background: 'transparent', border: '1px solid rgba(255,255,255,0.1)', color: '#fff', padding: '0.5rem', borderRadius: '8px', fontSize: '0.8rem', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.25rem' }}

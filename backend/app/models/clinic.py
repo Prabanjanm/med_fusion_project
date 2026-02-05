@@ -10,7 +10,7 @@ class Clinic(Base):
     id = Column(Integer, primary_key=True)
 
     clinic_name = Column(String, nullable=False)
-
+    address = Column(String, nullable=True)
     facility_id = Column(String, nullable=False)
     facility_id_type = Column(String, nullable=False)  # ABHA / CEA
 

@@ -4,7 +4,6 @@ import Layout from '../components/Layout';
 import StatusBadge from '../components/StatusBadge';
 import SummaryCard from '../components/SummaryCard';
 import '../styles/DashboardLayout.css';
-import UserApprovals from './UserApprovals';
 import { auditorAPI } from '../services/api';
 
 const AuditorCsrRegistry = () => {
@@ -19,14 +18,14 @@ const AuditorCsrRegistry = () => {
                 const data = await auditorAPI.getCsrRegistry().catch(() => []);
                 // Map Backend Data to UI Model
                 setCsrs(data.map(c => ({
-                    id: c.company_id || c.id || `CSR-${Math.random().toString(36).substr(2, 5)}`, // Fallback ID
-                    name: c.company_name || c.name || 'Unknown Company',
-                    details: `${c.location || 'Global'} • ${c.sector || 'General'}`,
-                    contact: c.official_email || c.email,
+                    id: c.company_id || c.id,
+                    name: c.company_name || c.name || 'Unregistered Entity',
+                    details: c.cin ? `CIN: ${c.cin}` : 'No CIN Records',
+                    contact: c.official_email || c.email || 'No Contact Data',
                     total_donations: c.total_donations || 0,
-                    last_active: c.last_active || new Date().toISOString(),
-                    status: c.is_verified ? 'ACTIVE' : (c.status || 'INACTIVE'),
-                    history: c.history || []
+                    last_active: c.last_active || null,
+                    status: c.is_verified ? 'ACTIVE' : (c.status || 'PENDING_VERIFICATION'),
+                    history: []
                 })));
             } catch (error) {
                 console.error("Failed to fetch CSR registry", error);
@@ -37,8 +36,33 @@ const AuditorCsrRegistry = () => {
         fetchData();
     }, []);
 
-    const toggleRow = (id) => {
-        setExpandedRow(expandedRow === id ? null : id);
+    const toggleRow = async (id) => {
+        if (expandedRow === id) {
+            setExpandedRow(null);
+            return;
+        }
+        setExpandedRow(id);
+
+        // Fetch real-time activity when expanded
+        try {
+            const detail = await auditorAPI.getCsrActivity(id);
+            setCsrs(prev => prev.map(c => {
+                if (c.id === id) {
+                    return {
+                        ...c,
+                        total_donations: detail.donations.length,
+                        history: detail.donations.map(d => ({
+                            action: d.status,
+                            target: d.ngo_id ? `NGO #${d.ngo_id}` : 'General Pool',
+                            date: new Date(d.authorized_at || d.created_at).toLocaleDateString()
+                        }))
+                    };
+                }
+                return c;
+            }));
+        } catch (error) {
+            console.error("Failed to fetch CSR activity", error);
+        }
     };
 
     const stats = {
@@ -73,8 +97,7 @@ const AuditorCsrRegistry = () => {
                 </div>
             </div>
 
-            {/* PENDING APPROVALS */}
-            <UserApprovals roleFilter="csr" />
+
 
             {/* Stats Grid */}
             <div className="stats-grid" style={{ marginBottom: '2rem' }}>
@@ -108,6 +131,7 @@ const AuditorCsrRegistry = () => {
                         {csrs.filter(csr =>
                             csr.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                             (csr.details || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+                            (csr.contact || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
                             (csr.id && csr.id.toString().toLowerCase().includes(searchTerm.toLowerCase()))
                         ).map(csr => (
                             <div key={csr.id} style={{
