@@ -9,7 +9,7 @@ class Donation(Base):
     id = Column(Integer, primary_key=True, index=True)
 
     company_id = Column(Integer, ForeignKey("companies.id"), nullable=False)
-    ngo_id = Column(Integer, ForeignKey("ngos.id"),nullable=False)
+    ngo_id = Column(Integer, ForeignKey("ngos.id"), nullable=True)
 
 
     item_name = Column(String, nullable=False)
@@ -18,6 +18,7 @@ class Donation(Base):
 
     board_resolution_ref = Column(String, nullable=False)
     csr_policy_declared = Column(Boolean, nullable=False)
+    expiry_date = Column(DateTime(timezone=True), nullable=True)
 
     status = Column(String, nullable=False, default="AUTHORIZED")
 

@@ -2,36 +2,12 @@ import React, { useState, useEffect } from 'react';
 import { CheckCircle, XCircle, Package, User, Calendar, AlertCircle } from 'lucide-react';
 import Layout from '../components/Layout';
 import StatusBadge from '../components/StatusBadge';
+import { ngoAPI } from '../services/api';
 import '../styles/DashboardLayout.css';
-
-// Mock data storage helpers
-const MOCK_DONATIONS_KEY = 'csr_tracker_mock_donations';
-
-const getMockDonations = () => {
-    try {
-        const stored = localStorage.getItem(MOCK_DONATIONS_KEY);
-        return stored ? JSON.parse(stored) : [];
-    } catch (error) {
-        return [];
-    }
-};
-
-const updateDonationStatus = (donationId, updates) => {
-    try {
-        const donations = getMockDonations();
-        const updatedDonations = donations.map(d =>
-            d.id === donationId ? { ...d, ...updates } : d
-        );
-        localStorage.setItem(MOCK_DONATIONS_KEY, JSON.stringify(updatedDonations));
-        return true;
-    } catch (error) {
-        console.error('Error updating donation:', error);
-        return false;
-    }
-};
 
 const NgoPendingDonations = () => {
     const [donations, setDonations] = useState([]);
+    const [acceptedStocks, setAcceptedStocks] = useState({});
     const [loading, setLoading] = useState(true);
     const [selectedDonation, setSelectedDonation] = useState(null);
     const [showModal, setShowModal] = useState(false);
@@ -41,55 +17,66 @@ const NgoPendingDonations = () => {
         fetchPendingDonations();
     }, []);
 
-    const fetchPendingDonations = () => {
+    const fetchPendingDonations = async () => {
         setLoading(true);
-        const allDonations = getMockDonations();
-        // Filter for pending donations only
-        const pending = allDonations.filter(d => d.status === 'PENDING');
-        setDonations(pending);
-        setLoading(false);
+        try {
+            // Fetch real available donations from backend
+            const [data, dashboardData] = await Promise.all([
+                ngoAPI.getAvailableDonations(),
+                ngoAPI.getDashboardData()
+            ]);
+
+            setDonations(data || []);
+
+            // Calculate accepted stocks
+            const accepted = dashboardData.accepted_donations || [];
+            const counts = accepted.reduce((acc, d) => {
+                acc[d.item_name] = (acc[d.item_name] || 0) + (d.quantity || 0);
+                return acc;
+            }, {});
+            setAcceptedStocks(counts);
+        } catch (error) {
+            console.error("Failed to fetch pending donations", error);
+        } finally {
+            setLoading(false);
+        }
     };
 
-    const handleAccept = (donation) => {
-        const success = updateDonationStatus(donation.id, {
-            status: 'ACCEPTED',
-            ngo_accepted_at: new Date().toISOString(),
-            ngo_status: 'accepted',
-            ngo_verified: true
-        });
+    const handleAccept = async (donation) => {
+        if (!window.confirm(`Accept donation of ${donation.quantity} ${donation.item_name}?`)) return;
 
-        if (success) {
-            alert(`✅ Donation ${donation.id} accepted successfully!`);
+        try {
+            // Call API to accept
+            await ngoAPI.acceptDonation(donation.donation_id || donation.id);
+            alert(`✅ Donation accepted successfully!`);
             fetchPendingDonations();
+        } catch (error) {
+            alert("Failed to accept donation: " + error.message);
         }
     };
 
     const handleReject = (donation) => {
+        // Backend logic for rejection isn't explicitly in the contract for NGO.
+        // It might be 'Auditor' who rejects. Or NGO can just Ignore it.
+        // For UI compliance, we'll confirm rejection but if API is missing, we simulate or warn.
         setSelectedDonation(donation);
         setShowModal(true);
     };
 
-    const confirmReject = () => {
+    const confirmReject = async () => {
         if (!rejectReason.trim()) {
             alert('Please provide a reason for rejection');
             return;
         }
 
-        const success = updateDonationStatus(selectedDonation.id, {
-            status: 'REJECTED',
-            ngo_rejected_at: new Date().toISOString(),
-            ngo_status: 'rejected',
-            rejection_reason: rejectReason,
-            ngo_verified: false
-        });
-
-        if (success) {
-            alert(`❌ Donation ${selectedDonation.id} rejected`);
-            setShowModal(false);
-            setRejectReason('');
-            setSelectedDonation(null);
-            fetchPendingDonations();
-        }
+        // Simulating Rejection if endpoint missing, or call specific endpoint if added later
+        // Currently contract has no 'Reject' for NGO.
+        alert("Donation marked as Ignored/Rejected locally.");
+        setShowModal(false);
+        setRejectReason('');
+        setSelectedDonation(null);
+        // Refresh or filter out locally
+        setDonations(prev => prev.filter(d => d.donation_id !== selectedDonation.donation_id));
     };
 
     return (
@@ -103,6 +90,44 @@ const NgoPendingDonations = () => {
                         </p>
                     </div>
                 </div>
+
+                {/* Accepted Stocks Summary */}
+                {!loading && Object.keys(acceptedStocks).length > 0 && (
+                    <div style={{
+                        display: 'grid',
+                        gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))',
+                        gap: '1rem',
+                        marginBottom: '2.5rem'
+                    }}>
+                        {Object.entries(acceptedStocks).map(([item, count]) => (
+                            <div key={item} style={{
+                                background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.1) 0%, rgba(5, 150, 105, 0.05) 100%)',
+                                border: '1px solid rgba(16, 185, 129, 0.2)',
+                                padding: '1.25rem',
+                                borderRadius: '16px',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '1rem'
+                            }}>
+                                <div style={{
+                                    width: '40px', height: '40px', borderRadius: '10px',
+                                    background: '#10b981', display: 'flex',
+                                    alignItems: 'center', justifyContent: 'center'
+                                }}>
+                                    <Package size={20} color="#000" />
+                                </div>
+                                <div>
+                                    <span style={{ fontSize: '0.7rem', color: '#10b981', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '1px' }}>
+                                        Accepted {item}
+                                    </span>
+                                    <div style={{ fontSize: '1.25rem', color: '#fff', fontWeight: 700 }}>
+                                        {count.toLocaleString()} <span style={{ fontSize: '0.8rem', color: '#64748b' }}>units</span>
+                                    </div>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                )}
 
                 {loading ? (
                     <div style={{ padding: '3rem', textAlign: 'center' }}>
@@ -125,7 +150,7 @@ const NgoPendingDonations = () => {
                     <div style={{ display: 'grid', gap: '1.5rem' }}>
                         {donations.map(donation => (
                             <div
-                                key={donation.id}
+                                key={donation.donation_id || donation.id}
                                 style={{
                                     background: 'rgba(15, 23, 42, 0.4)',
                                     backdropFilter: 'blur(20px)',
@@ -140,7 +165,7 @@ const NgoPendingDonations = () => {
                                         <h3 style={{ fontSize: '1.25rem', color: '#fff', marginBottom: '0.5rem' }}>
                                             {donation.item_name}
                                         </h3>
-                                        <p style={{ color: '#64748b', fontSize: '0.9rem' }}>{donation.id}</p>
+                                        <p style={{ color: '#64748b', fontSize: '0.9rem' }}>ID: {donation.donation_id || donation.id}</p>
                                     </div>
                                     <StatusBadge status={donation.status} />
                                 </div>
@@ -149,9 +174,9 @@ const NgoPendingDonations = () => {
                                     <div>
                                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
                                             <User size={16} color="#64748b" />
-                                            <span style={{ fontSize: '0.85rem', color: '#64748b', textTransform: 'uppercase' }}>Donor</span>
+                                            <span style={{ fontSize: '0.85rem', color: '#64748b', textTransform: 'uppercase' }}>Company</span>
                                         </div>
-                                        <p style={{ fontSize: '1rem', color: '#fff', fontWeight: 600 }}>{donation.donor_name || 'CSR Partner'}</p>
+                                        <p style={{ fontSize: '1rem', color: '#fff', fontWeight: 600 }}>{donation.company_name || 'CSR Partner'}</p>
                                     </div>
 
                                     <div>
@@ -168,7 +193,7 @@ const NgoPendingDonations = () => {
                                             <span style={{ fontSize: '0.85rem', color: '#64748b', textTransform: 'uppercase' }}>Created</span>
                                         </div>
                                         <p style={{ fontSize: '1rem', color: '#fff', fontWeight: 600 }}>
-                                            {new Date(donation.created_at).toLocaleDateString()}
+                                            {donation.created_at ? new Date(donation.created_at).toLocaleDateString() : 'N/A'}
                                         </p>
                                     </div>
                                 </div>
@@ -177,16 +202,6 @@ const NgoPendingDonations = () => {
                                     <div style={{ marginBottom: '2rem', padding: '1rem', background: 'rgba(255,255,255,0.02)', borderRadius: '12px' }}>
                                         <p style={{ fontSize: '0.85rem', color: '#64748b', marginBottom: '0.5rem', textTransform: 'uppercase' }}>Purpose</p>
                                         <p style={{ color: '#94a3b8', lineHeight: 1.6 }}>{donation.purpose}</p>
-                                    </div>
-                                )}
-
-                                {donation.supportingDocument && (
-                                    <div style={{ marginBottom: '2rem', padding: '1rem', background: 'rgba(59, 130, 246, 0.05)', border: '1px solid rgba(59, 130, 246, 0.2)', borderRadius: '12px' }}>
-                                        <p style={{ fontSize: '0.85rem', color: '#64748b', marginBottom: '0.5rem', textTransform: 'uppercase' }}>Supporting Document</p>
-                                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                            <Package size={16} color="#3b82f6" />
-                                            <p style={{ color: '#3b82f6', margin: 0 }}>{donation.supportingDocument.name || 'Document attached'}</p>
-                                        </div>
                                     </div>
                                 )}
 
@@ -229,125 +244,25 @@ const NgoPendingDonations = () => {
                                             transition: 'all 0.2s',
                                             boxShadow: '0 0 10px rgba(16, 185, 129, 0.1)'
                                         }}
-                                        onMouseOver={(e) => {
-                                            e.currentTarget.style.background = 'rgba(16, 185, 129, 0.2)';
-                                            e.currentTarget.style.boxShadow = '0 0 20px rgba(16, 185, 129, 0.2)';
-                                            e.currentTarget.style.borderColor = '#10b981';
-                                        }}
-                                        onMouseOut={(e) => {
-                                            e.currentTarget.style.background = 'rgba(16, 185, 129, 0.1)';
-                                            e.currentTarget.style.boxShadow = '0 0 10px rgba(16, 185, 129, 0.1)';
-                                            e.currentTarget.style.borderColor = 'rgba(16, 185, 129, 0.3)';
-                                        }}
                                     >
                                         <CheckCircle size={18} />
-                                        Verify & Accept
+                                        Request Donation
                                     </button>
                                 </div>
                             </div>
                         ))}
                     </div>
                 )}
-
-                {/* Reject Modal */}
+                {/* Reject Modal exists but not fully wired to backend since endpoint missing */}
                 {showModal && (
-                    <div style={{
-                        position: 'fixed',
-                        top: 0,
-                        left: 0,
-                        right: 0,
-                        bottom: 0,
-                        background: 'rgba(0, 0, 0, 0.8)',
-                        backdropFilter: 'blur(10px)',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        zIndex: 9999,
-                        padding: '2rem'
-                    }}>
-                        <div style={{
-                            background: 'rgba(15, 23, 42, 0.95)',
-                            border: '1px solid rgba(255, 255, 255, 0.1)',
-                            borderRadius: '24px',
-                            padding: '2rem',
-                            maxWidth: '500px',
-                            width: '100%'
-                        }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1.5rem' }}>
-                                <div style={{
-                                    width: '48px',
-                                    height: '48px',
-                                    borderRadius: '50%',
-                                    background: 'rgba(239, 68, 68, 0.1)',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center'
-                                }}>
-                                    <AlertCircle size={24} color="#ef4444" />
-                                </div>
-                                <div>
-                                    <h3 style={{ color: '#fff', margin: 0 }}>Reject Donation</h3>
-                                    <p style={{ color: '#64748b', fontSize: '0.9rem', margin: 0 }}>{selectedDonation?.id}</p>
-                                </div>
-                            </div>
-
-                            <div style={{ marginBottom: '1.5rem' }}>
-                                <label style={{ display: 'block', color: '#94a3b8', marginBottom: '0.5rem', fontSize: '0.9rem' }}>
-                                    Reason for Rejection *
-                                </label>
-                                <textarea
-                                    value={rejectReason}
-                                    onChange={(e) => setRejectReason(e.target.value)}
-                                    placeholder="Please provide a detailed reason..."
-                                    style={{
-                                        width: '100%',
-                                        minHeight: '120px',
-                                        background: 'rgba(255, 255, 255, 0.05)',
-                                        border: '1px solid rgba(255, 255, 255, 0.1)',
-                                        borderRadius: '12px',
-                                        padding: '1rem',
-                                        color: '#fff',
-                                        fontSize: '0.95rem',
-                                        resize: 'vertical'
-                                    }}
-                                />
-                            </div>
-
-                            <div style={{ display: 'flex', gap: '1rem', justifyContent: 'flex-end' }}>
-                                <button
-                                    onClick={() => {
-                                        setShowModal(false);
-                                        setRejectReason('');
-                                        setSelectedDonation(null);
-                                    }}
-                                    style={{
-                                        background: 'rgba(255, 255, 255, 0.05)',
-                                        border: '1px solid rgba(255, 255, 255, 0.1)',
-                                        borderRadius: '12px',
-                                        padding: '0.75rem 1.5rem',
-                                        color: '#94a3b8',
-                                        cursor: 'pointer',
-                                        fontSize: '0.95rem',
-                                        fontWeight: 600
-                                    }}
-                                >
-                                    Cancel
-                                </button>
-                                <button
-                                    onClick={confirmReject}
-                                    style={{
-                                        background: 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)',
-                                        border: 'none',
-                                        borderRadius: '12px',
-                                        padding: '0.75rem 1.5rem',
-                                        color: '#fff',
-                                        cursor: 'pointer',
-                                        fontSize: '0.95rem',
-                                        fontWeight: 600
-                                    }}
-                                >
-                                    Confirm Rejection
-                                </button>
+                    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.8)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 9999 }}>
+                        <div style={{ background: '#1e293b', padding: '2rem', borderRadius: '1rem', width: '400px' }}>
+                            <h3 style={{ color: 'white', marginTop: 0 }}>Reject Donation (Local)</h3>
+                            <p style={{ color: '#94a3b8' }}>Reason:</p>
+                            <textarea value={rejectReason} onChange={e => setRejectReason(e.target.value)} style={{ width: '100%', minHeight: '100px', background: '#334155', color: 'white', borderRadius: '8px' }}></textarea>
+                            <div style={{ marginTop: '1rem', display: 'flex', justifyContent: 'flex-end', gap: '1rem' }}>
+                                <button onClick={() => setShowModal(false)}>Cancel</button>
+                                <button onClick={confirmReject} style={{ background: '#ef4444', color: 'white', padding: '0.5rem 1rem', borderRadius: '0.5rem' }}>Confirm</button>
                             </div>
                         </div>
                     </div>

@@ -6,7 +6,7 @@ def create_clinic_invite_token(ngo_id: int, clinic_email: str):
     payload = {
         "ngo_id": ngo_id,
         "clinic_email": clinic_email,
-        "type": "clinic_invite",
+        "type": "clinic_set_password",
         "exp": datetime.utcnow() + timedelta(minutes=30)
     }
     return jwt.encode(payload, settings.SECRET_KEY, algorithm=settings.ALGORITHM)

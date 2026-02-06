@@ -1,293 +1,138 @@
-import React, { useState } from 'react';
-import { Send, Truck, CheckCircle } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Send, Truck, CheckCircle, Loader } from 'lucide-react';
 import Layout from '../components/Layout';
-import WizardModal, { ReviewSummary } from '../components/WizardModal';
-import { BlockchainToastContainer } from '../components/BlockchainToast';
-import { useBlockchainToast } from '../hooks/useBlockchainToast';
-import { simulateBlockchainTransaction, BlockchainEventTypes, getBlockchainEventMessage } from '../utils/blockchainService';
+import { ngoAPI } from '../services/api';
 import '../styles/FormStyles.css';
 
-/**
- * AllocateToClinic Component
- * NGO form to allocate donations to specific clinics using a Wizard Flow.
- */
 const AllocateToClinic = () => {
-  const [isWizardOpen, setIsWizardOpen] = useState(false);
-  const { toasts, showToast, removeToast } = useBlockchainToast();
-
+  const [data, setData] = useState({ availableDonations: [], requirements: [] });
+  const [loading, setLoading] = useState(true);
   const [formData, setFormData] = useState({
     donationId: '',
-    clinicName: '',
-    allocatedQuantity: '',
-    expectedDeliveryDate: new Date().toISOString().split('T')[0],
-    remarks: '',
+    requirementId: '',
   });
-
-  const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [submittedHash, setSubmittedHash] = useState(null);
+  const [success, setSuccess] = useState(false);
 
-  const donationOptions = [
-    { value: 'DON-2025-001', label: 'DON-2025-001 - PPE Kits (100 boxes)' },
-    { value: 'DON-2025-002', label: 'DON-2025-002 - Medical Gloves (500 boxes)' },
-    { value: 'DON-2025-003', label: 'DON-2025-003 - Syringes (1000 units)' },
-  ];
+  useEffect(() => {
+    fetchData();
+  }, []);
 
-  const clinicOptions = [
-    { value: 'clinic1', label: 'City General Hospital' },
-    { value: 'clinic2', label: 'Community Clinic West' },
-    { value: 'clinic3', label: 'Rural Health Center' },
-    { value: 'clinic4', label: 'Emergency Care Clinic' },
-  ];
-
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
-    if (errors[name]) setErrors(prev => ({ ...prev, [name]: '' }));
-  };
-
-  const validateStep1 = () => {
-    const newErrors = {};
-    if (!formData.donationId) newErrors.donationId = 'Donation is required';
-    if (!formData.clinicName) newErrors.clinicName = 'Clinic is required';
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
-
-  const validateStep2 = () => {
-    const newErrors = {};
-    if (!formData.allocatedQuantity || formData.allocatedQuantity <= 0) {
-      newErrors.allocatedQuantity = 'Valid quantity is required';
+  const fetchData = async () => {
+    try {
+      const dashboardData = await ngoAPI.getDashboardData();
+      setData({
+        availableDonations: dashboardData.accepted_donations || [],
+        requirements: dashboardData.clinic_requirements || []
+      });
+    } catch (error) {
+      console.error("Failed to load allocation data", error);
+    } finally {
+      setLoading(false);
     }
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = async () => {
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!formData.donationId || !formData.requirementId) return;
+
     setIsSubmitting(true);
     try {
-      // Simulate blockchain transaction
-      const blockchainResult = await simulateBlockchainTransaction(formData, 1500);
-
-      // Show blockchain notification toast (60s for demo visibility)
-      const message = getBlockchainEventMessage(BlockchainEventTypes.ALLOCATION_VERIFIED);
-      showToast(message, blockchainResult.hash, 'success', 60000);
-
-      // Simulate API call
-      console.log('Allocation submitted:', formData);
-      console.log('Mock blockchain transaction:', blockchainResult);
-
-      setSubmittedHash(blockchainResult.hash);
-      setIsSubmitting(false);
-      setIsWizardOpen(false);
+      await ngoAPI.allocate(formData.donationId, formData.requirementId);
+      setSuccess(true);
+      setFormData({ donationId: '', requirementId: '' });
+      fetchData(); // Refresh to remove allocated items if backend filters them
     } catch (error) {
-      console.error('Allocation failed:', error);
+      alert("Allocation failed: " + error.message);
+    } finally {
       setIsSubmitting(false);
     }
   };
 
-  const Step1Selection = (
-    <div>
-      <div className="wizard-field-group">
-        <label className="wizard-label">Select Source Donation</label>
-        <select
-          name="donationId"
-          value={formData.donationId}
-          onChange={handleChange}
-          className="wizard-select"
-        >
-          <option value="">Choose a donation</option>
-          {donationOptions.map(opt => (
-            <option key={opt.value} value={opt.value}>{opt.label}</option>
-          ))}
-        </select>
-        {errors.donationId && <span style={{ color: '#ef4444', fontSize: '0.8rem' }}>{errors.donationId}</span>}
-      </div>
-
-      <div className="wizard-field-group">
-        <label className="wizard-label">Target Clinic</label>
-        <select
-          name="clinicName"
-          value={formData.clinicName}
-          onChange={handleChange}
-          className="wizard-select"
-        >
-          <option value="">Select receiver clinic</option>
-          {clinicOptions.map(opt => (
-            <option key={opt.value} value={opt.value}>{opt.label}</option>
-          ))}
-        </select>
-        {errors.clinicName && <span style={{ color: '#ef4444', fontSize: '0.8rem' }}>{errors.clinicName}</span>}
-      </div>
-    </div>
-  );
-
-  const Step2Logistics = (
-    <div>
-      <div className="wizard-field-group">
-        <label className="wizard-label">Allocated Quantity</label>
-        <input
-          type="number"
-          name="allocatedQuantity"
-          value={formData.allocatedQuantity}
-          onChange={handleChange}
-          placeholder="Enter quantity"
-          min="1"
-          className="wizard-input"
-        />
-        {errors.allocatedQuantity && (
-          <span style={{ color: '#ef4444', fontSize: '0.8rem' }}>{errors.allocatedQuantity}</span>
-        )}
-      </div>
-
-      <div className="wizard-field-group">
-        <label className="wizard-label">Expected Delivery Date</label>
-        <input
-          type="date"
-          name="expectedDeliveryDate"
-          value={formData.expectedDeliveryDate}
-          onChange={handleChange}
-          className="wizard-input"
-        />
-      </div>
-
-      <div className="wizard-field-group">
-        <label className="wizard-label">Remarks (Optional)</label>
-        <textarea
-          name="remarks"
-          value={formData.remarks}
-          onChange={handleChange}
-          placeholder="Special instructions or notes"
-          rows="3"
-          className="wizard-textarea"
-        />
-      </div>
-    </div>
-  );
-
-  const wizardSteps = [
-    {
-      id: 'step1',
-      label: 'Source',
-      title: 'Select Donation & Clinic',
-      component: Step1Selection,
-      validate: validateStep1
-    },
-    {
-      id: 'step2',
-      label: 'Logistics',
-      title: 'Allocation Details',
-      component: Step2Logistics,
-      validate: validateStep2
-    },
-    {
-      id: 'step3',
-      label: 'Confirm',
-      title: 'Review & Sign Transaction',
-      component: <ReviewSummary data={formData} />,
-    }
-  ];
-
-  if (submittedHash) {
-    return (
-      <Layout>
-        <div style={{ height: '80vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center' }}>
-          <div style={{ fontSize: '4rem', color: '#00ff94', marginBottom: '1rem', animation: 'bounce 1s' }}>
-            <CheckCircle size={80} />
-          </div>
-          <h1 style={{ fontSize: '2.5rem', marginBottom: '0.5rem' }}>Allocation Recorded</h1>
-          <p style={{ color: 'var(--text-muted)', maxWidth: '500px', margin: '0 auto 2rem' }}>
-            The allocation has been successfully broadcast to the network.
-          </p>
-
-          <div style={{ background: 'rgba(0,0,0,0.3)', padding: '1rem 2rem', borderRadius: '8px', border: '1px dashed #334155', fontFamily: 'monospace', color: '#00ff94', marginBottom: '1rem' }}>
-            {submittedHash}
-          </div>
-
-          <div style={{
-            background: 'rgba(251, 191, 36, 0.1)',
-            border: '1px solid rgba(251, 191, 36, 0.3)',
-            borderRadius: '8px',
-            padding: '12px 20px',
-            marginBottom: '2rem',
-            maxWidth: '500px'
-          }}>
-            <p style={{ color: '#fbbf24', fontSize: '0.85rem', margin: 0 }}>
-              ⚠️ <strong>Simulated Blockchain Hash</strong> - Mock verification for demo purposes
-            </p>
-          </div>
-
-          <button
-            className="btn-primary"
-            onClick={() => {
-              setSubmittedHash(null);
-              setFormData({
-                donationId: '', clinicName: '', allocatedQuantity: '', expectedDeliveryDate: new Date().toISOString().split('T')[0], remarks: ''
-              });
-            }}
-          >
-            Allocate More
-          </button>
-        </div>
-        <style>{`
-         @keyframes bounce {
-           0%, 20%, 50%, 80%, 100% {transform: translateY(0);}
-           40% {transform: translateY(-20px);}
-           60% {transform: translateY(-10px);}
-         }
-       `}</style>
-      </Layout>
-    );
-  }
+  if (loading) return <Layout><div style={{ padding: '4rem', textAlign: 'center', color: '#fff' }}>Loading...</div></Layout>;
 
   return (
     <Layout>
-      <BlockchainToastContainer toasts={toasts} removeToast={removeToast} />
-
       <div className="page-header">
         <div>
           <h1 className="page-title">Clinic Allocation</h1>
-          <p className="page-subtitle">Distribute Resources to Clinics</p>
+          <p className="page-subtitle">Match Donations to Requirements</p>
         </div>
       </div>
 
-      <div style={{
-        minHeight: '60vh',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        background: 'rgba(255,255,255,0.02)',
-        borderRadius: '16px',
-        border: '1px solid rgba(255,255,255,0.05)',
-        padding: '2rem'
-      }}>
-        <div style={{ textAlign: 'center', maxWidth: '500px' }}>
-          <div style={{ background: 'linear-gradient(135deg, #F72585 0%, #7209B7 100%)', width: '80px', height: '80px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1.5rem', boxShadow: '0 10px 25px rgba(247, 37, 133, 0.4)' }}>
-            <Truck size={40} color="#fff" />
+      <div style={{ maxWidth: '700px', margin: '0 auto' }}>
+        {success && (
+          <div style={{
+            background: 'rgba(16, 185, 129, 0.1)',
+            border: '1px solid #10b981',
+            borderRadius: '8px',
+            padding: '1rem',
+            marginBottom: '1.5rem',
+            display: 'flex', alignItems: 'center', gap: '10px', color: '#10b981'
+          }}>
+            <CheckCircle size={20} />
+            Allocation Successful!
           </div>
-          <h2 style={{ fontSize: '2rem', marginBottom: '1rem', color: '#fff' }}>New Allocation</h2>
-          <p style={{ color: '#94A3B8', marginBottom: '2rem', lineHeight: '1.6' }}>
-            Create a new shipment allocation for a registered clinic.
-            Ensure quantities match available donation stock.
-          </p>
-          <button
-            className="btn-primary"
-            style={{ padding: '1rem 2rem', fontSize: '1.1rem' }}
-            onClick={() => setIsWizardOpen(true)}
-          >
-            Start Allocation Wizard
-          </button>
-        </div>
-      </div>
+        )}
 
-      <WizardModal
-        isOpen={isWizardOpen}
-        onClose={() => setIsWizardOpen(false)}
-        title="Distribute Resources (Secure)"
-        steps={wizardSteps}
-        onComplete={handleSubmit}
-        isSubmitting={isSubmitting}
-      />
+        <form onSubmit={handleSubmit} className="form-card" style={{ background: 'rgba(15, 23, 42, 0.6)', border: '1px solid rgba(255,255,255,0.05)' }}>
+          <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
+            <div style={{ background: 'linear-gradient(135deg, #F72585 0%, #7209B7 100%)', width: '60px', height: '60px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1rem', boxShadow: '0 10px 25px rgba(247, 37, 133, 0.4)' }}>
+              <Truck size={30} color="#fff" />
+            </div>
+            <h2 style={{ color: '#fff', fontSize: '1.5rem' }}>New Allocation</h2>
+          </div>
+
+          {/* Source: Donation */}
+          <div className="form-group">
+            <label className="input-label">Select Source Donation (In Stock)</label>
+            <select
+              className="form-input"
+              value={formData.donationId}
+              onChange={e => setFormData({ ...formData, donationId: e.target.value })}
+              required
+            >
+              <option value="">-- Choose Donation --</option>
+              {data.availableDonations.map(d => (
+                <option key={d.id} value={d.id}>
+                  #{d.id} {d.item_name} (Qty: {d.quantity})
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Target: Requirement */}
+          <div className="form-group">
+            <label className="input-label">Select Clinic Requirement</label>
+            <select
+              className="form-input"
+              value={formData.requirementId}
+              onChange={e => setFormData({ ...formData, requirementId: e.target.value })}
+              required
+            >
+              <option value="">-- Choose Requirement --</option>
+              {data.requirements.map(req => (
+                <option key={req.id} value={req.id}>
+                  {req.id} - {req.clinic_name} needs {req.item_name} ({req.quantity})
+                </option>
+              ))}
+            </select>
+            {data.requirements.length === 0 && (
+              <p style={{ fontSize: '0.8rem', color: '#f59e0b', marginTop: '5px' }}>No pending clinic requirements found.</p>
+            )}
+          </div>
+
+          <button
+            type="submit"
+            disabled={isSubmitting || !formData.donationId || !formData.requirementId}
+            className="btn btn-primary"
+            style={{ width: '100%', marginTop: '1rem' }}
+          >
+            {isSubmitting ? 'Allocating...' : 'Allocate Donation'}
+            {!isSubmitting && <Send size={16} />}
+          </button>
+        </form>
+      </div>
     </Layout>
   );
 };

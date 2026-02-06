@@ -12,11 +12,10 @@ const RoleSelection = () => {
     const [selectedRole, setSelectedRole] = useState(null);
 
     // Determine intent (login vs register) 
-    // Check both query param (preferred) and location state (fallback)
     const mode = searchParams.get('mode');
     const isRegisterIntent = mode === 'register' || location.state?.intent === 'register';
 
-    const roles = [
+    const allRoles = [
         {
             id: 'corporate',
             label: 'Corporate Donor',
@@ -47,16 +46,14 @@ const RoleSelection = () => {
         },
     ];
 
+    // Filter roles: Registration supports only Corporate and NGO. Login supports all.
+    const roles = isRegisterIntent
+        ? allRoles.filter(r => r.id === 'corporate' || r.id === 'ngo')
+        : allRoles;
+
     const handleRoleSelect = (roleId) => {
         setSelectedRole(roleId);
-
-        // Map role ID to route friendly term if needed (currently they match mostly)
-        // corporate -> csr due to route param mapping elsewhere? 
-        // Let's stick to what App.jsx uses for :roleId.
-        // The RoleSelection uses 'corporate' but App.jsx and RegisterCompany use 'csr'.
-        // We should normalize here.
         const routeRole = roleId === 'corporate' ? 'csr' : roleId;
-
         setTimeout(() => {
             if (isRegisterIntent) {
                 navigate(`/register/${routeRole}`);
@@ -135,17 +132,23 @@ const RoleSelection = () => {
                                 letterSpacing: '0.05em',
                                 fontFamily: "'Orbitron', sans-serif",
                                 textTransform: 'uppercase'
-                            }}>Select Your Portal</h1>
+                            }}>
+                                {isRegisterIntent ? 'Join the Network' : 'Select Your Portal'}
+                            </h1>
                             <p style={{ color: '#94a3b8', fontSize: '1rem', maxWidth: '550px', margin: '0 auto', lineHeight: '1.6' }}>
-                                Identify your role to access the dedicated secure dashboard.
+                                {isRegisterIntent
+                                    ? 'Start your compliance journey. Select your entity type to begin.'
+                                    : 'Identify your role to access the dedicated secure dashboard.'
+                                }
                             </p>
                         </motion.div>
 
                         <div style={{
                             display: 'grid',
-                            gridTemplateColumns: 'repeat(4, 1fr)', // STRICT 4-COLUMN ROW
+                            gridTemplateColumns: `repeat(${roles.length}, 1fr)`, // Dynamic columns based on filtered roles
                             gap: '24px',
-                            width: '100%'
+                            width: '100%',
+                            maxWidth: isRegisterIntent ? '700px' : '100%' // Narrower if only 2 items
                         }}>
                             {roles.map((role) => {
                                 const isHovered = hoveredRole === role.id;
@@ -176,14 +179,12 @@ const RoleSelection = () => {
                                             transition: 'opacity 0.3s ease'
                                         }}
                                     >
-                                        {/* Premium "Cut" Corner Effect - simulated with pseudo-borders if CSS allowed, but using subtle inset shadow here */}
                                         <div style={{
                                             position: 'absolute', inset: 0, borderRadius: '16px',
                                             boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.05)',
                                             pointerEvents: 'none'
                                         }} />
 
-                                        {/* Icon Container - Orbit Ring */}
                                         <div style={{
                                             width: '80px', height: '80px', borderRadius: '50%',
                                             background: `linear-gradient(135deg, ${role.color}10 0%, rgba(0,0,0,0) 100%)`,
@@ -193,7 +194,6 @@ const RoleSelection = () => {
                                             border: `1px solid ${role.color}15`,
                                             position: 'relative'
                                         }}>
-                                            {/* Subtle Orbit Ring */}
                                             <div style={{
                                                 position: 'absolute', inset: '-4px', borderRadius: '50%',
                                                 border: `1px solid ${role.color}10`,
@@ -218,7 +218,6 @@ const RoleSelection = () => {
                                             {role.desc}
                                         </p>
 
-                                        {/* Footer - Minimal Text */}
                                         <div style={{
                                             marginTop: '2rem',
                                             color: isHovered ? role.color : '#475569',
@@ -227,10 +226,9 @@ const RoleSelection = () => {
                                             display: 'flex', alignItems: 'center', gap: '6px',
                                             transition: 'color 0.3s ease'
                                         }}>
-                                            Enter Portal <ArrowRight size={14} />
+                                            {isRegisterIntent ? 'Start Registration' : 'Enter Portal'} <ArrowRight size={14} />
                                         </div>
 
-                                        {/* Hover Glow Edge / Bottom Line */}
                                         <motion.div
                                             initial={{ scaleX: 0, opacity: 0 }}
                                             animate={isHovered ? { scaleX: 1, opacity: 1 } : { scaleX: 0, opacity: 0 }}
@@ -257,19 +255,18 @@ const RoleSelection = () => {
                             justifyContent: 'center'
                         }}
                     >
-                        {/* Simple Premium Loader */}
                         <div style={{
                             width: '60px', height: '60px',
                             borderRadius: '50%',
                             border: '2px solid rgba(255,255,255,0.1)',
                             borderTopColor: roles.find(r => r.id === selectedRole).color,
                             marginBottom: '1.5rem',
-                            animation: 'spin 1s linear infinite' // Assuming global spin keyframe, or add style
+                            animation: 'spin 1s linear infinite'
                         }} />
                         <style>{`@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }`}</style>
 
                         <h2 style={{ color: '#fff', fontSize: '1.2rem', fontWeight: '500', letterSpacing: '0.5px' }}>
-                            Accessing Secure Portal...
+                            {isRegisterIntent ? 'Initializing Registration...' : 'Accessing Secure Portal...'}
                         </h2>
                     </motion.div>
                 )}

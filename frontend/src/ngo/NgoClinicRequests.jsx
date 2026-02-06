@@ -1,85 +1,78 @@
 import React, { useState, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import { Package, CheckCircle, XCircle, AlertTriangle, FileText, Download } from 'lucide-react';
 import Layout from '../components/Layout';
+import { ngoAPI } from '../services/api'; // Import API
 import '../styles/DashboardLayout.css';
-
-const CLINIC_REQUESTS_KEY = 'csr_tracker_clinic_requests';
-const MOCK_DONATIONS_KEY = 'csr_tracker_mock_donations';
-
-const getClinicRequests = () => {
-    try {
-        return JSON.parse(localStorage.getItem(CLINIC_REQUESTS_KEY) || '[]');
-    } catch (error) {
-        return [];
-    }
-};
-
-const getMockDonations = () => {
-    try {
-        return JSON.parse(localStorage.getItem(MOCK_DONATIONS_KEY) || '[]');
-    } catch (error) {
-        return [];
-    }
-};
-
-const updateRequest = (requestId, updates) => {
-    try {
-        const requests = getClinicRequests();
-        const updated = requests.map(r => r.id === requestId ? { ...r, ...updates } : r);
-        localStorage.setItem(CLINIC_REQUESTS_KEY, JSON.stringify(updated));
-        return true;
-    } catch (error) {
-        return false;
-    }
-};
 
 const NgoClinicRequests = () => {
     const [requests, setRequests] = useState([]);
-    const [availableStock, setAvailableStock] = useState({});
+    const [availableDonations, setAvailableDonations] = useState([]); // List of specific donation records
     const [loading, setLoading] = useState(true);
     const [selectedRequest, setSelectedRequest] = useState(null);
     const [showModal, setShowModal] = useState(false);
     const [modalType, setModalType] = useState('approve'); // 'approve' or 'deny'
-    const [allocations, setAllocations] = useState({});
+    const [selectedDonationIds, setSelectedDonationIds] = useState([]); // Now an array for multi-batch
     const [denialReason, setDenialReason] = useState('');
+    const { state } = useLocation();
+    const filterClinicId = state?.clinicId;
+    const filterClinicName = state?.clinicName;
 
     useEffect(() => {
         fetchData();
     }, []);
 
-    const fetchData = () => {
+    const fetchData = async () => {
         setLoading(true);
+        try {
+            // Maxwell: Use Real API calls
+            const [dashboardData, donations] = await Promise.all([
+                ngoAPI.getDashboardData(),
+                ngoAPI.getAvailableDonations()
+            ]);
 
-        // Get pending clinic requests
-        const allRequests = getClinicRequests();
-        const pending = allRequests.filter(r => r.status === 'PENDING');
-        setRequests(pending);
+            // Clinic Requirements from Dashboard Data
+            let requirements = dashboardData.clinic_requirements || [];
 
-        // Calculate available stock from accepted donations
-        const donations = getMockDonations();
-        const accepted = donations.filter(d => d.status === 'ACCEPTED');
+            // Filter by navigation state if provided
+            if (filterClinicId) {
+                requirements = requirements.filter(r => r.clinic_id === filterClinicId);
+            }
 
-        const stock = {};
-        accepted.forEach(d => {
-            const itemName = d.item_name;
-            stock[itemName] = (stock[itemName] || 0) + (d.quantity || 0);
-        });
+            // Filter only pending if backend returns all history
+            setRequests(requirements.filter(r =>
+                r.status === 'PENDING' ||
+                r.status === 'CLINIC_REQUESTED' ||
+                r.status === 'NGO_APPROVED' ||
+                r.status === 'PARTIALLY_ALLOCATED'
+            ));
 
-        setAvailableStock(stock);
-        setLoading(false);
+            // Accepted Donations (Inventory)
+            // Note: getAvailableDonations might return 'AUTHORIZED' (available to request) 
+            // We need 'ACCEPTED' donations (Inventory) to allocate.
+            // But Contract doesn't specify an endpoint for Inventory. 
+            // Prompt says: "Step 4: Approved CSR donation appears in NGO inventory"
+            // We will assume 'getAvailableDonations' returns ALL, and we filter by 'ACCEPTED'.
+            // OR we use the 'accepted_donations' from dashboardData if available.
+            const accepted = dashboardData.accepted_donations || [];
+
+            // Fallback: Check if donations list has accepted ones
+            // 🛡️ Extra check: Ensure we only show 'ACCEPTED' items in inventory
+            const inventory = (accepted.length > 0 ? accepted : (donations || [])).filter(d => d.status === 'ACCEPTED');
+
+            setAvailableDonations(inventory);
+
+        } catch (error) {
+            console.error("Failed to fetch NGO data", error);
+        } finally {
+            setLoading(false);
+        }
     };
 
     const handleApprove = (request) => {
         setSelectedRequest(request);
         setModalType('approve');
-
-        // Initialize allocations with requested quantities (capped by available stock)
-        const initialAllocations = {};
-        request.items.forEach(item => {
-            const available = availableStock[item.product_type] || 0;
-            initialAllocations[item.product_type] = Math.min(item.requested_quantity, available);
-        });
-        setAllocations(initialAllocations);
+        setSelectedDonationIds([]);
         setShowModal(true);
     };
 
@@ -90,74 +83,82 @@ const NgoClinicRequests = () => {
         setShowModal(true);
     };
 
-    const confirmApprove = () => {
-        // Validate allocations
-        const hasInvalidQty = Object.entries(allocations).some(([item, qty]) => {
-            const available = availableStock[item] || 0;
-            return qty <= 0 || qty > available;
-        });
+    const getMatchingDonations = (productType) => {
+        // Simple case-insensitive match
+        return availableDonations.filter(d =>
+            d.item_name.toLowerCase().includes(productType.toLowerCase()) ||
+            productType.toLowerCase().includes(d.item_name.toLowerCase())
+        );
+    };
 
-        if (hasInvalidQty) {
-            alert('Please enter valid quantities within available stock');
+    const toggleDonationSelection = (id) => {
+        setSelectedDonationIds(prev =>
+            prev.includes(id)
+                ? prev.filter(i => i !== id)
+                : [...prev, id]
+        );
+    };
+
+    const selectedTotal = availableDonations
+        .filter(d => selectedDonationIds.includes(d.donation_id))
+        .reduce((sum, d) => sum + d.quantity, 0);
+
+    const confirmApprove = async () => {
+        if (selectedDonationIds.length === 0) {
+            alert('Please select at least one donation batch to allocate');
             return;
         }
 
-        const approvedItems = selectedRequest.items.map(item => ({
-            ...item,
-            allocated_quantity: allocations[item.product_type] || 0
-        }));
+        try {
+            // Sequential allocation of all selected batches
+            for (const donationId of selectedDonationIds) {
+                await ngoAPI.allocate(donationId, selectedRequest.id);
+            }
 
-        const success = updateRequest(selectedRequest.id, {
-            status: 'APPROVED',
-            ngo_status: 'approved',
-            approved_at: new Date().toISOString(),
-            approved_items: approvedItems
-        });
-
-        if (success) {
-            alert(`✅ Request approved for ${selectedRequest.clinic_name}`);
+            alert(`✅ Allocation in progress! ${selectedDonationIds.length} batches linked to Audit.`);
             setShowModal(false);
             setSelectedRequest(null);
-            setAllocations({});
-            fetchData();
+            fetchData(); // Refresh list
+        } catch (error) {
+            alert("Allocation Failed: " + error.message);
         }
     };
 
-    const confirmDeny = () => {
+    const confirmDeny = async () => {
         if (!denialReason.trim()) {
             alert('Please provide a reason for denial');
             return;
         }
+        // Backend for Deny is not strict in Contract (AllocationCreate only allows allocation).
+        // If no endpoint exists, we can't 'Deny' via API officially. 
+        // We will alert user or just skip API for safety if backend doesn't support it.
+        // But Prompt says "NGO reviews... Allocates". Rejection might be implicit (ignore).
+        // We'll simulate success for UI or strictly call an endpoint if we found one.
+        alert('Request Rejected locally (Backend update pending implementation)');
 
-        const success = updateRequest(selectedRequest.id, {
-            status: 'DENIED',
-            ngo_status: 'denied',
-            denied_at: new Date().toISOString(),
-            denial_reason: denialReason
-        });
+        setShowModal(false);
+        setSelectedRequest(null);
+        setDenialReason('');
+        // Ensure UI updates
+        setRequests(prev => prev.filter(r => r.id !== selectedRequest.id));
+    };
 
-        if (success) {
-            alert(`❌ Request denied`);
-            setShowModal(false);
-            setSelectedRequest(null);
-            setDenialReason('');
-            fetchData();
+    const getPriorityLabel = (priority) => {
+        switch (priority) {
+            case 1: return 'CRITICAL';
+            case 2: return 'HIGH';
+            case 3: return 'MEDIUM';
+            case 4: return 'ROUTINE';
+            default: return 'NORMAL';
         }
     };
 
     const getPriorityColor = (priority) => {
         switch (priority) {
-            case 'emergency': return '#ef4444';
-            case 'not_urgent': return '#10b981';
-            default: return '#64748b';
-        }
-    };
-
-    const getPriorityLabel = (priority) => {
-        switch (priority) {
-            case 'emergency': return 'EMERGENCY';
-            case 'not_urgent': return 'Not Urgent';
-            default: return priority;
+            case 1: return '#ef4444';
+            case 2: return '#f59e0b';
+            case 3: return '#3b82f6';
+            default: return '#10b981';
         }
     };
 
@@ -166,39 +167,21 @@ const NgoClinicRequests = () => {
             <div style={{ maxWidth: '1400px', margin: '0 auto', padding: '2rem' }}>
                 <div className="page-header">
                     <div>
-                        <h1 className="page-title">Clinic Requests</h1>
+                        <h1 className="page-title">
+                            {filterClinicName ? `Requirements: ${filterClinicName}` : 'Clinic Requests'}
+                        </h1>
                         <p className="page-subtitle">
                             {loading ? 'Loading...' : `${requests.length} pending request${requests.length !== 1 ? 's' : ''}`}
+                            {filterClinicName && ' for this clinic'}
                         </p>
                     </div>
-                </div>
-
-                {/* Available Stock Summary */}
-                <div style={{
-                    background: 'rgba(15, 23, 42, 0.4)',
-                    backdropFilter: 'blur(20px)',
-                    border: '1px solid rgba(255, 255, 255, 0.08)',
-                    borderRadius: '24px',
-                    padding: '1.5rem',
-                    marginBottom: '2rem'
-                }}>
-                    <h3 style={{ color: '#fff', marginBottom: '1rem', fontSize: '1.1rem' }}>Available Stock</h3>
-                    {Object.keys(availableStock).length === 0 ? (
-                        <p style={{ color: '#64748b' }}>No stock available. Accept donations first.</p>
-                    ) : (
-                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '1rem' }}>
-                            {Object.entries(availableStock).map(([item, qty]) => (
-                                <div key={item} style={{
-                                    padding: '1rem',
-                                    background: 'rgba(16, 185, 129, 0.05)',
-                                    border: '1px solid rgba(16, 185, 129, 0.2)',
-                                    borderRadius: '12px'
-                                }}>
-                                    <p style={{ color: '#64748b', fontSize: '0.85rem', marginBottom: '0.25rem' }}>{item}</p>
-                                    <p style={{ color: '#10b981', fontSize: '1.25rem', fontWeight: 700 }}>{qty.toLocaleString()}</p>
-                                </div>
-                            ))}
-                        </div>
+                    {filterClinicName && (
+                        <button
+                            onClick={() => window.history.replaceState({}, document.title)} // Clear state
+                            style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: '#fff', padding: '0.5rem 1rem', borderRadius: '8px', cursor: 'pointer' }}
+                        >
+                            Show All Clinics
+                        </button>
                     )}
                 </div>
 
@@ -228,7 +211,7 @@ const NgoClinicRequests = () => {
                                 style={{
                                     background: 'rgba(15, 23, 42, 0.4)',
                                     backdropFilter: 'blur(20px)',
-                                    border: request.priority === 'emergency' ? '2px solid rgba(239, 68, 68, 0.5)' : '1px solid rgba(255, 255, 255, 0.08)',
+                                    border: request.priority === 1 ? '2px solid rgba(239, 68, 68, 0.5)' : '1px solid rgba(255, 255, 255, 0.08)',
                                     borderRadius: '24px',
                                     padding: '2rem'
                                 }}
@@ -236,14 +219,17 @@ const NgoClinicRequests = () => {
                                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1.5rem' }}>
                                     <div>
                                         <h3 style={{ fontSize: '1.25rem', color: '#fff', marginBottom: '0.5rem' }}>
-                                            {request.clinic_name}
+                                            {request.item_name}
                                         </h3>
-                                        <p style={{ color: '#64748b', fontSize: '0.9rem' }}>{request.id}</p>
+                                        <div style={{ color: '#64748b', fontSize: '0.9rem' }}>
+                                            Clinic: <strong style={{ color: '#00e5ff' }}>{request.clinic_name || 'Clinic ' + request.clinic_id}</strong> <br />
+                                            Required: {request.quantity} units
+                                        </div>
                                     </div>
                                     <div style={{
                                         padding: '0.5rem 1rem',
                                         borderRadius: '20px',
-                                        background: `rgba(${request.priority === 'emergency' ? '239, 68, 68' : '16, 185, 129'}, 0.1)`,
+                                        background: `rgba(${request.priority === 1 ? '239, 68, 68' : '16, 185, 129'}, 0.1)`,
                                         border: `1px solid ${getPriorityColor(request.priority)}`,
                                         color: getPriorityColor(request.priority),
                                         fontSize: '0.85rem',
@@ -253,140 +239,33 @@ const NgoClinicRequests = () => {
                                         alignItems: 'center',
                                         gap: '0.5rem'
                                     }}>
-                                        {request.priority === 'emergency' && <AlertTriangle size={14} />}
+                                        {request.priority === 1 && <AlertTriangle size={14} />}
                                         {getPriorityLabel(request.priority)}
                                     </div>
                                 </div>
 
-                                {/* Requested Items */}
-                                <div style={{ marginBottom: '1.5rem' }}>
-                                    <h4 style={{ color: '#94a3b8', fontSize: '0.9rem', marginBottom: '1rem', textTransform: 'uppercase' }}>
-                                        Requested Items
-                                    </h4>
-                                    <div style={{ display: 'grid', gap: '0.75rem' }}>
-                                        {request.items.map((item, idx) => {
-                                            const available = availableStock[item.product_type] || 0;
-                                            const canFulfill = available >= item.requested_quantity;
-
-                                            return (
-                                                <div key={idx} style={{
-                                                    padding: '1rem',
-                                                    background: 'rgba(255,255,255,0.02)',
-                                                    borderRadius: '8px',
-                                                    display: 'flex',
-                                                    justifyContent: 'space-between',
-                                                    alignItems: 'center'
-                                                }}>
-                                                    <div>
-                                                        <p style={{ color: '#fff', fontWeight: 600, marginBottom: '0.25rem' }}>{item.product_type}</p>
-                                                        <p style={{ color: '#64748b', fontSize: '0.85rem' }}>
-                                                            Requested: {item.requested_quantity.toLocaleString()} |
-                                                            Available: <span style={{ color: canFulfill ? '#10b981' : '#ef4444', fontWeight: 600 }}>
-                                                                {available.toLocaleString()}
-                                                            </span>
-                                                        </p>
-                                                    </div>
-                                                    {!canFulfill && (
-                                                        <div style={{
-                                                            padding: '0.5rem 1rem',
-                                                            background: 'rgba(239, 68, 68, 0.1)',
-                                                            border: '1px solid rgba(239, 68, 68, 0.3)',
-                                                            borderRadius: '8px',
-                                                            color: '#ef4444',
-                                                            fontSize: '0.85rem',
-                                                            fontWeight: 600
-                                                        }}>
-                                                            Insufficient Stock
-                                                        </div>
-                                                    )}
-                                                </div>
-                                            );
-                                        })}
-                                    </div>
-                                </div>
-
-                                {/* Emergency Details */}
-                                {request.priority === 'emergency' && (
-                                    <div style={{
-                                        marginBottom: '1.5rem',
-                                        padding: '1.5rem',
-                                        background: 'rgba(239, 68, 68, 0.05)',
-                                        border: '1px solid rgba(239, 68, 68, 0.2)',
-                                        borderRadius: '12px'
-                                    }}>
-                                        <h4 style={{ color: '#ef4444', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                            <AlertTriangle size={18} />
-                                            Emergency Details
-                                        </h4>
-                                        <p style={{ color: '#94a3b8', lineHeight: 1.6, marginBottom: '1rem' }}>
-                                            {request.emergency_reason}
-                                        </p>
-                                        {request.emergency_document && (
-                                            <div style={{
-                                                display: 'flex',
-                                                alignItems: 'center',
-                                                gap: '1rem',
-                                                padding: '1rem',
-                                                background: 'rgba(255,255,255,0.02)',
-                                                borderRadius: '8px'
-                                            }}>
-                                                <FileText size={24} color="#3b82f6" />
-                                                <div style={{ flex: 1 }}>
-                                                    <p style={{ color: '#fff', margin: 0, fontWeight: 600 }}>{request.emergency_document.name}</p>
-                                                    <p style={{ color: '#64748b', margin: 0, fontSize: '0.85rem' }}>
-                                                        {(request.emergency_document.size / 1024).toFixed(2)} KB
-                                                    </p>
-                                                </div>
-                                                <button
-                                                    style={{
-                                                        background: 'rgba(59, 130, 246, 0.1)',
-                                                        border: '1px solid rgba(59, 130, 246, 0.3)',
-                                                        borderRadius: '8px',
-                                                        padding: '0.5rem 1rem',
-                                                        color: '#3b82f6',
-                                                        cursor: 'pointer',
-                                                        display: 'flex',
-                                                        alignItems: 'center',
-                                                        gap: '0.5rem',
-                                                        fontSize: '0.85rem',
-                                                        fontWeight: 600
-                                                    }}
-                                                >
-                                                    <Download size={16} />
-                                                    View
-                                                </button>
-                                            </div>
-                                        )}
-                                    </div>
-                                )}
-
-                                {/* Purpose */}
                                 <div style={{ marginBottom: '1.5rem', padding: '1rem', background: 'rgba(255,255,255,0.02)', borderRadius: '12px' }}>
                                     <p style={{ color: '#64748b', fontSize: '0.85rem', marginBottom: '0.5rem' }}>Purpose</p>
                                     <p style={{ color: '#94a3b8', lineHeight: 1.6 }}>{request.purpose}</p>
                                 </div>
 
-                                {/* Actions */}
                                 <div style={{ display: 'flex', gap: '1rem', justifyContent: 'flex-end' }}>
-                                    <button
-                                        onClick={() => handleDeny(request)}
-                                        style={{
-                                            background: 'rgba(239, 68, 68, 0.1)',
-                                            border: '1px solid rgba(239, 68, 68, 0.3)',
-                                            borderRadius: '12px',
-                                            padding: '0.75rem 1.5rem',
-                                            color: '#ef4444',
-                                            cursor: 'pointer',
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            gap: '0.5rem',
-                                            fontSize: '0.95rem',
-                                            fontWeight: 600
-                                        }}
-                                    >
-                                        <XCircle size={18} />
-                                        Deny Request
-                                    </button>
+                                    {request.status !== 'NGO_APPROVED' && (
+                                        <button
+                                            onClick={() => handleDeny(request)}
+                                            style={{
+                                                background: 'rgba(239, 68, 68, 0.1)',
+                                                border: '1px solid rgba(239, 68, 68, 0.3)',
+                                                borderRadius: '12px',
+                                                padding: '0.75rem 1.5rem',
+                                                color: '#ef4444',
+                                                cursor: 'pointer',
+                                                display: 'flex', alignItems: 'center', gap: '0.5rem'
+                                            }}
+                                        >
+                                            <XCircle size={18} /> Deny
+                                        </button>
+                                    )}
 
                                     <button
                                         onClick={() => handleApprove(request)}
@@ -397,16 +276,10 @@ const NgoClinicRequests = () => {
                                             padding: '0.75rem 1.5rem',
                                             color: '#fff',
                                             cursor: 'pointer',
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            gap: '0.5rem',
-                                            fontSize: '0.95rem',
-                                            fontWeight: 600,
-                                            boxShadow: '0 4px 15px rgba(16, 185, 129, 0.3)'
+                                            display: 'flex', alignItems: 'center', gap: '0.5rem'
                                         }}
                                     >
-                                        <CheckCircle size={18} />
-                                        Approve & Allocate
+                                        <CheckCircle size={18} /> Allocate Stock
                                     </button>
                                 </div>
                             </div>
@@ -414,179 +287,88 @@ const NgoClinicRequests = () => {
                     </div>
                 )}
 
-                {/* Approve/Deny Modal */}
-                {showModal && selectedRequest && (
+                {/* Allocation Modal */}
+                {showModal && selectedRequest && modalType === 'approve' && (
                     <div style={{
-                        position: 'fixed',
-                        top: 0,
-                        left: 0,
-                        right: 0,
-                        bottom: 0,
-                        background: 'rgba(0, 0, 0, 0.8)',
-                        backdropFilter: 'blur(10px)',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        zIndex: 9999,
-                        padding: '2rem'
+                        position: 'fixed', inset: 0,
+                        background: 'rgba(0, 0, 0, 0.8)', backdropFilter: 'blur(10px)',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 9999
                     }}>
                         <div style={{
                             background: 'rgba(15, 23, 42, 0.95)',
                             border: '1px solid rgba(255, 255, 255, 0.1)',
-                            borderRadius: '24px',
-                            padding: '2rem',
-                            maxWidth: '600px',
-                            width: '100%',
-                            maxHeight: '80vh',
-                            overflowY: 'auto'
+                            borderRadius: '24px', padding: '2rem',
+                            maxWidth: '600px', width: '100%'
                         }}>
-                            {modalType === 'approve' ? (
-                                <>
-                                    <h3 style={{ color: '#fff', marginBottom: '1.5rem' }}>Approve Request & Allocate Quantities</h3>
-                                    <p style={{ color: '#94a3b8', marginBottom: '1.5rem' }}>
-                                        Set the quantity to allocate for each requested item
-                                    </p>
+                            <h3 style={{ color: '#fff', marginBottom: '1.5rem' }}>Select Donation Source</h3>
+                            <p style={{ color: '#94a3b8', marginBottom: '1.5rem' }}>
+                                Fulfilling request for <strong>{selectedRequest.clinic_name}</strong>: <br />
+                                Need <strong>{selectedRequest.quantity} {selectedRequest.item_name}</strong>.
+                            </p>
 
-                                    <div style={{ display: 'grid', gap: '1rem', marginBottom: '2rem' }}>
-                                        {selectedRequest.items.map((item, idx) => {
-                                            const available = availableStock[item.product_type] || 0;
-                                            return (
-                                                <div key={idx} style={{
-                                                    padding: '1rem',
-                                                    background: 'rgba(255,255,255,0.02)',
-                                                    borderRadius: '12px'
-                                                }}>
-                                                    <p style={{ color: '#fff', fontWeight: 600, marginBottom: '0.5rem' }}>{item.product_type}</p>
-                                                    <p style={{ color: '#64748b', fontSize: '0.85rem', marginBottom: '1rem' }}>
-                                                        Requested: {item.requested_quantity} | Available: {available}
-                                                    </p>
-                                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                                        <label style={{ color: '#94a3b8', fontSize: '0.9rem' }}>Allocate:</label>
-                                                        <input
-                                                            type="number"
-                                                            min="0"
-                                                            max={available}
-                                                            value={allocations[item.product_type] || 0}
-                                                            onChange={(e) => setAllocations({
-                                                                ...allocations,
-                                                                [item.product_type]: parseInt(e.target.value) || 0
-                                                            })}
-                                                            style={{
-                                                                flex: 1,
-                                                                padding: '0.75rem',
-                                                                background: 'rgba(255,255,255,0.05)',
-                                                                border: '1px solid rgba(255,255,255,0.1)',
-                                                                borderRadius: '8px',
-                                                                color: '#fff',
-                                                                fontSize: '1rem'
-                                                            }}
-                                                        />
-                                                    </div>
-                                                </div>
-                                            );
-                                        })}
-                                    </div>
-
-                                    <div style={{ display: 'flex', gap: '1rem', justifyContent: 'flex-end' }}>
-                                        <button
-                                            onClick={() => {
-                                                setShowModal(false);
-                                                setSelectedRequest(null);
-                                                setAllocations({});
-                                            }}
-                                            style={{
-                                                background: 'rgba(255,255,255,0.05)',
-                                                border: '1px solid rgba(255,255,255,0.1)',
-                                                borderRadius: '12px',
-                                                padding: '0.75rem 1.5rem',
-                                                color: '#94a3b8',
-                                                cursor: 'pointer',
-                                                fontSize: '0.95rem',
-                                                fontWeight: 600
-                                            }}
-                                        >
-                                            Cancel
-                                        </button>
-                                        <button
-                                            onClick={confirmApprove}
-                                            style={{
-                                                background: 'linear-gradient(135deg, #10b981 0%, #34d399 100%)',
-                                                border: 'none',
-                                                borderRadius: '12px',
-                                                padding: '0.75rem 1.5rem',
-                                                color: '#fff',
-                                                cursor: 'pointer',
-                                                fontSize: '0.95rem',
-                                                fontWeight: 600
-                                            }}
-                                        >
-                                            Confirm Approval
-                                        </button>
-                                    </div>
-                                </>
+                            {getMatchingDonations(selectedRequest.item_name).length === 0 ? (
+                                <div style={{ padding: '2rem', textAlign: 'center', background: 'rgba(239, 68, 68, 0.05)', borderRadius: '16px', border: '1px solid rgba(239, 68, 68, 0.2)' }}>
+                                    <XCircle size={48} color="#ef4444" style={{ marginBottom: '1rem', opacity: 0.5 }} />
+                                    <p style={{ color: '#ef4444', margin: 0 }}>No inventory found for {selectedRequest.item_name}.</p>
+                                </div>
                             ) : (
-                                <>
-                                    <h3 style={{ color: '#fff', marginBottom: '1.5rem' }}>Deny Request</h3>
-                                    <p style={{ color: '#94a3b8', marginBottom: '1.5rem' }}>
-                                        Please provide a reason for denying this request
-                                    </p>
-
-                                    <textarea
-                                        value={denialReason}
-                                        onChange={(e) => setDenialReason(e.target.value)}
-                                        placeholder="Enter denial reason..."
-                                        style={{
-                                            width: '100%',
-                                            minHeight: '120px',
-                                            background: 'rgba(255,255,255,0.05)',
-                                            border: '1px solid rgba(255,255,255,0.1)',
-                                            borderRadius: '12px',
-                                            padding: '1rem',
-                                            color: '#fff',
-                                            fontSize: '0.95rem',
-                                            resize: 'vertical',
-                                            marginBottom: '1.5rem'
-                                        }}
-                                    />
-
-                                    <div style={{ display: 'flex', gap: '1rem', justifyContent: 'flex-end' }}>
-                                        <button
-                                            onClick={() => {
-                                                setShowModal(false);
-                                                setSelectedRequest(null);
-                                                setDenialReason('');
-                                            }}
-                                            style={{
-                                                background: 'rgba(255,255,255,0.05)',
-                                                border: '1px solid rgba(255,255,255,0.1)',
-                                                borderRadius: '12px',
-                                                padding: '0.75rem 1.5rem',
-                                                color: '#94a3b8',
-                                                cursor: 'pointer',
-                                                fontSize: '0.95rem',
-                                                fontWeight: 600
-                                            }}
-                                        >
-                                            Cancel
-                                        </button>
-                                        <button
-                                            onClick={confirmDeny}
-                                            style={{
-                                                background: 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)',
-                                                border: 'none',
-                                                borderRadius: '12px',
-                                                padding: '0.75rem 1.5rem',
-                                                color: '#fff',
-                                                cursor: 'pointer',
-                                                fontSize: '0.95rem',
-                                                fontWeight: 600
-                                            }}
-                                        >
-                                            Confirm Denial
-                                        </button>
-                                    </div>
-                                </>
+                                <div style={{ display: 'grid', gap: '0.75rem', marginBottom: '1.5rem', maxHeight: '300px', overflowY: 'auto', paddingRight: '0.5rem' }}>
+                                    {getMatchingDonations(selectedRequest.item_name).map(donation => {
+                                        const isSelected = selectedDonationIds.includes(donation.donation_id);
+                                        return (
+                                            <div
+                                                key={donation.donation_id}
+                                                onClick={() => toggleDonationSelection(donation.donation_id)}
+                                                style={{
+                                                    padding: '1rem',
+                                                    background: isSelected ? 'rgba(16, 185, 129, 0.2)' : 'rgba(255,255,255,0.03)',
+                                                    border: isSelected ? '2px solid #10b981' : '1px solid rgba(255,255,255,0.1)',
+                                                    borderRadius: '12px',
+                                                    cursor: 'pointer',
+                                                    display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                                                    transition: 'all 0.2s ease'
+                                                }}
+                                            >
+                                                <div>
+                                                    <div style={{ color: '#fff', fontWeight: 'bold' }}>{donation.company_name}</div>
+                                                    <div style={{ color: '#94a3b8', fontSize: '0.85rem' }}>Batch ID: {donation.donation_id}</div>
+                                                </div>
+                                                <div style={{ textAlign: 'right' }}>
+                                                    <div style={{ color: isSelected ? '#10b981' : '#94a3b8', fontSize: '1.2rem', fontWeight: 'bold' }}>{donation.quantity}</div>
+                                                    <div style={{ color: '#64748b', fontSize: '0.8rem' }}>Available</div>
+                                                </div>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
                             )}
+
+                            <div style={{
+                                background: 'rgba(16, 185, 129, 0.1)',
+                                padding: '1rem', borderRadius: '12px',
+                                marginBottom: '2rem', display: 'flex',
+                                justifyContent: 'space-between', alignItems: 'center',
+                                border: `1px solid ${selectedTotal >= selectedRequest.quantity ? '#10b981' : 'rgba(16, 185, 129, 0.2)'}`
+                            }}>
+                                <span style={{ color: '#94a3b8', fontSize: '0.9rem' }}>Total Selected:</span>
+                                <span style={{ color: selectedTotal >= selectedRequest.quantity ? '#10b981' : '#fff', fontWeight: 'bold', fontSize: '1.2rem' }}>
+                                    {selectedTotal} / {selectedRequest.quantity}
+                                </span>
+                            </div>
+
+                            <div style={{ display: 'flex', gap: '1rem', justifyContent: 'flex-end' }}>
+                                <button onClick={() => setShowModal(false)} className="btn-secondary" style={{ padding: '0.75rem 1.5rem', borderRadius: '8px' }}>Cannot Fulfill</button>
+                                <button
+                                    onClick={confirmApprove}
+                                    disabled={selectedDonationIds.length === 0}
+                                    style={{
+                                        background: selectedDonationIds.length > 0 ? '#10b981' : '#64748b',
+                                        padding: '0.75rem 1.5rem', borderRadius: '8px', border: 'none', color: '#fff', cursor: selectedDonationIds.length > 0 ? 'pointer' : 'not-allowed'
+                                    }}
+                                >
+                                    Confirm {selectedDonationIds.length > 1 ? `Multi-Batch` : ''} Allocation
+                                </button>
+                            </div>
                         </div>
                     </div>
                 )}

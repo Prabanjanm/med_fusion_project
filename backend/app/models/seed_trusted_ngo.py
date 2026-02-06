@@ -28,6 +28,12 @@ async def seed_trusted_ngos(db: AsyncSession):
             "csr_1_number": "CSR00067890",
             "has_80g": False,
             "official_email": "admin@lifelinemed.org"
+        },
+        {
+            "ngo_name": "Ideafor Medical Lmt",
+            "csr_1_number": "CSR12345678",
+            "has_80g": False,
+            "official_email": "aiswaryam.cse2024@citchennai.net"
         }
     ]
 

@@ -10,6 +10,7 @@ from app.models.user import User
 from app.models.trusted_company import TrustedCompany
 from app.models.trusted_ngo import TrustedNGO
 from app.models.donation import Donation
+from app.models.admin_audit_log import AdminAuditLog
 
 
 async def init_db() -> None:

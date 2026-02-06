@@ -1,65 +1,70 @@
-
 import React, { useState, useEffect } from 'react';
 import { Truck, Activity, Search, Building2, Package } from 'lucide-react';
 import Layout from '../components/Layout';
 import StatusBadge from '../components/StatusBadge';
 import SummaryCard from '../components/SummaryCard';
 import '../styles/DashboardLayout.css';
-import UserApprovals from './UserApprovals';
+import { auditorAPI } from '../services/api';
 
 const AuditorNgoRegistry = () => {
     const [loading, setLoading] = useState(true);
     const [ngos, setNgos] = useState([]);
     const [searchTerm, setSearchTerm] = useState('');
-
-    useEffect(() => {
-        // Simulate API fetch with dummy data
-        setTimeout(() => {
-            setNgos([
-                {
-                    id: 'NGO-001',
-                    name: 'Red Cross India',
-                    details: 'New Delhi • Humanitarian Aid',
-                    contact: 'ops@redcross.in',
-                    pending_donations: 5,
-                    allocations_made: 42,
-                    status: 'ACTIVE',
-                    history: [
-                        { action: 'Verified Product', target: 'PPE Kits (500) from TechCorp', date: '2026-01-30' },
-                        { action: 'Allocated Stock', target: 'City Health Clinic (50 Kits)', date: '2026-01-29' }
-                    ]
-                },
-                {
-                    id: 'NGO-002',
-                    name: 'Doctors Without Borders',
-                    details: 'Global • Medical Relief',
-                    contact: 'logistics@msf.org',
-                    pending_donations: 12,
-                    allocations_made: 156,
-                    status: 'ACTIVE',
-                    history: [
-                        { action: 'Rejected Donation', target: 'Expired Meds from PharmaInc', date: '2026-01-25' }
-                    ]
-                },
-                {
-                    id: 'NGO-003',
-                    name: 'Local Relief Fund',
-                    details: 'Mumbai • Local Aid',
-                    contact: 'help@localrelief.org',
-                    pending_donations: 0,
-                    allocations_made: 10,
-                    status: 'UNDER_REVIEW',
-                    history: []
-                }
-            ]);
-            setLoading(false);
-        }, 800);
-    }, []);
-
     const [expandedRow, setExpandedRow] = useState(null);
 
-    const toggleRow = (id) => {
-        setExpandedRow(expandedRow === id ? null : id);
+    useEffect(() => {
+        const fetchData = async () => {
+            try {
+                const data = await auditorAPI.getNgoRegistry().catch(() => []);
+                // Map Backend Data to UI Model
+                setNgos(data.map(n => ({
+                    id: n.ngo_id || n.id,
+                    name: n.ngo_name || n.name || 'Unregistered NGO',
+                    details: n.csr_1_number ? `CSR1: ${n.csr_1_number}` : 'Awaiting Documentation',
+                    contact: n.official_email || n.email || 'No Contact Data',
+                    pending_donations: n.pending_donations || 0,
+                    allocations_made: n.allocations_made || 0,
+                    status: n.is_verified ? 'ACTIVE' : (n.status || 'UNDER_REVIEW'),
+                    history: []
+                })));
+            } catch (error) {
+                console.error("Failed to fetch NGO registry", error);
+            } finally {
+                setLoading(false);
+            }
+        };
+        fetchData();
+    }, []);
+
+
+    const toggleRow = async (id) => {
+        if (expandedRow === id) {
+            setExpandedRow(null);
+            return;
+        }
+        setExpandedRow(id);
+
+        // Fetch real-time activity and clinic allocations when expanded
+        try {
+            const detail = await auditorAPI.getNgoActivity(id);
+            setNgos(prev => prev.map(n => {
+                if (n.id === id) {
+                    return {
+                        ...n,
+                        allocations_made: detail.donations.filter(d => d.allocation).length,
+                        pending_donations: detail.donations.length,
+                        history: detail.donations.map(d => ({
+                            action: d.allocation?.received ? 'DELIVERED TO CLINIC' : (d.allocation ? 'ALLOCATED TO CLINIC' : 'ACCEPTED BY NGO'),
+                            target: d.item_name,
+                            date: new Date(d.allocation?.allocated_at || d.authorized_at || d.created_at).toLocaleDateString()
+                        }))
+                    };
+                }
+                return n;
+            }));
+        } catch (error) {
+            console.error("Failed to fetch NGO activity", error);
+        }
     };
 
     const stats = {
@@ -94,8 +99,7 @@ const AuditorNgoRegistry = () => {
                 </div>
             </div>
 
-            {/* PENDING APPROVALS */}
-            <UserApprovals roleFilter="ngo" />
+
 
             {/* Stats Grid */}
             <div className="stats-grid" style={{ marginBottom: '2rem' }}>
@@ -119,26 +123,18 @@ const AuditorNgoRegistry = () => {
                 />
             </div>
 
-            <div style={{ display: 'flex', gap: '1.5rem', marginBottom: '1.5rem', padding: '0 1rem' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.85rem', color: '#94a3b8' }}>
-                    <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#10b981' }}></div>
-                    <span>Active: Approved Partner</span>
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.85rem', color: '#94a3b8' }}>
-                    <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#f59e0b' }}></div>
-                    <span>Under Review: Pending Audit/Compliance Check</span>
-                </div>
-            </div>
-
             <div className="table-card">
                 {loading ? (
                     <div style={{ padding: '3rem', textAlign: 'center', color: '#64748b' }}>Loading registry...</div>
+                ) : ngos.length === 0 ? (
+                    <div style={{ padding: '3rem', textAlign: 'center', color: '#64748b' }}>Empty Registry</div>
                 ) : (
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                         {ngos.filter(ngo =>
                             ngo.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                            ngo.details.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                            ngo.id.toLowerCase().includes(searchTerm.toLowerCase())
+                            (ngo.details || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+                            (ngo.contact || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+                            (ngo.id && ngo.id.toString().toLowerCase().includes(searchTerm.toLowerCase()))
                         ).map(ngo => (
                             <div key={ngo.id} style={{
                                 background: 'rgba(255,255,255,0.02)',

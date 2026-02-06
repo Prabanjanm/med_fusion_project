@@ -188,9 +188,8 @@ const ClinicProductCatalog = () => {
                     </div>
 
                     <button
-                        className="btn-primary"
+                        className="btn btn-primary"
                         onClick={() => setRequestSubmitted(false)}
-                        style={{ padding: '0.875rem 1.5rem' }}
                     >
                         Request More Products
                     </button>

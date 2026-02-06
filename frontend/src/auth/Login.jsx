@@ -75,11 +75,18 @@ const Login = () => {
       const user = await login(formData.identifier, formData.secret);
       console.log('Login successful, user:', user);
 
+      // ROLE VALIDATION (Requirement 2)
+      const targetRole = user?.role ? user.role.toLowerCase() : selectedRole;
+
+      if (targetRole !== selectedRole) {
+        setError('Invalid role for this account. Please use the correct login.');
+        // Optional: you might want to call logout() here if you don't want to keep the session
+        setLoading(false);
+        return;
+      }
+
       setActiveField('success');
       setTimeout(() => {
-        // Get role from login response
-        const targetRole = user?.role ? user.role.toLowerCase() : selectedRole;
-
         // CRITICAL: Use explicit dashboard mapping to prevent redirect to /auth/select
         const dashboardMap = {
           'csr': '/csr',
@@ -101,8 +108,8 @@ const Login = () => {
       }, 800);
     } catch (err) {
       console.error('Login error:', err);
-      // Friendly error message
-      setError(err.message?.includes('401') ? 'INVALID CREDENTIALS' : 'AUTHENTICATION FAILED');
+      // Requirement 3: Use specific reasons from backend if available
+      setError(err.message || 'AUTHENTICATION FAILED');
       setLoading(false);
     }
   };
@@ -222,8 +229,10 @@ const Login = () => {
             </svg>
           </div>
 
-          <h1 style={{ fontSize: '1.8rem', fontWeight: '800', letterSpacing: '2px', color: '#fff', margin: 0 }}>CSR TRACKER</h1>
-          <p style={{ color: '#64748b', fontSize: '0.9rem', marginTop: '0.5rem', letterSpacing: '1px' }}>Global Trust Network</p>
+          <h1 style={{ fontSize: '1.8rem', fontWeight: '800', letterSpacing: '2px', color: '#fff', margin: 0, textAlign: 'center', lineHeight: '1.1' }}>
+            CSR HEALTH<br />TRACE
+          </h1>
+          <p style={{ color: '#64748b', fontSize: '0.9rem', marginTop: '1rem', letterSpacing: '1px', textAlign: 'center' }}>Global Trust Network</p>
 
           {/* Dynamic Role Badge */}
           <div style={{
@@ -315,9 +324,11 @@ const Login = () => {
 
           {/* Footer Area */}
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '2rem', borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: '1rem' }}>
-            <span onClick={() => navigate(`/register/${selectedRole}`)} style={{ color: '#94a3b8', fontSize: '0.8rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '5px' }}>
-              Create New Account <ArrowRight size={14} />
-            </span>
+            {(!['auditor', 'clinic'].includes(selectedRole)) ? (
+              <span onClick={() => navigate(`/register/${selectedRole}`)} style={{ color: '#94a3b8', fontSize: '0.8rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '5px' }}>
+                Create New Account <ArrowRight size={14} />
+              </span>
+            ) : <div />}
 
             {/* Demo Credentials Button */}
             <div

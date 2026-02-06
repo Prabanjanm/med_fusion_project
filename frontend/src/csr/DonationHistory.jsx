@@ -33,6 +33,7 @@ const DonationHistory = () => {
       // Transform API data to match table format
       const formattedDonations = data.map(donation => ({
         id: donation.id,
+        displayId: donation.display_id || `DON-${donation.id}`,
         donorName: donation.donor_name || 'CSR Donor',
         itemType: donation.item_name,
         quantity: donation.quantity,
@@ -68,7 +69,8 @@ const DonationHistory = () => {
   // Filter donations based on search and status
   const filteredDonations = donations.filter(donation => {
     const matchesSearch =
-      donation.id?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      String(donation.id)?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      donation.displayId?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       donation.donorName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       donation.itemType?.toLowerCase().includes(searchTerm.toLowerCase());
 
@@ -88,7 +90,7 @@ const DonationHistory = () => {
     const headers = ['Donation ID', 'Donor Name', 'Item Type', 'Quantity', 'NGO', 'Status', 'Date'];
     const csvContent = [
       headers.join(','),
-      ...donations.map(d => [d.id, d.donorName, d.itemType, d.quantity, d.ngoName, d.status, d.date].join(','))
+      ...donations.map(d => [d.displayId, d.donorName, d.itemType, d.quantity, d.ngoName, d.status, d.date].join(','))
     ].join('\n');
 
     // Download CSV
@@ -101,7 +103,7 @@ const DonationHistory = () => {
   };
 
   const columns = [
-    { key: 'id', label: 'Donation ID' },
+    { key: 'displayId', label: 'Donation ID' },
     { key: 'donorName', label: 'Donor Name' },
     { key: 'itemType', label: 'Item Type' },
     { key: 'quantity', label: 'Quantity' },

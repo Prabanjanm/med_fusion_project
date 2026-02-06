@@ -18,6 +18,7 @@ import DonationHistory from './csr/DonationHistory';
 import DonationDetails from './csr/DonationDetails';
 import CsrTrackStatus from './csr/CsrTrackStatus';
 import ProductDeclaration from './csr/ProductDeclaration';
+import CsrViewRequirements from './csr/CsrViewRequirements';
 
 // NGO Components
 import NgoDashboard from './ngo/NgoDashboard';
@@ -27,6 +28,7 @@ import AllocateToClinic from './ngo/AllocateToClinic';
 import AllocationHistory from './ngo/AllocationHistory';
 import ProductVerification from './ngo/ProductVerification';
 import RequestValidation from './ngo/RequestValidation';
+import NgoManageClinics from './ngo/NgoManageClinics';
 
 // Clinic Components
 import ClinicDashboard from './clinic/ClinicDashboard';
@@ -41,6 +43,7 @@ import AuditorCsrRegistry from './auditor/AuditorCsrRegistry';
 import AuditorNgoRegistry from './auditor/AuditorNgoRegistry';
 import AuditorPendingRequests from './auditor/AuditorPendingRequests';
 import AuditTrail from './auditor/AuditTrail';
+import AuditorClinicRegistry from './auditor/AuditorClinicRegistry';
 import Settings from './components/Settings';
 import BlockchainVerify from './components/BlockchainVerify';
 
@@ -98,7 +101,7 @@ function App() {
             element={<ProtectedRoutes element={<DonationDetails />} allowedRoles={['csr']} />}
           />
           <Route
-            path="/csr/declare-product"
+            path="/csr/verify-and-record"
             element={<ProtectedRoutes element={<ProductDeclaration />} allowedRoles={['csr']} />}
           />
 
@@ -132,6 +135,10 @@ function App() {
             path="/ngo/validate-requests"
             element={<ProtectedRoutes element={<RequestValidation />} allowedRoles={['ngo']} />}
           />
+          <Route
+            path="/ngo/manage-clinics"
+            element={<ProtectedRoutes element={<NgoManageClinics />} allowedRoles={['ngo']} />}
+          />
 
           {/* Clinic Routes */}
           <Route
@@ -162,7 +169,7 @@ function App() {
           />
           <Route
             path="/auditor/trail"
-            element={<ProtectedRoutes element={<AuditTrail />} allowedRoles={['auditor']} />}
+            element={<ProtectedRoutes element={<AuditTrail />} allowedRoles={['csr', 'ngo', 'clinic', 'auditor']} />}
           />
           <Route
             path="/auditor/csr-registry"
@@ -173,6 +180,10 @@ function App() {
             element={<ProtectedRoutes element={<AuditorNgoRegistry />} allowedRoles={['auditor']} />}
           />
           <Route
+            path="/auditor/clinic-registry"
+            element={<ProtectedRoutes element={<AuditorClinicRegistry />} allowedRoles={['auditor']} />}
+          />
+          <Route
             path="/auditor/pending-requests"
             element={<ProtectedRoutes element={<AuditorPendingRequests />} allowedRoles={['auditor']} />}
           />
@@ -180,6 +191,10 @@ function App() {
           {/* Universal Shared Routes (But protected) */}
           <Route
             path="/settings"
+            element={<ProtectedRoutes element={<Settings />} allowedRoles={['csr', 'ngo', 'clinic', 'auditor']} />}
+          />
+          <Route
+            path="/:role/settings"
             element={<ProtectedRoutes element={<Settings />} allowedRoles={['csr', 'ngo', 'clinic', 'auditor']} />}
           />
           <Route

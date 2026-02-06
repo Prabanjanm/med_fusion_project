@@ -44,7 +44,7 @@
 
 .timeline-stage {
     position: relative;
-    padding-bottom: 2.5rem;
+    padding-bottom: 2rem;
     display: flex;
     gap: 1.5rem;
     align-items: flex-start;
@@ -56,8 +56,8 @@
 
 .timeline-connector {
     position: absolute;
-    left: 32px;
-    top: 48px;
+    left: 24px;
+    top: 40px;
     width: 2px;
     height: calc(100% - 24px);
     transition: all 0.3s ease;
@@ -73,13 +73,13 @@
 }
 
 .timeline-icon {
-    width: 64px;
-    height: 64px;
+    width: 48px;
+    height: 48px;
     border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
-    border: 2px solid;
+    border: 1px solid;
     flex-shrink: 0;
     transition: all 0.3s ease;
     position: relative;
@@ -87,7 +87,7 @@
 }
 
 .timeline-stage.completed .timeline-icon {
-    animation: pulse-glow 2s ease-in-out infinite;
+    box-shadow: 0 0 10px rgba(16, 185, 129, 0.2);
 }
 
 @keyframes pulse-glow {

@@ -1,11 +1,14 @@
-from datetime import datetime
+from datetime import datetime, timezone
+from sys import audit
+from fastapi.concurrency import run_in_threadpool
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.models.donation import Donation
+from app.models.company import Company # Added Import
 from app.donations.schema import DonationCreate
 from sqlalchemy import select
-from sqlalchemy.ext.asyncio import AsyncSession
-from app.models.donation import Donation
 from sqlalchemy import func
+
+from app.blockchain.service import log_to_blockchain
 
 
 
@@ -21,20 +24,33 @@ async def create_donation(
 
     donation = Donation(
         company_id=company_id,
+        ngo_id=data.ngo_id, # Added ngo_id
         item_name=data.item_name,
         quantity=data.quantity,
         purpose=data.purpose,
         board_resolution_ref=data.board_resolution_ref,
         csr_policy_declared=data.csr_policy_declared,
+        expiry_date=data.expiry_date,
         status="AUTHORIZED",
-        authorized_at=datetime.utcnow()
+        authorized_at=datetime.now(timezone.utc)
     )
 
     db.add(donation)
     await db.commit()
     await db.refresh(donation)
+    # Fetch company name for audit trail
+    result = await db.execute(select(Company.company_name).where(Company.id == company_id))
+    company_name = result.scalar() or "CSR Company"
 
-    return donation
+    audit = await run_in_threadpool(
+        log_to_blockchain,
+        action="DONATION_CREATED",
+        entity=f"DON-{donation.id}",
+        role="CSR",
+        donor_name=company_name
+    )
+
+    return { "donation": donation, "audit": audit }
 
 
 

@@ -46,7 +46,10 @@ const Table = ({ columns, data = [], renderCell }) => {
                 const key = getColumnKey(col);
                 return (
                   <td key={colIdx}>
-                    {renderCell ? renderCell(row, key) : row[key]}
+                    {col.render
+                      ? col.render(row[key], row)
+                      : (renderCell ? renderCell(row, key) : row[key])
+                    }
                   </td>
                 );
               })}

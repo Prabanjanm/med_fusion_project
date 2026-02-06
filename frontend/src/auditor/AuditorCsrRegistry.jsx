@@ -1,72 +1,74 @@
-
 import React, { useState, useEffect } from 'react';
 import { User, Activity, FileText, Search, Building } from 'lucide-react';
 import Layout from '../components/Layout';
-import Table from '../components/Table';
 import StatusBadge from '../components/StatusBadge';
 import SummaryCard from '../components/SummaryCard';
 import '../styles/DashboardLayout.css';
-import UserApprovals from './UserApprovals';
+import { auditorAPI } from '../services/api';
 
 const AuditorCsrRegistry = () => {
     const [loading, setLoading] = useState(true);
     const [csrs, setCsrs] = useState([]);
     const [searchTerm, setSearchTerm] = useState('');
-
-    useEffect(() => {
-        // Simulate API fetch with dummy data
-        setTimeout(() => {
-            setCsrs([
-                {
-                    id: 'CSR-001',
-                    name: 'TechCorp Global',
-                    details: 'San Francisco, CA • Tech/Software',
-                    contact: 'admin@techcorp.com',
-                    total_donations: 12,
-                    last_active: '2026-01-30T10:30:00Z',
-                    status: 'ACTIVE',
-                    history: [
-                        { action: 'Created Donation', target: 'PPE Kits (500)', date: '2026-01-30' },
-                        { action: 'Updated Policy', target: 'CSR 2026', date: '2026-01-15' }
-                    ]
-                },
-                {
-                    id: 'CSR-002',
-                    name: 'MediLife Systems',
-                    details: 'Boston, MA • Healthcare',
-                    contact: 'csr@medilife.com',
-                    total_donations: 8,
-                    last_active: '2026-01-28T14:15:00Z',
-                    status: 'ACTIVE',
-                    history: [
-                        { action: 'Created Donation', target: 'Syringes (1000)', date: '2026-01-28' }
-                    ]
-                },
-                {
-                    id: 'CSR-003',
-                    name: 'BuildFuture Inc',
-                    details: 'Austin, TX • Construction',
-                    contact: 'info@buildfuture.com',
-                    total_donations: 3,
-                    last_active: '2025-12-10T09:00:00Z',
-                    status: 'INACTIVE',
-                    history: []
-                }
-            ]);
-            setLoading(false);
-        }, 800);
-    }, []);
-
     const [expandedRow, setExpandedRow] = useState(null);
 
-    const toggleRow = (id) => {
-        setExpandedRow(expandedRow === id ? null : id);
+    useEffect(() => {
+        const fetchData = async () => {
+            try {
+                const data = await auditorAPI.getCsrRegistry().catch(() => []);
+                // Map Backend Data to UI Model
+                setCsrs(data.map(c => ({
+                    id: c.company_id || c.id,
+                    name: c.company_name || c.name || 'Unregistered Entity',
+                    details: c.cin ? `CIN: ${c.cin}` : 'No CIN Records',
+                    contact: c.official_email || c.email || 'No Contact Data',
+                    total_donations: c.total_donations || 0,
+                    last_active: c.last_active || null,
+                    status: c.is_verified ? 'ACTIVE' : (c.status || 'PENDING_VERIFICATION'),
+                    history: []
+                })));
+            } catch (error) {
+                console.error("Failed to fetch CSR registry", error);
+            } finally {
+                setLoading(false);
+            }
+        };
+        fetchData();
+    }, []);
+
+    const toggleRow = async (id) => {
+        if (expandedRow === id) {
+            setExpandedRow(null);
+            return;
+        }
+        setExpandedRow(id);
+
+        // Fetch real-time activity when expanded
+        try {
+            const detail = await auditorAPI.getCsrActivity(id);
+            setCsrs(prev => prev.map(c => {
+                if (c.id === id) {
+                    return {
+                        ...c,
+                        total_donations: detail.donations.length,
+                        history: detail.donations.map(d => ({
+                            action: d.status,
+                            target: d.ngo_id ? `NGO #${d.ngo_id}` : 'General Pool',
+                            date: new Date(d.authorized_at || d.created_at).toLocaleDateString()
+                        }))
+                    };
+                }
+                return c;
+            }));
+        } catch (error) {
+            console.error("Failed to fetch CSR activity", error);
+        }
     };
 
     const stats = {
         total: csrs.length,
         active: csrs.filter(c => c.status === 'ACTIVE').length,
-        inactive: csrs.filter(c => c.status === 'INACTIVE').length
+        inactive: csrs.filter(c => c.status !== 'ACTIVE').length
     };
 
     return (
@@ -95,8 +97,7 @@ const AuditorCsrRegistry = () => {
                 </div>
             </div>
 
-            {/* PENDING APPROVALS */}
-            <UserApprovals roleFilter="csr" />
+
 
             {/* Stats Grid */}
             <div className="stats-grid" style={{ marginBottom: '2rem' }}>
@@ -120,26 +121,18 @@ const AuditorCsrRegistry = () => {
                 />
             </div>
 
-            <div style={{ display: 'flex', gap: '1.5rem', marginBottom: '1.5rem', padding: '0 1rem' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.85rem', color: '#94a3b8' }}>
-                    <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#10b981' }}></div>
-                    <span>Active: Fully Verified & Operational</span>
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.85rem', color: '#94a3b8' }}>
-                    <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#64748b' }}></div>
-                    <span>Inactive: No recent activity or Suspended</span>
-                </div>
-            </div>
-
             <div className="table-card">
                 {loading ? (
                     <div style={{ padding: '3rem', textAlign: 'center', color: '#64748b' }}>Loading registry...</div>
+                ) : csrs.length === 0 ? (
+                    <div style={{ padding: '3rem', textAlign: 'center', color: '#64748b' }}>Empty Registry</div>
                 ) : (
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                         {csrs.filter(csr =>
                             csr.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                            csr.details.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                            csr.id.toLowerCase().includes(searchTerm.toLowerCase())
+                            (csr.details || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+                            (csr.contact || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+                            (csr.id && csr.id.toString().toLowerCase().includes(searchTerm.toLowerCase()))
                         ).map(csr => (
                             <div key={csr.id} style={{
                                 background: 'rgba(255,255,255,0.02)',

@@ -1,36 +1,53 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
-    User, Shield, Bell, Lock, Key, QrCode,
-    ExternalLink, LogOut, CheckCircle, Copy, AlertTriangle
+    User, Shield, Lock, Key, QrCode,
+    ExternalLink, LogOut, CheckCircle, Copy, AlertTriangle, Building, Mail, MapPin, Hash
 } from 'lucide-react';
 import Layout from '../components/Layout';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useAuth } from '../context/AuthContext';
+import { authAPI } from '../services/api';
 
 /**
  * Settings Component
  * Redesigned to match the "Cyberpunk Medical" aesthetic with high-fidelity UI.
  */
 const Settings = () => {
-    const { user: authUser, logout } = useAuth();
     const [activeTab, setActiveTab] = useState('profile');
     const [showKey, setShowKey] = useState(false);
     const [copied, setCopied] = useState(false);
+    const [loading, setLoading] = useState(true);
+    const [user, setUser] = useState(null);
 
-    // Dynamic User Data from Context
-    const user = {
-        name: authUser?.name || authUser?.username || 'Guest User',
-        role: authUser?.role || 'Guest',
-        roleDesc: authUser?.role === 'csr' ? 'Corporate Partner' :
-            authUser?.role === 'ngo' ? 'Verified NGO' :
-                authUser?.role === 'clinic' ? 'Healthcare Provider' : 'System Auditor',
-        email: authUser?.email || authUser?.username || 'No Email',
-        wallet: authUser?.wallet || '0x71C93F...92F8A1', // Fallback for demo
-        shortWallet: authUser?.wallet ? `${authUser.wallet.substring(0, 6)}...${authUser.wallet.substring(authUser.wallet.length - 4)}` : '0x71C...92F',
-        identityId: authUser?.id_number || `ID-${Math.random().toString(36).substr(2, 9).toUpperCase()}`,
-        lastLogin: new Date().toLocaleDateString(), // Just for display
-        twoFactor: true
-    };
+    useEffect(() => {
+        const fetchProfile = async () => {
+            try {
+                const data = await authAPI.getMe();
+                // Map Backend Data to UI State - Filter out empty values
+                const profileData = {
+                    name: data.organization_name,
+                    role: data.role === 'CSR' ? 'CSR Manager' : (data.role === 'NGO' ? 'NGO Officer' : (data.role === 'CLINIC' ? 'Clinic Head' : 'Network Auditor')),
+                    email: data.email,
+                    identityId: data.identity_token,
+                    org_details: data.organization_details
+                };
+
+                // Clean data - Remove anything empty/null
+                const cleanUser = {};
+                Object.keys(profileData).forEach(key => {
+                    if (profileData[key] && profileData[key] !== 'N/A' && profileData[key] !== 'Unknown') {
+                        cleanUser[key] = profileData[key];
+                    }
+                });
+
+                setUser(cleanUser);
+            } catch (error) {
+                console.error("Failed to fetch profile", error);
+            } finally {
+                setLoading(false);
+            }
+        };
+        fetchProfile();
+    }, []);
 
     const handleCopy = () => {
         navigator.clipboard.writeText(user.wallet);
@@ -105,20 +122,25 @@ const Settings = () => {
                         <div style={{ padding: '1rem 0' }}>
                             <TabButton id="profile" label="Profile & Identity" icon={User} />
                             <TabButton id="security" label="Security & Access" icon={Shield} />
-                            <TabButton id="notifications" label="Notifications" icon={Bell} />
                         </div>
 
                         <div style={{ padding: '2rem 1.5rem 1.5rem' }}>
-                            <button style={{
-                                width: '100%', padding: '12px',
-                                background: 'rgba(239, 68, 68, 0.1)',
-                                border: '1px solid rgba(239, 68, 68, 0.2)',
-                                borderRadius: '8px',
-                                color: '#ef4444',
-                                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
-                                cursor: 'pointer', fontWeight: '600', fontSize: '0.9rem',
-                                transition: 'all 0.2s'
-                            }}
+                            <button
+                                onClick={() => {
+                                    authAPI.logout?.(); // Optional backend call
+                                    localStorage.clear();
+                                    window.location.href = '/login';
+                                }}
+                                style={{
+                                    width: '100%', padding: '12px',
+                                    background: 'rgba(239, 68, 68, 0.1)',
+                                    border: '1px solid rgba(239, 68, 68, 0.2)',
+                                    borderRadius: '8px',
+                                    color: '#ef4444',
+                                    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
+                                    cursor: 'pointer', fontWeight: '600', fontSize: '0.9rem',
+                                    transition: 'all 0.2s'
+                                }}
                                 onMouseEnter={(e) => e.target.style.background = 'rgba(239, 68, 68, 0.2)'}
                                 onMouseLeave={(e) => e.target.style.background = 'rgba(239, 68, 68, 0.1)'}
                             >
@@ -138,175 +160,146 @@ const Settings = () => {
                             border: '1px solid rgba(6, 182, 212, 0.2)', // Cyan border glow
                             boxShadow: '0 0 40px rgba(6, 182, 212, 0.05)',
                             padding: '2.5rem',
-                            minHeight: '600px',
+                            minHeight: '400px',
                             position: 'relative'
                         }}
                     >
-                        {activeTab === 'profile' && (
+                        {loading ? (
+                            <div style={{ padding: '4rem', textAlign: 'center', color: '#64748b' }}>Consulting Blockchain Records...</div>
+                        ) : !user ? (
+                            <div style={{ padding: '4rem', textAlign: 'center', color: '#64748b' }}>Identity Not Found</div>
+                        ) : (
                             <>
-                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '3rem' }}>
-                                    <h2 style={{ fontSize: '1.5rem', fontWeight: '700', color: '#fff', fontFamily: '"Outfit", sans-serif' }}>
-                                        Verified Digital Identity
-                                    </h2>
-                                    <div style={{
-                                        padding: '6px 12px', background: 'rgba(16, 185, 129, 0.1)',
-                                        border: '1px solid rgba(16, 185, 129, 0.3)', borderRadius: '20px',
-                                        display: 'flex', alignItems: 'center', gap: '6px',
-                                        boxShadow: '0 0 15px rgba(16, 185, 129, 0.1)'
-                                    }}>
-                                        <Shield size={14} color="#10b981" fill="#10b981" />
-                                        <span style={{ fontSize: '0.75rem', fontWeight: '700', color: '#10b981', letterSpacing: '0.5px' }}>VERIFIED ON-CHAIN</span>
-                                    </div>
-                                </div>
-
-                                {/* IDENTITY CARD */}
-                                <div style={{
-                                    background: '#1e293b',
-                                    borderRadius: '16px',
-                                    padding: '2.5rem',
-                                    marginBottom: '3rem',
-                                    display: 'flex', alignItems: 'center', gap: '2.5rem',
-                                    border: '1px solid rgba(255,255,255,0.05)'
-                                }}>
-                                    {/* Avatar */}
-                                    <div style={{ position: 'relative' }}>
-                                        <div style={{
-                                            width: '110px', height: '110px', borderRadius: '50%',
-                                            background: 'linear-gradient(135deg, #6366f1 0%, #a855f7 100%)',
-                                            display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                            fontSize: '2.5rem', fontWeight: 'bold', color: '#fff',
-                                            border: '4px solid #0f172a',
-                                            boxShadow: '0 0 0 2px rgba(99, 102, 241, 0.5)'
-                                        }}>
-                                            SM
-                                        </div>
-                                        <div style={{
-                                            position: 'absolute', bottom: '5px', right: '5px',
-                                            width: '24px', height: '24px', borderRadius: '50%',
-                                            background: '#10b981', border: '3px solid #0f172a',
-                                            display: 'flex', alignItems: 'center', justifyContent: 'center'
-                                        }}>
-                                            <CheckCircle size={14} color="#0f172a" />
-                                        </div>
-                                    </div>
-
-                                    {/* Details */}
-                                    <div>
-                                        <h2 style={{ fontSize: '1.8rem', color: '#fff', margin: '0 0 0.5rem 0', fontWeight: '700' }}>{user.name}</h2>
-                                        <p style={{ color: '#06b6d4', fontSize: '1rem', margin: 0, fontWeight: '500', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                            {user.role} <span style={{ opacity: 0.5 }}>•</span> {user.roleDesc}
-                                        </p>
-
-                                        <div style={{ marginTop: '1.5rem', display: 'flex', gap: '1rem' }}>
+                                {activeTab === 'profile' && (
+                                    <>
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '3rem' }}>
+                                            <h2 style={{ fontSize: '1.5rem', fontWeight: '700', color: '#fff', fontFamily: '"Outfit", sans-serif' }}>
+                                                Verified Digital Identity
+                                            </h2>
                                             <div style={{
-                                                background: '#020617', padding: '8px 16px', borderRadius: '8px',
-                                                border: '1px solid rgba(255,255,255,0.1)', display: 'flex', alignItems: 'center', gap: '10px'
+                                                padding: '6px 12px', background: 'rgba(16, 185, 129, 0.1)',
+                                                border: '1px solid rgba(16, 185, 129, 0.3)', borderRadius: '20px',
+                                                display: 'flex', alignItems: 'center', gap: '6px'
                                             }}>
-                                                <QrCode size={18} color="#64748b" />
-                                                <span style={{ fontFamily: 'monospace', color: '#94a3b8', fontSize: '0.95rem' }}>{user.shortWallet}</span>
+                                                <Shield size={14} color="#10b981" fill="#10b981" />
+                                                <span style={{ fontSize: '0.75rem', fontWeight: '700', color: '#10b981', letterSpacing: '0.5px' }}>VERIFIED</span>
                                             </div>
-                                            <button
-                                                onClick={handleCopy}
-                                                style={{
-                                                    width: '40px', background: '#fff', borderRadius: '8px', border: 'none',
-                                                    display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer',
-                                                    transition: 'all 0.2s'
-                                                }}
-                                            >
-                                                {copied ? <CheckCircle size={18} color="#10b981" /> : <ExternalLink size={18} color="#0f172a" />}
-                                            </button>
                                         </div>
-                                    </div>
-                                </div>
 
-                                {/* FORM FIELDS */}
-                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem' }}>
-                                    <div>
-                                        <label style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#06b6d4', fontSize: '0.75rem', fontWeight: '700', marginBottom: '0.8rem', textTransform: 'uppercase' }}>
-                                            <Lock size={12} /> Full Name
-                                        </label>
-                                        <input type="text" value={user.name} readOnly style={{
-                                            width: '100%', padding: '14px', background: '#1e293b', border: '1px solid rgba(255,255,255,0.05)',
-                                            borderRadius: '8px', color: '#94a3b8', fontSize: '0.95rem', fontWeight: '500'
-                                        }} />
-                                    </div>
-                                    <div>
-                                        <label style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#06b6d4', fontSize: '0.75rem', fontWeight: '700', marginBottom: '0.8rem', textTransform: 'uppercase' }}>
-                                            <Lock size={12} /> Email Address
-                                        </label>
-                                        <input type="text" value={user.email} readOnly style={{
-                                            width: '100%', padding: '14px', background: '#1e293b', border: '1px solid rgba(255,255,255,0.05)',
-                                            borderRadius: '8px', color: '#94a3b8', fontSize: '0.95rem', fontWeight: '500'
-                                        }} />
-                                    </div>
-                                    <div>
-                                        <label style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#06b6d4', fontSize: '0.75rem', fontWeight: '700', marginBottom: '0.8rem', textTransform: 'uppercase' }}>
-                                            <Lock size={12} /> Role Authorization
-                                        </label>
-                                        <input type="text" value={user.role.toUpperCase()} readOnly style={{
-                                            width: '100%', padding: '14px', background: 'rgba(6, 182, 212, 0.05)', border: '1px solid rgba(6, 182, 212, 0.2)',
-                                            borderRadius: '8px', color: '#06b6d4', fontSize: '0.95rem', fontWeight: '700'
-                                        }} />
-                                    </div>
-                                    <div>
-                                        <label style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#06b6d4', fontSize: '0.75rem', fontWeight: '700', marginBottom: '0.8rem', textTransform: 'uppercase' }}>
-                                            <Lock size={12} /> Identity Token ID
-                                        </label>
-                                        <input type="text" value={user.identityId} readOnly style={{
-                                            width: '100%', padding: '14px', background: '#1e293b', border: '1px solid rgba(255,255,255,0.05)',
-                                            borderRadius: '8px', color: '#94a3b8', fontSize: '0.95rem', fontWeight: '500'
-                                        }} />
-                                    </div>
-                                </div>
-
-                                {/* FOOTER NOTE */}
-                                <div style={{ marginTop: '3rem', paddingTop: '1.5rem', borderTop: '1px solid rgba(255,255,255,0.1)' }}>
-                                    <p style={{ color: '#64748b', fontSize: '0.85rem', lineHeight: '1.6', margin: 0 }}>
-                                        <strong style={{ color: '#fff' }}>Note:</strong> Your identity details are immutably recorded on the blockchain. To request changes, please contact the network administrator for a new identity issuance.
-                                    </p>
-                                </div>
-                            </>
-                        )}
-
-                        {activeTab === 'security' && (
-                            <>
-                                <h2 style={{ fontSize: '1.5rem', fontWeight: '700', color: '#fff', fontFamily: '"Outfit", sans-serif', marginBottom: '2rem' }}>
-                                    Security & Access
-                                </h2>
-
-                                <div style={{ marginBottom: '2rem', padding: '1.5rem', background: 'rgba(239, 68, 68, 0.05)', border: '1px solid rgba(239, 68, 68, 0.2)', borderRadius: '12px' }}>
-                                    <div style={{ display: 'flex', gap: '1rem' }}>
-                                        <AlertTriangle size={24} color="#ef4444" />
-                                        <div>
-                                            <h4 style={{ color: '#ef4444', margin: '0 0 0.5rem 0' }}>SENSITIVE AREA</h4>
-                                            <p style={{ color: '#cbd5e1', fontSize: '0.9rem', margin: 0 }}>
-                                                You are viewing sensitive credentials. Ensure you are in a secure location.
+                                        {/* IDENTITY HEADER */}
+                                        <div style={{ marginBottom: '3rem', borderBottom: '1px solid rgba(255,255,255,0.05)', pb: '2rem' }}>
+                                            <h2 style={{ fontSize: '2rem', color: '#fff', margin: '0 0 0.5rem 0', fontWeight: '700' }}>{user.name}</h2>
+                                            <p style={{ color: '#06b6d4', fontSize: '1rem', margin: 0, fontWeight: '600', letterSpacing: '0.5px' }}>
+                                                {user.role}
                                             </p>
                                         </div>
-                                    </div>
-                                </div>
 
-                                <div style={{ marginBottom: '2rem' }}>
-                                    <label style={{ display: 'block', color: '#94a3b8', marginBottom: '0.5rem', fontSize: '0.9rem' }}>Private Key (Signing)</label>
-                                    <div style={{ position: 'relative' }}>
-                                        <input type={showKey ? "text" : "password"} value="************************" readOnly
-                                            style={{
-                                                width: '100%', padding: '14px', background: '#1e293b', border: '1px solid rgba(255,255,255,0.1)',
-                                                color: '#fff', fontFamily: 'monospace', borderRadius: '8px'
-                                            }} />
-                                        <button onClick={() => setShowKey(!showKey)} style={{ position: 'absolute', right: '10px', top: '10px', background: 'none', border: 'none', color: '#64748b', cursor: 'pointer' }}>
-                                            {showKey ? "Hide" : "Show"}
-                                        </button>
-                                    </div>
-                                </div>
+                                        {/* DYNAMIC DATA GRID: SHOW ONLY IF DATA EXISTS */}
+                                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2.5rem' }}>
+                                            {user.email && (
+                                                <div>
+                                                    <label style={{ color: '#64748b', fontSize: '0.7rem', fontWeight: '800', marginBottom: '0.8rem', display: 'flex', alignItems: 'center', gap: '6px', textTransform: 'uppercase' }}>
+                                                        <Mail size={12} /> Registered Email
+                                                    </label>
+                                                    <div style={{ color: '#fff', fontSize: '1.1rem', fontWeight: '500' }}>{user.email}</div>
+                                                </div>
+                                            )}
+
+                                            {user.identityId && (
+                                                <div>
+                                                    <label style={{ color: '#64748b', fontSize: '0.7rem', fontWeight: '800', marginBottom: '0.8rem', display: 'flex', alignItems: 'center', gap: '6px', textTransform: 'uppercase' }}>
+                                                        <Hash size={12} /> Network ID
+                                                    </label>
+                                                    <div style={{ color: '#fff', fontSize: '1.1rem', fontWeight: '500' }}>{user.identityId}</div>
+                                                </div>
+                                            )}
+
+                                            {user.org_details?.cin && (
+                                                <div>
+                                                    <label style={{ color: '#64748b', fontSize: '0.7rem', fontWeight: '800', marginBottom: '0.8rem', display: 'flex', alignItems: 'center', gap: '6px', textTransform: 'uppercase' }}>
+                                                        <Building size={12} /> Corporate CIN
+                                                    </label>
+                                                    <div style={{ color: '#fff', fontSize: '1.1rem', fontWeight: '500' }}>{user.org_details.cin}</div>
+                                                </div>
+                                            )}
+
+                                            {user.org_details?.csr_1 && (
+                                                <div>
+                                                    <label style={{ color: '#64748b', fontSize: '0.7rem', fontWeight: '800', marginBottom: '0.8rem', display: 'flex', alignItems: 'center', gap: '6px', textTransform: 'uppercase' }}>
+                                                        <Building size={12} /> CSR-1 Registration
+                                                    </label>
+                                                    <div style={{ color: '#fff', fontSize: '1.1rem', fontWeight: '500' }}>{user.org_details.csr_1}</div>
+                                                </div>
+                                            )}
+
+                                            {user.org_details?.address && (
+                                                <div>
+                                                    <label style={{ color: '#64748b', fontSize: '0.7rem', fontWeight: '800', marginBottom: '0.8rem', display: 'flex', alignItems: 'center', gap: '6px', textTransform: 'uppercase' }}>
+                                                        <MapPin size={12} /> Office Location
+                                                    </label>
+                                                    <div style={{ color: '#fff', fontSize: '1.1rem', fontWeight: '500', lineHeight: '1.4' }}>{user.org_details.address}</div>
+                                                </div>
+                                            )}
+
+                                            {user.wallet && (
+                                                <div style={{ gridColumn: 'span 2' }}>
+                                                    <label style={{ color: '#64748b', fontSize: '0.7rem', fontWeight: '800', marginBottom: '0.8rem', display: 'flex', alignItems: 'center', gap: '6px', textTransform: 'uppercase' }}>
+                                                        <QrCode size={12} /> Blockchain Public Address
+                                                    </label>
+                                                    <div style={{
+                                                        background: 'rgba(0,0,0,0.3)', padding: '12px 16px', borderRadius: '8px',
+                                                        display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                                                        border: '1px solid rgba(255,255,255,0.05)'
+                                                    }}>
+                                                        <span style={{ color: '#06b6d4', fontFamily: 'monospace', fontSize: '1rem' }}>{user.wallet}</span>
+                                                        <button onClick={handleCopy} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '4px' }}>
+                                                            {copied ? <CheckCircle size={14} color="#10b981" /> : <Copy size={14} color="#475569" />}
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </div>
+
+                                        {/* FOOTER NOTE */}
+                                        <div style={{ marginTop: '3rem', paddingTop: '1.5rem', borderTop: '1px solid rgba(255,255,255,0.05)' }}>
+                                            <p style={{ color: '#475569', fontSize: '0.8rem', lineHeight: '1.6', margin: 0 }}>
+                                                Digital Identity v1.0 • All data is strictly read-only and verified by the central health network.
+                                            </p>
+                                        </div>
+                                    </>
+                                )}
+
+                                {activeTab === 'security' && (
+                                    <>
+                                        <h2 style={{ fontSize: '1.5rem', fontWeight: '700', color: '#fff', fontFamily: '"Outfit", sans-serif', marginBottom: '2rem' }}>
+                                            Security & Access
+                                        </h2>
+
+                                        <div style={{ marginBottom: '2rem', padding: '1.5rem', background: 'rgba(239, 68, 68, 0.05)', border: '1px solid rgba(239, 68, 68, 0.2)', borderRadius: '12px' }}>
+                                            <div style={{ display: 'flex', gap: '1rem' }}>
+                                                <AlertTriangle size={24} color="#ef4444" />
+                                                <div>
+                                                    <h4 style={{ color: '#ef4444', margin: '0 0 0.5rem 0' }}>SENSITIVE AREA</h4>
+                                                    <p style={{ color: '#cbd5e1', fontSize: '0.9rem', margin: 0 }}>
+                                                        Private credentials are for recovery purposes only. Do not share.
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div style={{ marginBottom: '2rem' }}>
+                                            <label style={{ display: 'block', color: '#94a3b8', marginBottom: '0.5rem', fontSize: '0.9rem' }}>Security Signature</label>
+                                            <div style={{ position: 'relative' }}>
+                                                <input type="text" value={user.identityId || 'HIDDEN'} readOnly
+                                                    style={{
+                                                        width: '100%', padding: '14px', background: '#1e293b', border: '1px solid rgba(255,255,255,0.1)',
+                                                        color: '#fff', fontFamily: 'monospace', borderRadius: '8px'
+                                                    }} />
+                                            </div>
+                                        </div>
+                                    </>
+                                )}
                             </>
-                        )}
-
-                        {activeTab === 'notifications' && (
-                            <div style={{ textAlign: 'center', padding: '4rem 0', color: '#64748b' }}>
-                                <Bell size={48} style={{ opacity: 0.2, marginBottom: '1rem' }} />
-                                <p>Notification preferences coming soon.</p>
-                            </div>
                         )}
                     </motion.div>
                 </div>

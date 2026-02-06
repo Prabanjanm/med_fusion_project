@@ -1,491 +1,216 @@
-import React, { useState, useEffect } from 'react';
-import { Package, Send, AlertTriangle, Upload, FileText, X } from 'lucide-react';
+import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { ShieldCheck, ArrowLeft, Send, AlertCircle, CheckCircle, RefreshCw, Box } from 'lucide-react';
 import Layout from '../components/Layout';
-import { useAuth } from '../context/AuthContext';
+import { clinicAPI } from '../services/api';
 import '../styles/FormStyles.css';
 
-// Mock storage
-const CLINIC_REQUESTS_KEY = 'csr_tracker_clinic_requests';
-const MOCK_DONATIONS_KEY = 'csr_tracker_mock_donations';
-
-const getAvailableItems = () => {
-    try {
-        const donations = JSON.parse(localStorage.getItem(MOCK_DONATIONS_KEY) || '[]');
-        const accepted = donations.filter(d => d.status === 'ACCEPTED');
-
-        // Group by item type and sum quantities
-        const items = {};
-        accepted.forEach(d => {
-            const itemName = d.item_name;
-            if (!items[itemName]) {
-                items[itemName] = { name: itemName, available: 0, ngo: d.ngo_name };
-            }
-            items[itemName].available += d.quantity || 0;
-        });
-
-        return Object.values(items);
-    } catch (error) {
-        return [];
-    }
-};
-
-const saveClinicRequest = (request) => {
-    try {
-        const existing = JSON.parse(localStorage.getItem(CLINIC_REQUESTS_KEY) || '[]');
-        const updated = [request, ...existing];
-        localStorage.setItem(CLINIC_REQUESTS_KEY, JSON.stringify(updated));
-        return true;
-    } catch (error) {
-        console.error('Error saving request:', error);
-        return false;
-    }
-};
-
 const ClinicProductRequest = () => {
-    const { user } = useAuth();
-    const [availableItems, setAvailableItems] = useState([]);
-    const [selectedItems, setSelectedItems] = useState([{ product: '', quantity: '' }]);
-    const [priority, setPriority] = useState('low');
-    const [purpose, setPurpose] = useState('');
-    const [emergencyDoc, setEmergencyDoc] = useState(null);
-    const [emergencyReason, setEmergencyReason] = useState('');
-    const [loading, setLoading] = useState(false);
+    const navigate = useNavigate();
+    const [submitting, setSubmitting] = useState(false);
     const [success, setSuccess] = useState(false);
+    const [ngoInventory, setNgoInventory] = useState([]);
+    const [loadingInventory, setLoadingInventory] = useState(true);
+    const [formData, setFormData] = useState({
+        item_name: '',
+        quantity: '',
+        priority: 3, // Default Medium/Standard
+        purpose: ''
+    });
 
-    useEffect(() => {
-        const items = getAvailableItems();
-        setAvailableItems(items);
+    React.useEffect(() => {
+        fetchNgoInventory();
     }, []);
 
-    const addItemRow = () => {
-        setSelectedItems([...selectedItems, { product: '', quantity: '' }]);
-    };
-
-    const removeItemRow = (index) => {
-        if (selectedItems.length > 1) {
-            setSelectedItems(selectedItems.filter((_, i) => i !== index));
+    const fetchNgoInventory = async () => {
+        setLoadingInventory(true);
+        try {
+            const data = await clinicAPI.getNgoInventory();
+            setNgoInventory(data || []);
+        } catch (error) {
+            console.error("Failed to fetch NGO inventory:", error);
+        } finally {
+            setLoadingInventory(false);
         }
     };
 
-    const updateItemRow = (index, field, value) => {
-        const updated = [...selectedItems];
-        updated[index][field] = value;
-        setSelectedItems(updated);
-    };
-
-    const handleFileUpload = (e) => {
-        const file = e.target.files[0];
-        if (file) {
-            setEmergencyDoc({
-                name: file.name,
-                size: file.size,
-                type: file.type,
-                uploadedAt: new Date().toISOString()
-            });
-        }
-    };
-
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
-
-        const validItems = selectedItems.filter(item => item.product && item.quantity > 0);
-
-        if (validItems.length === 0) {
-            alert('Please select at least one item with quantity');
-            return;
+        setSubmitting(true);
+        try {
+            await clinicAPI.createRequirement({
+                ...formData,
+                quantity: parseInt(formData.quantity)
+            });
+            setSuccess(true);
+            setTimeout(() => navigate('/clinic/request-status'), 2000);
+        } catch (error) {
+            console.error("Failed to submit requirement:", error);
+            alert("Error: " + error.message);
+        } finally {
+            setSubmitting(false);
         }
-
-        const isUrgent = priority === 'high' || priority === 'emergency';
-
-        if (isUrgent && !emergencyDoc) {
-            alert('High and Emergency requests require supporting documents');
-            return;
-        }
-
-        if (isUrgent && !emergencyReason.trim()) {
-            alert('Please describe the situation requiring urgent attention');
-            return;
-        }
-
-        setLoading(true);
-
-        const requestItems = validItems.map(item => {
-            const availableItem = availableItems.find(ai => ai.name === item.product);
-            return {
-                product_type: item.product,
-                requested_quantity: parseInt(item.quantity),
-                available_quantity: availableItem?.available || 0
-            };
-        });
-
-        const request = {
-            id: `REQ-${Date.now()}`,
-            clinic_name: user?.companyName || 'Clinic',
-            items: requestItems,
-            priority: priority,
-            purpose: purpose,
-            emergency_reason: (priority === 'high' || priority === 'emergency') ? emergencyReason : null,
-            emergency_document: (priority === 'high' || priority === 'emergency') ? emergencyDoc : null,
-            status: 'PENDING',
-            ngo_status: 'pending_review',
-            created_at: new Date().toISOString(),
-            ngo_name: requestItems[0]?.ngo || 'NGO'
-        };
-
-        const saved = saveClinicRequest(request);
-
-        setTimeout(() => {
-            setLoading(false);
-            if (saved) {
-                setSuccess(true);
-                setSelectedItems([{ product: '', quantity: '' }]);
-                setPriority('low');
-                setPurpose('');
-                setEmergencyDoc(null);
-                setEmergencyReason('');
-
-                setTimeout(() => setSuccess(false), 3000);
-            }
-        }, 1000);
     };
 
-    const getMaxQuantity = (productName) => {
-        const item = availableItems.find(i => i.name === productName);
-        return item?.available || 0;
-    };
+    if (success) {
+        return (
+            <Layout>
+                <div style={{ height: '70vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center' }}>
+                    <div style={{ color: '#00ff94', marginBottom: '2rem' }}>
+                        <CheckCircle size={80} />
+                    </div>
+                    <h1 style={{ fontSize: '2rem', color: '#fff', marginBottom: '1rem' }}>Requirement Submitted</h1>
+                    <p style={{ color: '#94a3b8' }}>Your request has been forwarded directly to your supervising NGO for review and allocation.</p>
+                </div>
+            </Layout>
+        );
+    }
 
     return (
         <Layout>
-            <div style={{ maxWidth: '900px', margin: '0 auto', padding: '2rem' }}>
+            <div style={{ maxWidth: '700px', margin: '0 auto', padding: '2rem' }}>
+                <button
+                    onClick={() => navigate('/clinic')}
+                    style={{
+                        background: 'none', border: 'none', color: '#64748b',
+                        display: 'flex', alignItems: 'center', gap: '8px',
+                        cursor: 'pointer', marginBottom: '2rem', fontSize: '0.9rem'
+                    }}
+                >
+                    <ArrowLeft size={16} /> Back to Dashboard
+                </button>
+
                 <div className="page-header" style={{ marginBottom: '2rem' }}>
                     <div>
-                        <h1 className="page-title" style={{
-                            color: '#00e5ff',
-                            textShadow: '0 0 10px rgba(0, 229, 255, 0.3)'
-                        }}>
-                            REQUEST PRODUCTS FROM NGO
-                        </h1>
-                        <p className="page-subtitle">Select items from available stock and submit your request</p>
+                        <h1 className="page-title" style={{ color: '#00e5ff' }}>Request Requirements</h1>
+                        <p className="page-subtitle" style={{ color: '#94a3b8' }}>Submit your clinical needs for NGO-authorized supply allocation</p>
                     </div>
                 </div>
 
-                {success && (
-                    <div style={{
-                        background: 'rgba(16, 185, 129, 0.1)',
-                        border: '1px solid rgba(16, 185, 129, 0.3)',
-                        borderRadius: '12px',
-                        padding: '1rem 1.5rem',
-                        marginBottom: '2rem',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '1rem'
-                    }}>
-                        <Send size={20} color="#10b981" />
-                        <div>
-                            <h4 style={{ color: '#10b981', margin: 0, fontSize: '1rem' }}>Request Submitted!</h4>
-                            <p style={{ color: '#94a3b8', margin: 0, fontSize: '0.85rem' }}>NGO will review your request</p>
-                        </div>
-                    </div>
-                )}
-
-                <form onSubmit={handleSubmit} className="form-card" style={{
-                    background: 'rgba(15, 23, 42, 0.4)',
-                    backdropFilter: 'blur(10px)',
-                    border: '1px solid rgba(0, 229, 255, 0.2)'
-                }}>
-
-                    {/* Available Items */}
-                    <div className="form-section">
-                        <h3 className="section-title">
-                            <Package size={20} />
-                            Available Items from NGO
-                        </h3>
-
-                        {availableItems.length === 0 ? (
-                            <div style={{
-                                padding: '2rem',
-                                textAlign: 'center',
-                                background: 'rgba(255,255,255,0.02)',
-                                borderRadius: '12px',
-                                border: '1px solid rgba(255,255,255,0.1)'
-                            }}>
-                                <Package size={40} color="#64748b" style={{ marginBottom: '0.5rem' }} />
-                                <p style={{ color: '#94a3b8', margin: 0 }}>No items available</p>
-                            </div>
-                        ) : (
-                            <>
-                                {selectedItems.map((item, index) => (
-                                    <div key={index} style={{
-                                        display: 'grid',
-                                        gridTemplateColumns: '1fr 150px auto',
-                                        gap: '1rem',
-                                        marginBottom: '1rem',
-                                        alignItems: 'end'
-                                    }}>
-                                        <div className="form-group" style={{ marginBottom: 0 }}>
-                                            <label>Product Type</label>
-                                            <select
-                                                value={item.product}
-                                                onChange={(e) => updateItemRow(index, 'product', e.target.value)}
-                                                className="form-input"
-                                                required
-                                            >
-                                                <option value="">Select Product</option>
-                                                {availableItems.map(ai => (
-                                                    <option key={ai.name} value={ai.name}>
-                                                        {ai.name} (Available: {ai.available.toLocaleString()})
-                                                    </option>
-                                                ))}
-                                            </select>
-                                        </div>
-
-                                        <div className="form-group" style={{ marginBottom: 0 }}>
-                                            <label>
-                                                Quantity
-                                                {item.product && (
-                                                    <span style={{ color: '#64748b', fontSize: '0.8rem', marginLeft: '0.5rem' }}>
-                                                        (Max: {getMaxQuantity(item.product)})
-                                                    </span>
-                                                )}
-                                            </label>
-                                            <input
-                                                type="number"
-                                                min="1"
-                                                max={getMaxQuantity(item.product)}
-                                                value={item.quantity}
-                                                onChange={(e) => updateItemRow(index, 'quantity', e.target.value)}
-                                                className="form-input"
-                                                placeholder={item.product ? `Max ${getMaxQuantity(item.product)}` : "0"}
-                                                required
-                                            />
-                                        </div>
-
-                                        <div style={{ paddingBottom: '0.25rem' }}>
-                                            {selectedItems.length > 1 && (
-                                                <button
-                                                    type="button"
-                                                    onClick={() => removeItemRow(index)}
-                                                    style={{
-                                                        background: 'rgba(239, 68, 68, 0.1)',
-                                                        border: '1px solid rgba(239, 68, 68, 0.3)',
-                                                        borderRadius: '8px',
-                                                        padding: '0.5rem',
-                                                        color: '#ef4444',
-                                                        cursor: 'pointer',
-                                                        display: 'flex',
-                                                        alignItems: 'center'
-                                                    }}
-                                                >
-                                                    <X size={18} />
-                                                </button>
-                                            )}
-                                        </div>
-                                    </div>
-                                ))}
-
+                <div className="form-card" style={{ background: 'rgba(15, 23, 42, 0.4)', backdropFilter: 'blur(20px)', borderRadius: '24px', padding: '2.5rem' }}>
+                    <form onSubmit={handleSubmit}>
+                        <div className="form-group">
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
+                                <label className="form-label" style={{ marginBottom: 0 }}>Item / Resource Name (From NGO Stock)</label>
                                 <button
                                     type="button"
-                                    onClick={addItemRow}
+                                    onClick={fetchNgoInventory}
                                     style={{
-                                        background: 'rgba(59, 130, 246, 0.1)',
-                                        border: '1px solid rgba(59, 130, 246, 0.3)',
-                                        borderRadius: '8px',
-                                        padding: '0.75rem 1.5rem',
-                                        color: '#3b82f6',
-                                        cursor: 'pointer',
-                                        fontSize: '0.9rem',
-                                        fontWeight: 600,
-                                        marginTop: '0.5rem'
+                                        background: 'none', border: 'none', color: '#00e5ff',
+                                        fontSize: '0.75rem', cursor: 'pointer', display: 'flex',
+                                        alignItems: 'center', gap: '4px'
                                     }}
                                 >
-                                    + Add Another Item
+                                    <RefreshCw size={12} className={loadingInventory ? 'spin-animation' : ''} />
+                                    SYNC STOCK
                                 </button>
-                            </>
-                        )}
-                    </div>
+                            </div>
 
-                    {/* Priority Level */}
-                    <div className="form-section">
-                        <h3 className="section-title">
-                            <AlertTriangle size={20} />
-                            Priority Level
-                        </h3>
+                            {loadingInventory ? (
+                                <div style={{ color: '#64748b', fontSize: '0.9rem', padding: '0.8rem', background: 'rgba(0,0,0,0.1)', borderRadius: '12px' }}>
+                                    Checking NGO live inventory...
+                                </div>
+                            ) : (
+                                <div style={{ position: 'relative' }}>
+                                    <select
+                                        className="form-select"
+                                        value={formData.item_name}
+                                        onChange={e => setFormData({ ...formData, item_name: e.target.value })}
+                                        required
+                                        style={{ width: '100%', appearance: 'auto' }}
+                                    >
+                                        <option value="">-- Select Available Item --</option>
+                                        {ngoInventory.length === 0 ? (
+                                            <option value="" disabled>No stock available at NGO</option>
+                                        ) : (
+                                            ngoInventory.map(item => (
+                                                <option key={item.item_name} value={item.item_name}>
+                                                    {item.item_name} ({item.quantity} available)
+                                                </option>
+                                            ))
+                                        )}
+                                        <option value="OTHER">--- Item Not Listed? ---</option>
+                                    </select>
+                                </div>
+                            )}
 
-                        <div className="form-group">
-                            <label>Select Priority Urgency</label>
-                            <select
-                                value={priority}
-                                onChange={(e) => setPriority(e.target.value)}
-                                className="form-input"
-                                style={{ width: '100%' }}
-                            >
-                                <option value="low">Low - Routine Stock</option>
-                                <option value="medium">Medium - Replenishment</option>
-                                <option value="high">High - Urgent</option>
-                                <option value="emergency">Emergency - Immediate Attention</option>
-                            </select>
-                        </div>
-                    </div>
-
-                    {/* Urgent/Emergency Details */}
-                    {(priority === 'high' || priority === 'emergency') && (
-                        <div className="form-section" style={{
-                            background: 'rgba(239, 68, 68, 0.05)',
-                            border: '1px solid rgba(239, 68, 68, 0.2)',
-                            borderRadius: '12px',
-                            padding: '1.5rem',
-                            marginTop: '1rem'
-                        }}>
-                            <h3 style={{
-                                color: '#ef4444',
-                                marginBottom: '1rem',
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: '0.5rem',
-                                fontSize: '1rem'
-                            }}>
-                                <AlertTriangle size={18} />
-                                {priority === 'emergency' ? 'Emergency' : 'Urgent'} Documentation Required
-                            </h3>
-
-                            <div className="form-group">
-                                <label>Describe Situation *</label>
-                                <textarea
-                                    value={emergencyReason}
-                                    onChange={(e) => setEmergencyReason(e.target.value)}
-                                    placeholder="Provide detailed information about why this is urgent..."
-                                    required
+                            {formData.item_name === 'OTHER' && (
+                                <input
+                                    type="text"
                                     className="form-input"
-                                    rows="3"
+                                    placeholder="Enter item name manually..."
+                                    style={{ marginTop: '1rem' }}
+                                    onChange={e => setFormData({ ...formData, item_name: e.target.value })}
+                                    required
+                                />
+                            )}
+                        </div>
+
+                        <div className="form-row" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
+                            <div className="form-group">
+                                <label className="form-label">Quantity Required</label>
+                                <input
+                                    type="number"
+                                    className="form-input"
+                                    placeholder="0"
+                                    value={formData.quantity}
+                                    onChange={e => setFormData({ ...formData, quantity: e.target.value })}
+                                    required
                                 />
                             </div>
-
                             <div className="form-group">
-                                <label>Upload Supporting Document *</label>
-                                <div style={{
-                                    border: '2px dashed rgba(239, 68, 68, 0.3)',
-                                    borderRadius: '8px',
-                                    padding: '1.5rem',
-                                    textAlign: 'center',
-                                    background: 'rgba(255,255,255,0.02)'
-                                }}>
-                                    {emergencyDoc ? (
-                                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '1rem' }}>
-                                            <FileText size={20} color="#10b981" />
-                                            <div style={{ textAlign: 'left', flex: 1 }}>
-                                                <p style={{ color: '#fff', margin: 0, fontSize: '0.9rem' }}>{emergencyDoc.name}</p>
-                                                <p style={{ color: '#64748b', margin: 0, fontSize: '0.75rem' }}>
-                                                    {(emergencyDoc.size / 1024).toFixed(2)} KB
-                                                </p>
-                                            </div>
-                                            <button
-                                                type="button"
-                                                onClick={() => setEmergencyDoc(null)}
-                                                style={{
-                                                    background: 'rgba(239, 68, 68, 0.1)',
-                                                    border: '1px solid rgba(239, 68, 68, 0.3)',
-                                                    borderRadius: '6px',
-                                                    padding: '0.5rem 1rem',
-                                                    color: '#ef4444',
-                                                    cursor: 'pointer',
-                                                    fontSize: '0.85rem'
-                                                }}
-                                            >
-                                                Remove
-                                            </button>
-                                        </div>
-                                    ) : (
-                                        <>
-                                            <Upload size={24} color="#64748b" style={{ marginBottom: '0.5rem' }} />
-                                            <p style={{ color: '#94a3b8', marginBottom: '0.75rem', fontSize: '0.85rem' }}>
-                                                Upload medical certificate or emergency report
-                                            </p>
-                                            <input
-                                                type="file"
-                                                onChange={handleFileUpload}
-                                                accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
-                                                style={{ display: 'none' }}
-                                                id="emergency-doc"
-                                            />
-                                            <label
-                                                htmlFor="emergency-doc"
-                                                style={{
-                                                    display: 'inline-block',
-                                                    padding: '0.5rem 1.25rem',
-                                                    background: 'rgba(239, 68, 68, 0.1)',
-                                                    border: '1px solid rgba(239, 68, 68, 0.3)',
-                                                    borderRadius: '6px',
-                                                    color: '#ef4444',
-                                                    cursor: 'pointer',
-                                                    fontWeight: 600,
-                                                    fontSize: '0.85rem'
-                                                }}
-                                            >
-                                                Choose File
-                                            </label>
-                                        </>
-                                    )}
-                                </div>
+                                <label className="form-label">Priority Level</label>
+                                <select
+                                    className="form-select"
+                                    value={formData.priority}
+                                    onChange={e => setFormData({ ...formData, priority: e.target.value })}
+                                >
+                                    <option value={1}>1 - Critical Emergency</option>
+                                    <option value={2}>2 - High Priority</option>
+                                    <option value={3}>3 - Standard Need</option>
+                                    <option value={4}>4 - Routine Inventory</option>
+                                </select>
                             </div>
                         </div>
-                    )}
 
-                    {/* Purpose */}
-                    <div className="form-section">
                         <div className="form-group">
-                            <label>Purpose & Medical Need *</label>
+                            <label className="form-label">Purpose / Clinical Rationale</label>
                             <textarea
-                                value={purpose}
-                                onChange={(e) => setPurpose(e.target.value)}
-                                placeholder="Describe how these items will be used for patient care..."
+                                className="form-textarea"
+                                placeholder="Describe why these items are needed..."
+                                value={formData.purpose}
+                                onChange={e => setFormData({ ...formData, purpose: e.target.value })}
                                 required
-                                className="form-input"
-                                rows="3"
-                            />
+                                style={{ minHeight: '120px' }}
+                            ></textarea>
                         </div>
-                    </div>
 
-                    {/* Submit */}
-                    <div style={{ display: 'flex', gap: '1rem', justifyContent: 'flex-end' }}>
-                        <button
-                            type="button"
-                            onClick={() => {
-                                setSelectedItems([{ product: '', quantity: '' }]);
-                                setPriority('low');
-                                setPurpose('');
-                                setEmergencyDoc(null);
-                                setEmergencyReason('');
-                            }}
-                            className="btn btn-secondary"
-                            style={{
-                                borderRadius: '12px',
-                                minWidth: '150px',
-                                justifyContent: 'center',
-                                fontFamily: "'Orbitron', sans-serif"
-                            }}
-                        >
-                            CLEAR FORM
-                        </button>
+                        <div style={{
+                            background: 'rgba(245, 158, 11, 0.05)',
+                            border: '1px solid rgba(245, 158, 11, 0.1)',
+                            borderRadius: '12px',
+                            padding: '1rem',
+                            display: 'flex',
+                            gap: '0.75rem',
+                            marginBottom: '2rem'
+                        }}>
+                            <AlertCircle size={20} color="#f59e0b" style={{ flexShrink: 0 }} />
+                            <p style={{ color: '#d97706', fontSize: '0.85rem', margin: 0 }}>
+                                Only your superviding NGO will see this requirement. Allocation depends on NGO inventory availability and priority ranking.
+                            </p>
+                        </div>
+
                         <button
                             type="submit"
-                            disabled={loading}
-                            className="btn-submit"
-                            style={{
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: '0.5rem',
-                                borderRadius: '12px',
-                                minWidth: '200px',
-                                justifyContent: 'center',
-                                textTransform: 'uppercase',
-                                fontFamily: "'Orbitron', sans-serif"
-                            }}
+                            disabled={submitting}
+                            className="btn btn-primary"
+                            style={{ width: '100%', padding: '1rem', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '0.75rem' }}
                         >
                             <Send size={18} />
-                            {loading ? 'SUBMITTING...' : 'SUBMIT REQUEST'}
+                            {submitting ? 'Submitting Requirement...' : 'Notify NGO of Requirement'}
                         </button>
-                    </div>
-                </form>
+                    </form>
+                </div>
             </div>
         </Layout>
     );
