@@ -31,7 +31,7 @@ const apiCall = async (endpoint, options = {}) => {
   } catch (error) {
     console.error(`API Call Error to ${endpoint}:`, error);
     if (error.name === 'TypeError' && error.message === 'Failed to fetch') {
-      throw new Error(`Connection to Backend Failed. Please ensure the backend server is running on http://127.0.0.1:8000. (Tech detail: ${error.message})`);
+      throw new Error(`Connection to Backend Failed. Please ensure the backend server is running at ${API_BASE_URL}. (Tech detail: ${error.message})`);
     }
     throw error;
   }

@@ -121,6 +121,14 @@ async def global_exception_handler(request: Request, exc: Exception):
 async def ping():
     return {"status": "ok", "message": "Backend is reachable"}
 
+@app.get("/")
+async def root():
+    return {
+        "message": "Welcome to CSR HealthTrace API", 
+        "status": "online", 
+        "docs_url": "/docs"
+    }
+
 # --------------------------------------------------
 # 🔹 Startup (DB only)
 # --------------------------------------------------
