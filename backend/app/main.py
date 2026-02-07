@@ -68,6 +68,11 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+from fastapi import Response
+@app.options("/{full_path:path}")
+async def preflight_handler(full_path: str):
+    return Response(status_code=204)
+
 # --------------------------------------------------
 # 🔹 Request logging (SAFE)
 # --------------------------------------------------
