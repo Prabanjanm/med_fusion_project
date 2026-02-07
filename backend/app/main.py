@@ -1,15 +1,26 @@
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, FileResponse
 from starlette.exceptions import HTTPException as StarletteHTTPException
 import logging
+import os
+from pathlib import Path
 
 # --------------------------------------------------
 # 🔹 Logging
 # --------------------------------------------------
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+# --------------------------------------------------
+# 🔹 Path Configuration (Robust)
+# --------------------------------------------------
+# Resolve paths relative to THIS file (app/main.py)
+# structure: backend/app/main.py -> backend/app/static
+BASE_DIR = Path(__file__).resolve().parent
+STATIC_DIR = BASE_DIR / "static"
+ASSETS_DIR = STATIC_DIR / "assets"
 
 # --------------------------------------------------
 # 🔹 Routers
@@ -35,43 +46,20 @@ from app.db.startup import (
 )
 
 # --------------------------------------------------
-# 🔹 Import models (IMPORTANT for SQLAlchemy)
-# --------------------------------------------------
-from app.models.company import Company
-from app.models.clinic import Clinic
-from app.models.ngo import NGO
-from app.models.user import User
-from app.models.trusted_company import TrustedCompany
-from app.models.trusted_ngo import TrustedNGO
-from app.models.donation import Donation
-from app.models.clinic_invitation import ClinicInvitation
-from app.models.clinic_requirment import ClinicRequirement
-from app.models.password_set_jwt import PasswordSetupToken
-from app.models.admin_audit_log import AdminAuditLog
-
-# --------------------------------------------------
 # 🔹 App init
 # --------------------------------------------------
 app = FastAPI(title="CSR HealthTrace")
 
 # --------------------------------------------------
-# 🔹 CORS (THE ONLY PLACE CORS IS HANDLED)
-# --------------------------------------------------
-# --------------------------------------------------
-# 🔹 CORS (PERMISSIVE DEBUGGING MODE)
+# 🔹 CORS
 # --------------------------------------------------
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Allow ALL origins
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
-from fastapi import Response
-@app.options("/{full_path:path}")
-async def preflight_handler(full_path: str):
-    return Response(status_code=204)
 
 # --------------------------------------------------
 # 🔹 Request logging (SAFE)
@@ -84,39 +72,11 @@ async def log_requests(request: Request, call_next):
     return response
 
 # --------------------------------------------------
-# 🔹 Exception handlers (NO CORS HERE)
-# --------------------------------------------------
-@app.exception_handler(StarletteHTTPException)
-async def http_exception_handler(request: Request, exc: StarletteHTTPException):
-    logger.warning(f"HTTP {exc.status_code}: {exc.detail}")
-    # Let CORSMiddleware handle headers naturally
-    return JSONResponse(
-        status_code=exc.status_code,
-        content={"detail": exc.detail},
-    )
-
-@app.exception_handler(Exception)
-async def global_exception_handler(request: Request, exc: Exception):
-    logger.error(f"Unhandled error: {str(exc)}", exc_info=True)
-    return JSONResponse(
-        status_code=500,
-        content={"detail": "Internal Server Error"},
-    )
-
-# --------------------------------------------------
 # 🔹 Health check
 # --------------------------------------------------
 @app.get("/ping")
 async def ping():
     return {"status": "ok", "message": "Backend is reachable"}
-
-@app.get("/")
-async def root():
-    return {
-        "message": "Welcome to CSR HealthTrace API", 
-        "status": "online", 
-        "docs_url": "/docs"
-    }
 
 # --------------------------------------------------
 # 🔹 Startup (DB only)
@@ -144,27 +104,28 @@ app.include_router(clinic_router)
 app.include_router(admin_router)
 
 # --------------------------------------------------
-# 🔹 Static files
-# --------------------------------------------------
-# --------------------------------------------------
 # 🔹 Serve Frontend (React Single Page App)
 # --------------------------------------------------
-# 1. Mount assets (so /assets/index.css works)
-# CRITICAL: Path must be relative to where uvicorn runs (root) -> app/static/assets
-app.mount("/assets", StaticFiles(directory="app/static/assets"), name="assets")
 
-# 2. Serve index.html for root and unknown routes (SPA fallback)
-from fastapi.responses import FileResponse
-import os
+# 1. Mount /assets explicitly if it exists
+if ASSETS_DIR.exists():
+    app.mount("/assets", StaticFiles(directory=str(ASSETS_DIR)), name="assets")
 
+# 2. SPA Catch-All Handler
+# This MUST be the last route defined.
 @app.get("/{full_path:path}")
-async def serve_react_app(full_path: str):
-    # API and docs routes are already defined above, so they won't be caught here
+async def serve_spa(full_path: str):
+    # API routes are already matched above, so we only get here for non-API requests.
     
-    # Check if a file exists (e.g. valid file request like favicon.ico)
-    file_path = f"app/static/{full_path}"
-    if os.path.exists(file_path) and os.path.isfile(file_path):
-        return FileResponse(file_path)
+    # 2a. Check if it's a specific static file request (e.g. /favicon.ico, /robots.txt)
+    # We check if the file exists in the static directory.
+    target_file = STATIC_DIR / full_path
+    if target_file.exists() and target_file.is_file():
+        return FileResponse(target_file)
     
-    # Otherwise, return index.html for client-side routing
-    return FileResponse("app/static/index.html")
+    # 2b. Fallback to index.html for React Routing (if not found as file)
+    index_file = STATIC_DIR / "index.html"
+    if index_file.exists():
+        return FileResponse(index_file)
+        
+    return JSONResponse(status_code=404, content={"message": "Frontend not found on server"})
