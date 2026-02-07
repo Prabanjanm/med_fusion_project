@@ -14,13 +14,12 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 # --------------------------------------------------
-# 🔹 Path Configuration (Robust)
+# 🔹 Path Configuration (Absolute)
 # --------------------------------------------------
-# Resolve paths relative to THIS file (app/main.py)
-# structure: backend/app/main.py -> backend/app/static
 BASE_DIR = Path(__file__).resolve().parent
 STATIC_DIR = BASE_DIR / "static"
 ASSETS_DIR = STATIC_DIR / "assets"
+INDEX_HTML = STATIC_DIR / "index.html"
 
 # --------------------------------------------------
 # 🔹 Routers
@@ -46,6 +45,21 @@ from app.db.startup import (
 )
 
 # --------------------------------------------------
+# 🔹 Import models (IMPORTANT for SQLAlchemy)
+# --------------------------------------------------
+from app.models.company import Company
+from app.models.clinic import Clinic
+from app.models.ngo import NGO
+from app.models.user import User
+from app.models.trusted_company import TrustedCompany
+from app.models.trusted_ngo import TrustedNGO
+from app.models.donation import Donation
+from app.models.clinic_invitation import ClinicInvitation
+from app.models.clinic_requirment import ClinicRequirement
+from app.models.password_set_jwt import PasswordSetupToken
+from app.models.admin_audit_log import AdminAuditLog
+
+# --------------------------------------------------
 # 🔹 App init
 # --------------------------------------------------
 app = FastAPI(title="CSR HealthTrace")
@@ -55,14 +69,16 @@ app = FastAPI(title="CSR HealthTrace")
 # --------------------------------------------------
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    # Allow all for robustness since frontend is served from origin, 
+    # but exact matches are fine too. Wildcard is easiest for hybrid.
+    allow_origins=["*"], 
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
 # --------------------------------------------------
-# 🔹 Request logging (SAFE)
+# 🔹 Request logging
 # --------------------------------------------------
 @app.middleware("http")
 async def log_requests(request: Request, call_next):
@@ -72,7 +88,33 @@ async def log_requests(request: Request, call_next):
     return response
 
 # --------------------------------------------------
-# 🔹 Health check
+# 🔹 Exception handlers (API Only)
+# --------------------------------------------------
+@app.exception_handler(StarletteHTTPException)
+async def http_exception_handler(request: Request, exc: StarletteHTTPException):
+    # Only return JSON errors for API routes to avoid confusing the SPA
+    if request.url.path.startswith("/api") or request.url.path.startswith("/auth"):
+         return JSONResponse(
+            status_code=exc.status_code,
+            content={"detail": exc.detail},
+        )
+    # For everything else, let the fallback route handle it, 
+    # or return JSON if it really didn't match anything.
+    return JSONResponse(
+            status_code=exc.status_code,
+            content={"detail": exc.detail},
+    )
+
+@app.exception_handler(Exception)
+async def global_exception_handler(request: Request, exc: Exception):
+    logger.error(f"Unhandled error: {str(exc)}", exc_info=True)
+    return JSONResponse(
+        status_code=500,
+        content={"detail": "Internal Server Error"},
+    )
+
+# --------------------------------------------------
+# 🔹 Health check (API)
 # --------------------------------------------------
 @app.get("/ping")
 async def ping():
@@ -104,28 +146,30 @@ app.include_router(clinic_router)
 app.include_router(admin_router)
 
 # --------------------------------------------------
-# 🔹 Serve Frontend (React Single Page App)
+# 🔹 Serve Frontend (React SPA)
 # --------------------------------------------------
 
-# 1. Mount /assets explicitly if it exists
+# 1. Mount Assets Explicitly (Performance & correctness)
 if ASSETS_DIR.exists():
     app.mount("/assets", StaticFiles(directory=str(ASSETS_DIR)), name="assets")
 
-# 2. SPA Catch-All Handler
-# This MUST be the last route defined.
-@app.get("/{full_path:path}")
+# 2. explicit Root Handler (Handles "/" exactly)
+@app.api_route("/", methods=["GET", "HEAD"], include_in_schema=False)
+async def root():
+    if INDEX_HTML.exists():
+        return FileResponse(INDEX_HTML)
+    return JSONResponse(status_code=404, content={"message": "Frontend index.html not found"})
+
+# 3. SPA Catch-All Handler (Must be LAST)
+@app.api_route("/{full_path:path}", methods=["GET", "HEAD"], include_in_schema=False)
 async def serve_spa(full_path: str):
-    # API routes are already matched above, so we only get here for non-API requests.
+    # Check for direct file match First
+    file_path = STATIC_DIR / full_path
+    if file_path.exists() and file_path.is_file():
+        return FileResponse(file_path)
     
-    # 2a. Check if it's a specific static file request (e.g. /favicon.ico, /robots.txt)
-    # We check if the file exists in the static directory.
-    target_file = STATIC_DIR / full_path
-    if target_file.exists() and target_file.is_file():
-        return FileResponse(target_file)
-    
-    # 2b. Fallback to index.html for React Routing (if not found as file)
-    index_file = STATIC_DIR / "index.html"
-    if index_file.exists():
-        return FileResponse(index_file)
+    # Fallback to index.html for React Routes
+    if INDEX_HTML.exists():
+        return FileResponse(INDEX_HTML)
         
-    return JSONResponse(status_code=404, content={"message": "Frontend not found on server"})
+    return JSONResponse(status_code=404, content={"message": "Frontend not found"})
