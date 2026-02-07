@@ -4,6 +4,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.responses import JSONResponse, FileResponse
 import logging
 from pathlib import Path
+import os
 
 # --------------------------------------------------
 # 🔹 Logging
@@ -12,7 +13,7 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 # --------------------------------------------------
-# 🔹 Path Configuration (Absolute & Safe)
+# 🔹 Path Configuration (Robust)
 # --------------------------------------------------
 BASE_DIR = Path(__file__).resolve().parent
 STATIC_DIR = BASE_DIR / "static"
@@ -47,28 +48,12 @@ from app.db.startup import (
 # --------------------------------------------------
 app = FastAPI(title="CSR HealthTrace")
 
-print("DEBUG: Loaded main.py with confirmed debug-files endpoint (v2)")
-
-@app.get("/debug-files")
-async def debug_files():
-    import os
-    files = []
-    if STATIC_DIR.exists():
-        for f in STATIC_DIR.rglob("*"):
-            files.append(str(f))
-    return {
-        "base_dir": str(BASE_DIR),
-        "static_dir": str(STATIC_DIR),
-        "exists": STATIC_DIR.exists(),
-        "files": files
-    }
-
 # --------------------------------------------------
 # 🔹 CORS
 # --------------------------------------------------
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],   # safe since frontend is same-origin
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -85,7 +70,7 @@ async def log_requests(request: Request, call_next):
     return response
 
 # --------------------------------------------------
-# 🔹 Global exception handler (NO StarletteHTTPException!)
+# 🔹 Global exception handler
 # --------------------------------------------------
 @app.exception_handler(Exception)
 async def global_exception_handler(request: Request, exc: Exception):
@@ -118,54 +103,43 @@ async def startup():
         await seed_clinics(db)
 
 # --------------------------------------------------
-# 🔹 API Routers (PREFIXED via Router definitions)
+# 🔹 API Routers
 # --------------------------------------------------
-# We include routers that ALREADY have prefix="..." defined in their files.
-# This prevents routers from accidentally capturing root paths.
-app.include_router(auth_router)       # prefix="/auth"
-app.include_router(company_router)    # prefix="/companies"
-app.include_router(donation_router)   # prefix="/donations"
-app.include_router(ngo_router)        # prefix="/ngo"
-app.include_router(clinic_router)     # prefix="/clinic"
-app.include_router(admin_router)      # prefix="/admin"
+app.include_router(auth_router)
+app.include_router(company_router)
+app.include_router(donation_router)
+app.include_router(ngo_router)
+app.include_router(clinic_router)
+app.include_router(admin_router)
 
 # --------------------------------------------------
 # 🔹 Serve Frontend (React SPA)
 # --------------------------------------------------
 
-@app.get("/debug-files")
-async def debug_files():
-    import os
-    files = []
-    if STATIC_DIR.exists():
-        for f in STATIC_DIR.rglob("*"):
-            files.append(str(f))
-    return {
-        "base_dir": str(BASE_DIR),
-        "static_dir": str(STATIC_DIR),
-        "exists": STATIC_DIR.exists(),
-        "files": files
-    }
-
-# 1️⃣ Serve assets explicitly
+# 1️⃣ Mount Assets (Prioritize static files)
 if ASSETS_DIR.exists():
     app.mount("/assets", StaticFiles(directory=str(ASSETS_DIR)), name="assets")
 
-# 2️⃣ Root route (GET + HEAD for Render health checks)
+# 2️⃣ Root Route (Explicitly serve index.html)
 @app.api_route("/", methods=["GET", "HEAD"], include_in_schema=False)
 async def serve_root():
     if INDEX_HTML.exists():
         return FileResponse(INDEX_HTML)
     return JSONResponse(status_code=404, content={"message": "index.html not found"})
 
-# 3️⃣ SPA Catch-All (MUST BE LAST)
+# 3️⃣ SPA Catch-All (Fallback for React Router)
 @app.api_route("/{full_path:path}", methods=["GET", "HEAD"], include_in_schema=False)
 async def serve_spa(full_path: str):
-    file_path = STATIC_DIR / full_path
-    if file_path.exists() and file_path.is_file():
-        return FileResponse(file_path)
+    # Security: Ensure we don't serve arbitrary files outside static dir
+    # But for SPA catch-all, we mostly care about returning index.html
+    
+    # Check if specifically requesting a static file that exists
+    potential_file = STATIC_DIR / full_path
+    if potential_file.exists() and potential_file.is_file():
+        return FileResponse(potential_file)
 
+    # Fallback to index.html
     if INDEX_HTML.exists():
         return FileResponse(INDEX_HTML)
-
+        
     return JSONResponse(status_code=404, content={"message": "Frontend not found"})
