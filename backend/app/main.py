@@ -2,9 +2,7 @@ from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import JSONResponse, FileResponse
-from starlette.exceptions import HTTPException as StarletteHTTPException
 import logging
-import os
 from pathlib import Path
 
 # --------------------------------------------------
@@ -88,23 +86,8 @@ async def log_requests(request: Request, call_next):
     return response
 
 # --------------------------------------------------
-# 🔹 Exception handlers (API Only)
+# 🔹 Exception handlers (Global Only)
 # --------------------------------------------------
-@app.exception_handler(StarletteHTTPException)
-async def http_exception_handler(request: Request, exc: StarletteHTTPException):
-    # Only return JSON errors for API routes to avoid confusing the SPA
-    if request.url.path.startswith("/api") or request.url.path.startswith("/auth"):
-         return JSONResponse(
-            status_code=exc.status_code,
-            content={"detail": exc.detail},
-        )
-    # For everything else, let the fallback route handle it, 
-    # or return JSON if it really didn't match anything.
-    return JSONResponse(
-            status_code=exc.status_code,
-            content={"detail": exc.detail},
-    )
-
 @app.exception_handler(Exception)
 async def global_exception_handler(request: Request, exc: Exception):
     logger.error(f"Unhandled error: {str(exc)}", exc_info=True)
