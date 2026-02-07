@@ -117,6 +117,20 @@ app.include_router(admin_router)      # prefix="/admin"
 # 🔹 Serve Frontend (React SPA)
 # --------------------------------------------------
 
+@app.get("/debug-files")
+async def debug_files():
+    import os
+    files = []
+    if STATIC_DIR.exists():
+        for f in STATIC_DIR.rglob("*"):
+            files.append(str(f))
+    return {
+        "base_dir": str(BASE_DIR),
+        "static_dir": str(STATIC_DIR),
+        "exists": STATIC_DIR.exists(),
+        "files": files
+    }
+
 # 1️⃣ Serve assets explicitly
 if ASSETS_DIR.exists():
     app.mount("/assets", StaticFiles(directory=str(ASSETS_DIR)), name="assets")
