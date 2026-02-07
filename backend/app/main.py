@@ -146,4 +146,25 @@ app.include_router(admin_router)
 # --------------------------------------------------
 # 🔹 Static files
 # --------------------------------------------------
-app.mount("/static", StaticFiles(directory="app/static"), name="static")
+# --------------------------------------------------
+# 🔹 Serve Frontend (React Single Page App)
+# --------------------------------------------------
+# 1. Mount assets (so /assets/index.css works)
+# CRITICAL: Path must be relative to where uvicorn runs (root) -> app/static/assets
+app.mount("/assets", StaticFiles(directory="app/static/assets"), name="assets")
+
+# 2. Serve index.html for root and unknown routes (SPA fallback)
+from fastapi.responses import FileResponse
+import os
+
+@app.get("/{full_path:path}")
+async def serve_react_app(full_path: str):
+    # API and docs routes are already defined above, so they won't be caught here
+    
+    # Check if a file exists (e.g. valid file request like favicon.ico)
+    file_path = f"app/static/{full_path}"
+    if os.path.exists(file_path) and os.path.isfile(file_path):
+        return FileResponse(file_path)
+    
+    # Otherwise, return index.html for client-side routing
+    return FileResponse("app/static/index.html")
