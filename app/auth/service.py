@@ -111,6 +111,44 @@ async def set_password(db, email: str, password: str):
     return {"message": "Password set successfully. You can now login."}
 
 
+from jose import jwt, JWTError
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
+from fastapi import HTTPException, status
+
+from app.core.config import settings
+from app.models.user import User
+
+
+async def set_password_from_token(
+    db: AsyncSession,
+    token: str,
+    expected_role: str,
+):
+    payload = jwt.decode(
+        token,
+        settings.SECRET_KEY,
+        algorithms=[settings.ALGORITHM],
+    )
+
+    email = payload.get("sub")
+    role = payload.get("role")
+    company_id = payload.get("company_id")
+    print("Decoded token payload:", payload)
+    if not email or role != expected_role or not company_id:
+        raise HTTPException(status_code=400, detail="Invalid invitation token")
+
+    result = await db.execute(
+        select(Company).where(Company.id == company_id)
+    )
+    company = result.scalar_one_or_none()
+
+    if not company:
+        raise HTTPException(status_code=404, detail="Company not found")
+
+    return company, email
+
+    return user
 
 
 

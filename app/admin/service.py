@@ -8,42 +8,66 @@ from app.models.donation import Donation
 from app.models.admin_audit_log import AdminAuditLog
 from collections import defaultdict
 from app.models.donation_allocation import DonationAllocation
+from app.auth.invitation_token import create_invite_token
+from app.notifications.email_service import send_csr_password_setup_email, send_ngo_password_setup_email
+from app.core.config import settings
+from app.models.user import User    
 
 async def get_pending_companies(db: AsyncSession):
     result = await db.execute(
-        select(Company).where(Company.is_verified == None)
+        select(Company).where(Company.is_verified.is_(False))
     )
     return result.scalars().all()
 
 
 async def get_pending_ngos(db: AsyncSession):
     result = await db.execute(
-        select(NGO).where(NGO.is_verified == None)
+        select(NGO).where(NGO.is_verified.is_(False))
     )
     return result.scalars().all()
 
 
 async def review_company(
     db: AsyncSession,
-    company_id: int,
+    company_uid: str,
     admin_user,
     approve: bool,
     remarks: str | None = None,
 ):
-    result = await db.execute(
-        select(Company).where(Company.id == company_id)
+    select(Company).where(Company.csr_uid == company_uid)
+    company = await db.execute(
+        select(Company).where(Company.csr_uid == company_uid)
     )
-    company = result.scalar_one_or_none()
-
+    company = company.scalar_one_or_none()
     if not company:
         raise ValueError("Company not found")
 
-    if company.is_verified:
+    if company.is_verified is True:
         raise ValueError("Company already verified")
-
+    
+    
     if approve:
         company.is_verified = True
         action = "VERIFY_COMPANY"
+
+        token = create_invite_token(
+            role="CSR",
+            email=str(company.official_email),
+            csr_uid=company.csr_uid
+        )
+        print("Generated token for CSR password setup:", token)
+
+        invite_link = (
+            f"{settings.FRONTEND_URL}/static/set-csr-password.html"
+            f"?token={token}"
+        )
+
+        await send_csr_password_setup_email(
+            to_email=company.official_email,
+            company_name=company.company_name,
+            csr_uid=company.csr_uid,
+            invite_link=invite_link,
+        )
     else:
         company.is_verified = False
         action = "REJECT_COMPANY"
@@ -59,43 +83,63 @@ async def review_company(
     )
 
     await db.commit()
-    await db.refresh(company)
 
     return {
-        "company_id": company.id,
+        "csr_uid": company.csr_uid,
         "approved": approve,
     }
 
 
 async def review_ngo(
     db: AsyncSession,
-    ngo_id: int,
+    ngo_uid: str,
     admin_user,
     approve: bool,
     remarks: str | None = None,
-): 
-    print("Reviewing NGO with ID:", ngo_id)
+):
+    # 1️⃣ Fetch NGO using ngo_uid
     result = await db.execute(
-        select(NGO).where(NGO.id == ngo_id)
+        select(NGO).where(NGO.ngo_uid == ngo_uid)
     )
     ngo = result.scalar_one_or_none()
-    print("Fetched NGO:", ngo)
 
     if not ngo:
         raise ValueError("NGO not found")
 
-    if ngo.is_verified:
+    if ngo.is_verified is True:
         raise ValueError("NGO already verified")
 
+    # 2️⃣ Approve or Reject
     if approve:
-        print("Approving NGO")
         ngo.is_verified = True
         action = "VERIFY_NGO"
+
+        # 3️⃣ Create invite token
+        token = create_invite_token(
+            role="NGO",
+            email=str(ngo.official_email),
+            ngo_uid=ngo.ngo_uid,
+        )
+        print("Generated token for NGO password setup:", token)
+
+        invite_link = (
+            f"{settings.FRONTEND_URL}/static/set-ngo-password.html"
+            f"?token={token}"
+        )
+
+        # 4️⃣ Send email
+        await send_ngo_password_setup_email(
+            to_email=ngo.official_email,
+            ngo_name=ngo.ngo_name,
+            ngo_uid=ngo.ngo_uid,
+            invite_link=invite_link,
+        )
+
     else:
-        print("Rejecting NGO")
         ngo.is_verified = False
         action = "REJECT_NGO"
 
+    # 5️⃣ Audit log
     db.add(
         AdminAuditLog(
             admin_id=admin_user.id,
@@ -106,32 +150,60 @@ async def review_ngo(
         )
     )
 
+    # 6️⃣ Save
     await db.commit()
-    await db.refresh(ngo)
 
     return {
-        "ngo_id": ngo.id,
+        "ngo_uid": ngo.ngo_uid,
         "approved": approve,
     }
 
 
+from sqlalchemy import case, func
 async def get_donation_logs(db: AsyncSession):
     result = await db.execute(
         select(
+            # Donation fields (same as your current response)
             Donation.id,
             Donation.company_id,
+            Donation.ngo_id,
             Donation.item_name,
             Donation.quantity,
             Donation.purpose,
-            Donation.board_resolution_ref,
-            Donation.csr_policy_declared,
-            Donation.status,
             Donation.authorized_at,
-            Donation.created_at,
-            Donation.ngo_id,
+
+            # ✅ Clinic allocation field (THIS IS WHAT YOU WANT)
+            DonationAllocation.clinic_requirement_id,
+
+            # Optional allocation metadata
+            DonationAllocation.allocated_at,
+            DonationAllocation.received,
+            DonationAllocation.received_at,
+
+            # ✅ FINAL DERIVED STATUS (business-correct)
+            case(
+                (
+                    DonationAllocation.received.is_(True),
+                    "CLINIC_ACCEPTED"
+                ),
+                (
+                    DonationAllocation.donation_id.isnot(None),
+                    "NGO_ACCEPTED"
+                ),
+                else_="AUTHORIZED"
+            ).label("status"),
         )
-        .order_by(Donation.authorized_at.desc())
-        .limit(10)   # 👈 last 10 logs
+        .outerjoin(
+            DonationAllocation,
+            DonationAllocation.donation_id == Donation.id
+        )
+        .order_by(
+            func.coalesce(
+                DonationAllocation.allocated_at,
+                Donation.authorized_at
+            ).desc()
+        )
+        .limit(10)
     )
 
     return result.mappings().all()

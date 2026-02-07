@@ -20,6 +20,10 @@ supabase = "*"
 asyncpg = "*"
 resend = "*"
 web3 = "*"
+pytesseract = "*"
+pillow = "*"
+opencv-python = "*"
+pdf2image = "*"
 
 [dev-packages]
 pytest = "*"

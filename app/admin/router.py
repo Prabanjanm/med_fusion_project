@@ -1,3 +1,5 @@
+
+from select import select
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -21,6 +23,7 @@ from app.admin.service import (
     get_verified_companies,
     get_verified_ngos
 )
+from app.models.clinic_requirments import ClinicRequirements
 
 router = APIRouter(prefix="/admin", tags=["Admin"])
 
@@ -30,9 +33,9 @@ class TempAdminUser:
     id = 1
 
 
-@router.post("/company/{company_id}/review")
+@router.post("/company/{company_uid}/review")
 async def review_company_endpoint(
-    company_id: int,
+    company_uid: str,
     data: AdminReviewRequest,
     db: AsyncSession = Depends(get_db),
 ):
@@ -40,7 +43,7 @@ async def review_company_endpoint(
         admin_user = TempAdminUser()
         return await review_company(
             db=db,
-            company_id=company_id,
+            company_uid=company_uid,
             admin_user=admin_user,
             approve=data.approve,
             remarks=data.remarks,
@@ -49,9 +52,9 @@ async def review_company_endpoint(
         raise HTTPException(status_code=400, detail=str(e))
 
 
-@router.post("/ngo/{ngo_id}/review")
+@router.post("/ngo/{ngo_uid}/review")
 async def review_ngo_endpoint(
-    ngo_id: int,
+    ngo_uid: str,
     data: AdminReviewRequest,
     db: AsyncSession = Depends(get_db),
 ):
@@ -59,7 +62,7 @@ async def review_ngo_endpoint(
         admin_user = TempAdminUser()
         return await review_ngo(
             db=db,
-            ngo_id=ngo_id,
+            ngo_uid=ngo_uid,
             admin_user=admin_user,
             approve=data.approve,
             remarks=data.remarks,
@@ -116,3 +119,46 @@ async def fetch_verified_ngos(
     db: AsyncSession = Depends(get_db)
 ):
     return await get_verified_ngos(db)
+
+
+@router.get("/dashboard")
+async def admin_dashboard(
+    db: AsyncSession = Depends(get_db),
+):
+    result = await db.execute(
+        select(ClinicRequirements)
+    )
+    rows = result.scalars().all()
+
+    return {
+        "kpis": {
+            "total_requirements": len(rows),
+            "pending_confirmations": len(
+                [r for r in rows if r.status == "DRAFT"]
+            ),
+            "emergency_cases": len(
+                [r for r in rows if r.priority == "EMERGENCY"]
+            ),
+        }
+    }
+
+
+@router.get("/blockchain/audit")
+async def admin_blockchain_audit():
+    logs = []
+    total = contract.functions.totalLogs().call()
+
+    for i in range(total):
+        action, record_hash, timestamp = contract.functions.getLog(i).call()
+        logs.append({
+            "index": i,
+            "action": action,
+            "record_hash": record_hash,
+            "timestamp": timestamp,
+        })
+
+    return {
+        "total_logs": total,
+        "logs": logs,
+        "network": "Ethereum (Ganache)",
+    }

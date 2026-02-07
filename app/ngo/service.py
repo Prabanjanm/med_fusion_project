@@ -10,55 +10,77 @@ from app.models.donation import Donation
 from app.models.company import Company
 from app.models.donation_allocation import DonationAllocation
 from app.blockchain.service import log_to_blockchain
+from app.core.id_generator import generate_uid
+from app.services.storage_service import upload_org_document
 
 
 
-async def register_and_verify_ngo(
-    db: AsyncSession,
-    data
-):
+async def register_and_verify_ngo(db: AsyncSession, data):
     """
-    Register NGO only if CSR-1 and 80G match trusted registry.
+    Register NGO with documents stored in bucket
     """
 
     trusted = await db.execute(
         select(TrustedNGO).where(
-            TrustedNGO.csr_1_number == data.csr_1_number
+            TrustedNGO.csr_1_number == data.csr_1_number,
+            TrustedNGO.has_80g == data.has_80g,
+            TrustedNGO.official_email == data.official_email,
         )
     )
-    trusted_ngo = trusted.scalar_one_or_none()
+    if not trusted.scalar_one_or_none():
+        raise HTTPException(status_code=400, detail="NGO verification failed")
 
-    if not trusted_ngo:
-        raise ValueError("NGO not found in CSR-1 registry")
+    existing_ngo = await db.execute(
+        select(NGO).where(NGO.csr_1_number == data.csr_1_number)
+    )
+    ngo = existing_ngo.scalar_one_or_none()
 
-    if trusted_ngo.has_80g != data.has_80g:
-        raise ValueError("80G verification failed")
+    if ngo:
+        return {
+            "message": "NGO already registered",
+            "ngo_uid": ngo.ngo_uid,
+            "next_step": "Please login or wait for admin verification",
+        }
 
-    if trusted_ngo.official_email != data.official_email:
-        raise ValueError("Official email mismatch")
+    ngo_uid = generate_uid("NGO")
+
+    # Upload docs
+    registration_doc = upload_org_document(
+        entity="ngo",
+        entity_uid=ngo_uid,
+        file_bytes=await data.registration_doc.read(),
+        filename=data.registration_doc.filename,
+        content_type=data.registration_doc.content_type,
+    )
+
+    certificate_80g = upload_org_document(
+        entity="ngo",
+        entity_uid=ngo_uid,
+        file_bytes=await data.certificate_80g_doc.read(),
+        filename=data.certificate_80g_doc.filename,
+        content_type=data.certificate_80g_doc.content_type,
+    )
 
     ngo = NGO(
+        ngo_uid=ngo_uid,
         ngo_name=data.ngo_name,
         csr_1_number=data.csr_1_number,
         has_80g=data.has_80g,
         official_email=data.official_email,
-        is_verified=True
+        registration_doc=registration_doc["path"],
+        certificate_80g_doc=certificate_80g["path"],
+        is_verified=False,
     )
+
     db.add(ngo)
-    await db.flush()
-
-    user = User(
-        email=data.official_email,
-        role="NGO",
-        ngo_id=ngo.id,
-        password_set=False
-    )
-    db.add(user)
-
     await db.commit()
+    await db.refresh(ngo)
 
-    return ngo
-
+    return {
+        "message": "NGO registered successfully",
+        "ngo_uid": ngo_uid,
+        "next_step": "Admin will verify documents. Password setup link will be emailed after approval.",
+    }
 
 
 

@@ -8,6 +8,7 @@ class Clinic(Base):
     __tablename__ = "clinics"
 
     id = Column(Integer, primary_key=True)
+    clinic_uid = Column(String, unique=True, index=True)
 
     clinic_name = Column(String, nullable=False)
 

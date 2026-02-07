@@ -1,3 +1,5 @@
+from ast import List
+from realtime import List
 from pydantic import BaseModel
 
 
@@ -27,3 +29,13 @@ class ClinicAllocationHistory(BaseModel):
 
     class Config:
         from_attributes = True
+
+
+class ConfirmItem(BaseModel):
+    requirement_id: list[int]
+    final_quantity: int
+
+
+class ConfirmRequirementsRequest(BaseModel):
+    clinic_id: int
+    confirmed_items: List[ConfirmItem]
