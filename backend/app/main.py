@@ -57,28 +57,12 @@ app = FastAPI(title="CSR HealthTrace")
 # --------------------------------------------------
 # 🔹 CORS (THE ONLY PLACE CORS IS HANDLED)
 # --------------------------------------------------
-ORIGINS = [
-    "http://localhost:3000",
-    "http://localhost:5173",
-    "http://localhost:5174",
-    "http://localhost:5175",
-    "http://localhost:5176",
-    # Allow local IP access
-    "http://127.0.0.1:3000",
-    "http://127.0.0.1:5173",
-    "http://127.0.0.1:5174",
-    "http://127.0.0.1:5175",
-    "http://127.0.0.1:5176",
-    # Specific Render domains
-    "https://csr-healthtrace-3fzy.onrender.com",
-    "https://csr-healthtrace-frontend.onrender.com",
-    # Backup wildcard (Render sometimes sends weird origins)
-    "https://csr-healthtrace.onrender.com",
-]
-
+# --------------------------------------------------
+# 🔹 CORS (PERMISSIVE DEBUGGING MODE)
+# --------------------------------------------------
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=ORIGINS,
+    allow_origins=["*"],  # Allow ALL origins
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
