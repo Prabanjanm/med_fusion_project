@@ -58,6 +58,8 @@ ORIGINS = [
     "http://127.0.0.1:5174",
     "http://127.0.0.1:5175",
     "http://127.0.0.1:5176",
+    "https://csr-healthtrace-3fzy.onrender.com",
+    "https://csr-healthtrace-frontend.onrender.com",
 ]
 
 app.add_middleware(
