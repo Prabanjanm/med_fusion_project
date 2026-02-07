@@ -14,3 +14,4 @@ pydantic[email]
 supabase
 asyncpg
 resend
+uvicorn[standard]==0.30.0
