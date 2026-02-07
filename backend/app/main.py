@@ -47,6 +47,22 @@ from app.db.startup import (
 # --------------------------------------------------
 app = FastAPI(title="CSR HealthTrace")
 
+print("DEBUG: Loaded main.py with confirmed debug-files endpoint (v2)")
+
+@app.get("/debug-files")
+async def debug_files():
+    import os
+    files = []
+    if STATIC_DIR.exists():
+        for f in STATIC_DIR.rglob("*"):
+            files.append(str(f))
+    return {
+        "base_dir": str(BASE_DIR),
+        "static_dir": str(STATIC_DIR),
+        "exists": STATIC_DIR.exists(),
+        "files": files
+    }
+
 # --------------------------------------------------
 # 🔹 CORS
 # --------------------------------------------------
