@@ -12,7 +12,7 @@ async def seed_trusted_companies():
     async with SessionLocal() as db:
         existing = await db.execute(
             select(TrustedCompany).where(
-                TrustedCompany.cin == "L12345TN2020PLC000001"
+                TrustedCompany.cin == "L12345TN2020PLC000091"
             )
         )
 
@@ -21,8 +21,8 @@ async def seed_trusted_companies():
 
         company = TrustedCompany(
             company_name="ABC Healthcare Ltd",
-            cin="L12345TN2020PLC000001",
-            pan="ABCDE1234F",
+            cin="L12345TN2020PLC000091",
+            pan="ABCDE1239P",
            
         )
 

@@ -7,10 +7,12 @@ class NGO(Base):
     __tablename__ = "ngos"
 
     id = Column(Integer, primary_key=True)
+    ngo_uid = Column(String, unique=True, index=True)
     ngo_name = Column(String, nullable=False)
     csr_1_number = Column(String, unique=True, nullable=False)
     has_80g = Column(Boolean, nullable=False)
     official_email = Column(String, nullable=False)
-
+    registration_doc = Column(String, nullable=False)
+    certificate_80g_doc = Column(String, nullable=False)
     is_verified = Column(Boolean, default=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now())

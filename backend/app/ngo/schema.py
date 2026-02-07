@@ -1,4 +1,7 @@
 from pydantic import BaseModel, Field
+from datetime import datetime
+
+from typing  import List
 
 
 class NGORegister(BaseModel):
@@ -6,6 +9,8 @@ class NGORegister(BaseModel):
     csr_1_number: str = Field(..., example="CSR00012345")
     has_80g: bool = Field(..., example=True)
     official_email: str = Field(..., example="ngo@healthreach.org")
+    registration_doc: str = Field(..., example="registration_doc.pdf")
+    certificate_80g_doc: str = Field(..., example="certificate_80g_doc.pdf")
 
 
 class ClinicCreate(BaseModel):
@@ -19,3 +24,33 @@ class ClinicCreate(BaseModel):
 
     class Config:
         from_attributes = True
+
+class ClinicNeedCreate(BaseModel):
+    clinic_id: int
+    item_name: str
+    quantity: int
+    purpose: str
+    priority: int
+
+class DonationAllocationResponse(BaseModel):
+    id: int
+    donation_id: int
+    clinic_requirement_id: int
+    allocated_at: datetime
+
+    class Config:
+        from_attributes = True
+
+class AllocationCreate(BaseModel):
+    donation_id: int
+    clinic_requirement_id: int
+
+
+class AllocationItem(BaseModel):
+    clinic_requirement_id: int
+    allocate_quantity: int
+
+
+class AllocateDonationRequest(BaseModel):
+    donation_id: int
+    allocations: List[AllocationItem]

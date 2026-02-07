@@ -1,3 +1,4 @@
+from fastapi.concurrency import run_in_threadpool
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.models.trusted_ngo import TrustedNGO
@@ -7,55 +8,79 @@ from fastapi import HTTPException, status
 from app.models.ngo import NGO
 from app.models.donation import Donation
 from app.models.company import Company
+from app.models.donation_allocation import DonationAllocation
+from app.blockchain.service import log_to_blockchain
+from app.core.id_generator import generate_uid
+from app.services.storage_service import upload_org_document
 
 
 
-async def register_and_verify_ngo(
-    db: AsyncSession,
-    data
-):
+async def register_and_verify_ngo(db: AsyncSession, data):
     """
-    Register NGO only if CSR-1 and 80G match trusted registry.
+    Register NGO with documents stored in bucket
     """
 
     trusted = await db.execute(
         select(TrustedNGO).where(
-            TrustedNGO.csr_1_number == data.csr_1_number
+            TrustedNGO.csr_1_number == data.csr_1_number,
+            TrustedNGO.has_80g == data.has_80g,
+            TrustedNGO.official_email == data.official_email,
         )
     )
-    trusted_ngo = trusted.scalar_one_or_none()
+    if not trusted.scalar_one_or_none():
+        raise HTTPException(status_code=400, detail="NGO verification failed")
 
-    if not trusted_ngo:
-        raise ValueError("NGO not found in CSR-1 registry")
+    existing_ngo = await db.execute(
+        select(NGO).where(NGO.csr_1_number == data.csr_1_number)
+    )
+    ngo = existing_ngo.scalar_one_or_none()
 
-    if trusted_ngo.has_80g != data.has_80g:
-        raise ValueError("80G verification failed")
+    if ngo:
+        return {
+            "message": "NGO already registered",
+            "ngo_uid": ngo.ngo_uid,
+            "next_step": "Please login or wait for admin verification",
+        }
 
-    if trusted_ngo.official_email != data.official_email:
-        raise ValueError("Official email mismatch")
+    ngo_uid = generate_uid("NGO")
+
+    # Upload docs
+    registration_doc = upload_org_document(
+        entity="ngo",
+        entity_uid=ngo_uid,
+        file_bytes=await data.registration_doc.read(),
+        filename=data.registration_doc.filename,
+        content_type=data.registration_doc.content_type,
+    )
+
+    certificate_80g = upload_org_document(
+        entity="ngo",
+        entity_uid=ngo_uid,
+        file_bytes=await data.certificate_80g_doc.read(),
+        filename=data.certificate_80g_doc.filename,
+        content_type=data.certificate_80g_doc.content_type,
+    )
 
     ngo = NGO(
+        ngo_uid=ngo_uid,
         ngo_name=data.ngo_name,
         csr_1_number=data.csr_1_number,
         has_80g=data.has_80g,
         official_email=data.official_email,
-        is_verified=True
+        registration_doc=registration_doc["path"],
+        certificate_80g_doc=certificate_80g["path"],
+        is_verified=False,
     )
+
     db.add(ngo)
-    await db.flush()
-
-    user = User(
-        email=data.official_email,
-        role="NGO",
-        ngo_id=ngo.id,
-        password_set=False
-    )
-    db.add(user)
-
     await db.commit()
+    await db.refresh(ngo)
 
-    return ngo
-
+    return {
+        "message": "NGO registered successfully",
+        "ngo_uid": ngo_uid,
+        "next_step": "Admin will verify documents. Password setup link will be emailed after approval.",
+    }
 
 
 
@@ -149,12 +174,39 @@ async def register_clinic(
     db: AsyncSession,
     ngo,
     clinic_email: str,
-    clinic_name: str
+    clinic_name: str,
+    facility_id: str,
+    facility_id_type: str,
+    doctor_registration_number: str,
+    pincode: str
 ):
     """
     Register clinic and send secure invitation email.
     NGO must be verified.
     """
+    existing = await db.execute(
+        select(Clinic).where(Clinic.official_email == clinic_email)
+    )
+    # if existing.scalar_one_or_none():
+    #     raise HTTPException(
+    #         status_code=400,
+    #         detail="Clinic already registered"
+    #     )
+
+    # 2️⃣ CREATE clinic row (THIS WAS MISSING)
+    clinic = Clinic(
+        clinic_name=clinic_name,
+        official_email=clinic_email,
+        ngo_id=ngo.id,
+        facility_id=facility_id,
+        facility_id_type=facility_id_type,
+        doctor_registration_number=doctor_registration_number,
+        pincode=pincode,
+        is_active=False
+    )
+    db.add(clinic)
+    await db.commit()
+    await db.refresh(clinic)
 
     reference_id = f"INV-CLINIC-{datetime.utcnow().year}-{uuid.uuid4().hex[:6].upper()}"
 
@@ -174,18 +226,215 @@ async def register_clinic(
     db.add(invitation)
     await db.commit()
 
-    invite_link = f"{settings.FRONTEND_URL}/clinic/onboard?token={token}"
+    if clinic.ngo_id != ngo.id:
+     raise HTTPException(
+        status_code=403,
+        detail="Clinic does not belong to this NGO"
+    )
+
+    print("TOken:", token)
+    invite_link = f"{settings.FRONTEND_URL}/static/set-clinic-password.html?token={token}"
 
     await send_clinic_invitation_email(
         to_email=clinic_email,
         clinic_name=clinic_name,
-        ngo_name=ngo.name,
-        csr1_number=ngo.csr1_number,
+        ngo_name=ngo.ngo_name,
+        csr1_number=ngo.csr_1_number,
         invite_link=invite_link,
         reference_id=reference_id
     )
+    
 
     return {
         "message": "Clinic invitation sent successfully",
         "invitation_reference": reference_id
     }
+
+from sqlalchemy import select
+from fastapi import HTTPException, status
+
+from app.models.clinic import Clinic
+from app.models.user import User
+from app.models.clinic_requirment import ClinicRequirement
+
+
+async def create_clinic_need(db, ngo, data):
+    """
+    Create a clinic need ONLY if:
+    - clinic exists
+    - clinic has completed onboarding (password set)
+    """
+  
+    # 1️⃣ Check clinic exists
+    clinic = await db.get(Clinic, data.clinic_id)
+    if not clinic:
+        raise HTTPException(
+            status_code=404,
+            detail="Clinic not found"
+        )
+
+    # 2️⃣ Check clinic user & password status
+    result = await db.execute(
+        select(User)
+        .where(User.clinic_id == clinic.id)
+        .where(User.password_set == True)
+    )
+    clinic_user = result.scalar_one_or_none()
+
+    if not clinic_user:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Clinic has not completed onboarding (password not set)"
+        )
+    
+    if data.priority not in [1, 2, 3, 4]:
+        raise HTTPException(
+            400,
+            "Priority must be between 1 (Critical) and 4 (Low)"
+        )
+    
+    # 3️⃣ Create clinic need
+    need = ClinicRequirement(
+        ngo_id=ngo.id,
+        clinic_id=clinic.id,
+        item_name=data.item_name,
+        quantity=data.quantity,
+        priority=data.priority,
+        purpose=data.purpose
+    )
+
+    db.add(need)
+    await db.commit()
+    await db.refresh(need)
+
+    return need
+
+from fastapi import Depends, HTTPException
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select
+from app.db.deps import get_db
+from app.core.security import require_role
+from app.models.ngo import NGO
+
+
+async def get_current_ngo(
+    db: AsyncSession = Depends(get_db),
+    payload: dict = Depends(require_role("NGO"))
+) -> NGO:
+    """
+    Dependency to get the current NGO object for the authenticated NGO user.
+    """
+    ngo_id = payload.get("ngo_id")
+    if not ngo_id:
+        raise HTTPException(status_code=400, detail="NGO ID not found in token")
+    
+    result = await db.execute(select(NGO).where(NGO.id == ngo_id))
+    ngo = result.scalar_one_or_none()
+    if not ngo:
+        raise HTTPException(status_code=404, detail="NGO not found")
+    
+    return ngo
+
+
+from fastapi import HTTPException
+from sqlalchemy import select, func
+from app.models.donation import Donation
+from app.models.clinic_requirment import ClinicRequirement
+
+
+async def accept_csr_donation(db, payload, donation_id: int):
+    """
+    Accept CSR donation ONLY if valid clinic requirements exist.
+    """
+    
+    ngo_id = payload.get("ngo_id")
+    donation = await db.get(Donation, donation_id)
+
+    if not donation:
+        raise HTTPException(404, "Donation not found")
+
+    if donation.status != "AUTHORIZED":
+        raise HTTPException(400, "Donation already processed")
+
+    donation.status = "ACCEPTED"
+    donation.ngo_id = ngo_id
+
+    await db.commit()
+    await db.refresh(donation)
+    audit = await run_in_threadpool(
+        log_to_blockchain,
+        "DONATION_CREATED",
+        str(donation.id)
+    )
+
+
+    return {
+        "message": "Donation accepted successfully",
+        "donation_id": donation_id,
+        "item": donation.item_name,
+        "quantity": donation.quantity,
+        "status": donation.status,
+        "audit": audit
+    }
+
+
+from sqlalchemy import select
+from app.models.donation import Donation
+
+async def get_available_donations(db: AsyncSession):
+    """
+    Return donations that are not yet accepted by any NGO
+    """
+    result = await db.execute(
+        select(Donation)
+        .where(Donation.ngo_id.is_(None))
+        .where(Donation.status == "AUTHORIZED")
+        .order_by(Donation.created_at.desc())
+    )
+
+    return result.scalars().all()
+
+async def get_accepted_donations(db, ngo):
+    result = await db.execute(
+        select(Donation)
+        .where(Donation.ngo_id == ngo)
+        .where(Donation.status == "ACCEPTED")
+    )
+    return result.scalars().all()
+
+async def get_clinic_requirements(db, ngo):
+    result = await db.execute(
+        select(ClinicRequirement)
+        .where(ClinicRequirement.ngo_id == ngo)
+        .order_by(ClinicRequirement.priority.desc())
+    )
+    return result.scalars().all()
+
+
+async def allocate_donation(db, payload, donation_id, clinic_requirement_id):
+    donation = await db.get(Donation, donation_id)
+    requirement = await db.get(ClinicRequirement, clinic_requirement_id)
+    ngo_id = payload.get("ngo_id")
+    if not donation or donation.status != "ACCEPTED":
+        raise HTTPException(400, "Donation not eligible")
+    print("NGO:", ngo_id)
+    if requirement.ngo_id != ngo_id:
+        raise HTTPException(403, "Invalid clinic requirement")
+
+    allocation = DonationAllocation(
+        donation_id=donation.id,
+        clinic_requirement_id=requirement.id
+    )
+
+    donation.status = "ALLOCATED"
+
+    db.add(allocation)
+    await db.commit()
+    await db.refresh(allocation)
+    audit = await run_in_threadpool(
+        log_to_blockchain,
+        "DONATION_ALLOCATED",
+        str(donation.id)
+    )
+
+    return { "allocation": allocation, "audit": audit }

@@ -1,4 +1,6 @@
 from datetime import datetime
+from sys import audit
+from fastapi.concurrency import run_in_threadpool
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.models.donation import Donation
 from app.donations.schema import DonationCreate
@@ -6,6 +8,9 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.models.donation import Donation
 from sqlalchemy import func
+
+from app.blockchain.service import log_to_blockchain
+from med_fusion_project.backend.app.blockchain.audit_chain import write_to_blockchain
 
 
 
@@ -31,10 +36,33 @@ async def create_donation(
     )
 
     db.add(donation)
+    
+    audit = write_to_blockchain(
+        action="CSR_DONATION",
+        payload={
+            "company_id": donation.company_id,
+            "donation_id": donation.id,
+            "amount": donation.amount,
+        }
+    )
+
+    donation.blockchain_tx = audit["tx_hash"]
+    donation.blockchain_hash = audit["record_hash"]
+
     await db.commit()
     await db.refresh(donation)
+#     audit= await log_to_blockchain(
+#     action="DONATION_CREATED",
+#     entity=f"DON-{donation.id}"
+# )
+    audit = await run_in_threadpool(
+        log_to_blockchain,
+        "DONATION_CREATED",
+        str(donation.id)
+    )
 
-    return donation
+
+    return { "donation": donation, "audit": audit }
 
 
 
