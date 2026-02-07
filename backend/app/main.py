@@ -60,6 +60,17 @@ from app.models.admin_audit_log import AdminAuditLog
 # --------------------------------------------------
 # 🔹 App init
 # --------------------------------------------------
+# DEBUG: Print static directory contents (DIAGNOSTIC)
+print(f"DEBUG: BASE_DIR={BASE_DIR}")
+print(f"DEBUG: STATIC_DIR={STATIC_DIR}")
+print(f"DEBUG: INDEX_HTML={INDEX_HTML}")
+if STATIC_DIR.exists():
+    print(f"DEBUG: Listing {STATIC_DIR}:")
+    for f in STATIC_DIR.rglob("*"):
+        print(f"  - {f}")
+else:
+    print(f"DEBUG: STATIC_DIR does not exist!")
+
 app = FastAPI(title="CSR HealthTrace")
 
 # --------------------------------------------------
