@@ -37,7 +37,7 @@ async def startup():
 
     async with AsyncSessionLocal() as db:
         await seed_trusted_ngos(db)
-    start_ganache()
+    # start_ganache()
 
 
 app.include_router(auth_router)
