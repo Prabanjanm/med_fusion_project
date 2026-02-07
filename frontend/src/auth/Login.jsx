@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Building2, Handshake, Stethoscope, FileCheck, ArrowRight, ShieldCheck, Info } from 'lucide-react';
 import WelcomeCharacter from '../components/WelcomeCharacter';
+import Logo from '../components/Logo';
 import PasswordInput from '../components/PasswordInput';
 import '../styles/Auth.css';
 
@@ -229,10 +230,10 @@ const Login = () => {
             </svg>
           </div>
 
-          <h1 style={{ fontSize: '1.8rem', fontWeight: '800', letterSpacing: '2px', color: '#fff', margin: 0, textAlign: 'center', lineHeight: '1.1' }}>
-            CSR HEALTH<br />TRACE
-          </h1>
-          <p style={{ color: '#64748b', fontSize: '0.9rem', marginTop: '1rem', letterSpacing: '1px', textAlign: 'center' }}>Global Trust Network</p>
+          <div style={{ transform: 'scale(0.8)', marginBottom: '1rem' }}>
+            <Logo />
+          </div>
+          <p style={{ color: '#64748b', fontSize: '0.9rem', marginTop: '0.5rem', letterSpacing: '1px', textAlign: 'center' }}>Global Trust Network</p>
 
           {/* Dynamic Role Badge */}
           <div style={{
@@ -302,8 +303,17 @@ const Login = () => {
                     onFocus={() => setActiveField('secret')}
                     onBlur={() => setActiveField('idle')}
                     style={{ background: 'rgba(0,0,0,0.2)', height: '45px' }}
-                    required
                   />
+                </div>
+                <div style={{ textAlign: 'right', marginTop: '-1rem', marginBottom: '1.5rem' }}>
+                  <span
+                    onClick={() => navigate('/auth/forgot-password')}
+                    style={{ color: '#64748b', fontSize: '0.75rem', cursor: 'pointer', transition: 'color 0.2s' }}
+                    onMouseOver={(e) => e.target.style.color = activeRoleObj?.color}
+                    onMouseOut={(e) => e.target.style.color = '#64748b'}
+                  >
+                    Forgot password?
+                  </span>
                 </div>
               </motion.div>
             </AnimatePresence>
@@ -323,39 +333,12 @@ const Login = () => {
           </form>
 
           {/* Footer Area */}
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '2rem', borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: '1rem' }}>
+          <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', marginTop: '2rem', borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: '1rem' }}>
             {(!['auditor', 'clinic'].includes(selectedRole)) ? (
               <span onClick={() => navigate(`/register/${selectedRole}`)} style={{ color: '#94a3b8', fontSize: '0.8rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '5px' }}>
                 Create New Account <ArrowRight size={14} />
               </span>
-            ) : <div />}
-
-            {/* Demo Credentials Button */}
-            <div
-              onClick={() => {
-                setFormData({
-                  identifier: `demo@${selectedRole}.com`,
-                  secret: selectedRole
-                })
-              }}
-              style={{
-                padding: '6px 12px',
-                background: `${activeRoleObj?.color}20`,
-                border: `1px solid ${activeRoleObj?.color}40`,
-                borderRadius: '8px',
-                color: activeRoleObj?.color,
-                fontSize: '0.75rem',
-                fontWeight: '600',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '6px',
-                transition: 'all 0.2s ease'
-              }}
-              title={`Email: demo@${selectedRole}.com | Password: ${selectedRole}`}
-            >
-              🔬 Use Demo Login
-            </div>
+            ) : null}
           </div>
         </div>
       </motion.div>

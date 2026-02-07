@@ -50,6 +50,9 @@ export const authAPI = {
   setPassword: (email, password) => apiCall(`/auth/set-password?email=${encodeURIComponent(email)}&password=${encodeURIComponent(password)}`, {
     method: 'POST'
   }),
+  forgotPassword: (email) => apiCall(`/auth/forgot-password?email=${encodeURIComponent(email)}`, {
+    method: 'POST'
+  }),
   // Backend expects JSON body with token for clinic password
   setClinicPassword: (token, password) => apiCall('/auth/clinic/set-password', {
     method: 'POST',
@@ -117,7 +120,8 @@ export const ngoAPI = {
       clinic_requirement_id: requirementId
     })
   }),
-  getAllocationHistory: () => apiCall('/ngo/allocations/history')
+  getAllocationHistory: () => apiCall('/ngo/allocations/history'),
+  getClinicFeedback: (clinicId) => apiCall(`/ngo/clinics/${clinicId}/feedback`)
 };
 
 // ===== CLINIC =====

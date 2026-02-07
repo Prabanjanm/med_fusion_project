@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate, useLocation, useSearchParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Building2, Handshake, Stethoscope, FileCheck, ArrowRight, ShieldCheck, CheckCircle2 } from 'lucide-react';
+import Logo from '../components/Logo';
 import '../styles/Auth.css';
 
 const RoleSelection = () => {
@@ -113,16 +114,9 @@ const RoleSelection = () => {
                             alignItems: 'center'
                         }}
                     >
-                        <motion.div style={{ textAlign: 'center', marginBottom: '3.5rem' }}>
-                            <div style={{
-                                display: 'inline-flex', alignItems: 'center', gap: '8px',
-                                background: 'linear-gradient(180deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.01) 100%)',
-                                padding: '6px 14px', borderRadius: '30px',
-                                marginBottom: '1.2rem', border: '1px solid rgba(255,255,255,0.08)',
-                                boxShadow: '0 2px 10px rgba(0,0,0,0.2)'
-                            }}>
-                                <ShieldCheck size={14} color="#00ff9d" />
-                                <span style={{ fontSize: '0.75rem', color: '#cbd5e1', fontWeight: '500', letterSpacing: '0.5px' }}>SECURE ACCESS PORTAL</span>
+                        <motion.div style={{ textAlign: 'center', marginBottom: '3.5rem', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                            <div style={{ marginBottom: '1.5rem' }}>
+                                <Logo />
                             </div>
                             <h1 style={{
                                 fontSize: '2.2rem',

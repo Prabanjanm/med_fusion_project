@@ -6,8 +6,11 @@ import {
   Activity,
   Package,
   AlertTriangle,
-  UserPlus
+  UserPlus,
+  Building
 } from 'lucide-react';
+import { motion } from 'framer-motion';
+import { useAuth } from '../context/AuthContext';
 
 import Layout from '../components/Layout';
 import Table from '../components/Table';
@@ -18,6 +21,7 @@ import '../styles/DashboardLayout.css';
 
 const NgoDashboard = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
 
   const [donations, setDonations] = useState([]);
   const [clinicRequests, setClinicRequests] = useState([]);
@@ -79,44 +83,55 @@ const NgoDashboard = () => {
 
   return (
     <Layout>
-      {/* HEADER */}
-      <div className="page-header">
+      {/* Hero Section */}
+      <div style={{
+        marginBottom: '1rem',
+        paddingTop: '1.5rem',
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'flex-end',
+        paddingBottom: '1rem',
+        position: 'relative'
+      }}>
         <div>
-          <h1 className="page-title">NGO Dashboard</h1>
-          <p className="page-subtitle">
-            Manage incoming donations and clinic requests
+          <h1 className="page-title" style={{
+            fontSize: '2rem',
+            marginBottom: '0.25rem',
+            textShadow: '0 0 20px rgba(139, 92, 246, 0.2)'
+          }}>
+            NGO Network Dashboard
+          </h1>
+          <p className="page-subtitle" style={{
+            fontSize: '1.1rem',
+            opacity: 0.6,
+            color: '#94a3b8',
+            fontWeight: '400'
+          }}>
+            Welcome back, {user?.organization_name || 'Health Partner'}
           </p>
         </div>
 
-        {/* ✅ FIXED MANAGE CLINICS BUTTON */}
-        <button
+        <motion.button
+          whileHover={{ scale: 1.05, boxShadow: '0 0 30px rgba(139, 92, 246, 0.4)' }}
+          whileTap={{ scale: 0.95 }}
           onClick={() => navigate('/ngo/manage-clinics')}
           style={{
-            background: '#0f172a',
-            color: '#38bdf8',
-            border: '1px solid #38bdf8',
-            padding: '0.75rem 1.25rem',
-            borderRadius: '10px',          // ❌ no pill
-            fontSize: '0.9rem',
-            fontWeight: 600,
+            background: 'linear-gradient(135deg, #7c3aed 0%, #4f46e5 100%)',
+            color: '#fff',
+            border: 'none',
+            padding: '0.8rem 1.8rem',
+            borderRadius: '12px',
+            fontSize: '0.95rem',
+            fontWeight: '700',
+            cursor: 'pointer',
             display: 'flex',
             alignItems: 'center',
-            gap: '0.5rem',
-            cursor: 'pointer',
-            transition: 'all 0.2s ease'
-          }}
-          onMouseEnter={e => {
-            e.currentTarget.style.background = '#38bdf8';
-            e.currentTarget.style.color = '#020617';
-          }}
-          onMouseLeave={e => {
-            e.currentTarget.style.background = '#0f172a';
-            e.currentTarget.style.color = '#38bdf8';
+            gap: '10px',
+            boxShadow: '0 4px 15px rgba(124, 58, 237, 0.3)'
           }}
         >
-          <UserPlus size={18} />
-          MANAGE CLINICS
-        </button>
+          <Building size={18} /> MANAGE CLINICS
+        </motion.button>
       </div>
 
       {/* STATS */}

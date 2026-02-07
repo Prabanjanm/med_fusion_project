@@ -5,8 +5,7 @@ import {
   CheckCircle2,
   Users,
   Link,
-  Stethoscope,
-  Bell
+  Stethoscope
 } from 'lucide-react';
 
 import Layout from '../components/Layout';
@@ -14,10 +13,13 @@ import Table from '../components/Table';
 import SummaryCard from '../components/SummaryCard';
 import StatusBadge from '../components/StatusBadge';
 import { auditorAPI } from '../services/api';
+import { useAuth } from '../context/AuthContext';
+import { motion } from 'framer-motion';
 import '../styles/DashboardLayout.css';
 
 const AuditDashboard = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
 
   const [auditRecords, setAuditRecords] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -75,45 +77,54 @@ const AuditDashboard = () => {
 
   return (
     <Layout>
-      {/* HEADER */}
-      <div className="page-header">
+      {/* Hero Section */}
+      <div style={{
+        marginBottom: '1rem',
+        paddingTop: '1.5rem',
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'flex-end',
+        paddingBottom: '1rem',
+        position: 'relative'
+      }}>
         <div>
-          <h1 className="page-title">Compliance & Monitoring</h1>
-          <p className="page-subtitle">
-            Oversight of verified CSR partners and NGO networks
+          <h1 className="page-title" style={{
+            fontSize: '2rem',
+            marginBottom: '0.25rem',
+            textShadow: '0 0 20px rgba(0, 229, 255, 0.2)'
+          }}>
+            Auditor Compliance Dashboard
+          </h1>
+          <p className="page-subtitle" style={{
+            fontSize: '1.1rem',
+            opacity: 0.6,
+            color: '#94a3b8',
+            fontWeight: '400'
+          }}>
+            Oversight Protocol: {user?.organization_name || 'System Authority'}
           </p>
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
-          {/* Real-time Notifications Bell */}
-          <div style={{ position: 'relative', cursor: 'pointer' }} onClick={() => navigate('/auditor/pending-requests')}>
-            <Bell size={24} color={stats.pendingReviews > 0 ? "#ff4d4d" : "#64748b"} />
-            {stats.pendingReviews > 0 && (
-              <span style={{
-                position: 'absolute', top: '-5px', right: '-5px',
-                background: '#ff4d4d', color: '#fff', borderRadius: '50%',
-                width: '18px', height: '18px', fontSize: '0.65rem',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                fontWeight: '800', border: '2px solid #0f172a'
-              }}>
-                {stats.pendingReviews}
-              </span>
-            )}
-          </div>
-
-          <button
-            className="btn-submit"
-            onClick={() => navigate('/auditor/pending-requests')}
-            style={{
-              minWidth: '220px',
-              borderRadius: '12px',
-              letterSpacing: '0.05em',
-              fontWeight: 600
-            }}
-          >
-            REVIEW APPLICATIONS
-          </button>
-        </div>
+        <motion.button
+          whileHover={{ scale: 1.05, boxShadow: '0 0 30px rgba(0, 229, 255, 0.4)' }}
+          whileTap={{ scale: 0.95 }}
+          onClick={() => navigate('/auditor/pending-requests')}
+          style={{
+            background: 'rgba(0, 229, 255, 0.1)',
+            color: '#00e5ff',
+            border: '1px solid #00e5ff',
+            padding: '0.8rem 1.8rem',
+            borderRadius: '12px',
+            fontSize: '0.95rem',
+            fontWeight: '700',
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '10px'
+          }}
+        >
+          <ClipboardCheck size={18} /> REVIEW APPLICATIONS
+        </motion.button>
       </div>
 
       {/* STATS */}

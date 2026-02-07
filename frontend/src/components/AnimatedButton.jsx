@@ -56,7 +56,7 @@ const AnimatedButton = ({
   return (
     <motion.button
       type={type}
-      className={`animated-button animated-button--${variant}`}
+      className={`animated-button variant-${variant}`}
       onClick={handleClick}
       disabled={disabled || loading}
       whileHover={!disabled && !loading ? { scale: 1.05 } : {}}

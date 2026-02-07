@@ -73,10 +73,13 @@ class ClinicResponse(BaseModel):
     id: int
     clinic_name: str
     address: Optional[str] = None
+    pincode: Optional[str] = None
     official_email: Optional[str] = None
     is_active: bool
+    active_needs: int = 0
     total_requirements: int = 0
     confirmed_receipts: int = 0
+    last_active_at: Optional[datetime] = None
 
     class Config:
         from_attributes = True
@@ -87,12 +90,14 @@ class ClinicAllocationPart(BaseModel):
     received_at: Optional[datetime] = None
     feedback: Optional[str] = None
     quality_rating: Optional[int] = None
+    ngo_name: Optional[str] = None
+    company_name: Optional[str] = None
 
 class ClinicRequirementPart(BaseModel):
     id: int
     item_name: str
     quantity: int
-    urgency: str
+    urgency: Optional[str] = "Normal"
     created_at: datetime
     allocation: Optional[ClinicAllocationPart] = None
 
@@ -100,6 +105,8 @@ class ClinicActivityResponse(BaseModel):
     id: int
     clinic_name: str
     address: Optional[str] = None
+    official_email: Optional[str] = None
+    pincode: Optional[str] = None
     is_active: bool
     requirements: list[ClinicRequirementPart] = []
 

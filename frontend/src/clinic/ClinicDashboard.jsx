@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowDownCircle, CheckSquare, Truck, Clock, Package, AlertTriangle } from 'lucide-react';
+import { ArrowDownCircle, CheckSquare, Truck, Clock, Package, AlertTriangle, History } from 'lucide-react';
+import { motion } from 'framer-motion';
 import Layout from '../components/Layout';
 import Table from '../components/Table';
 import SummaryCard from '../components/SummaryCard';
@@ -71,42 +72,79 @@ const ClinicDashboard = () => {
 
   return (
     <Layout>
-      <div className="page-header">
+      {/* Hero Section */}
+      <div style={{
+        marginBottom: '1rem',
+        paddingTop: '1.5rem',
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'flex-end',
+        paddingBottom: '1rem',
+        position: 'relative'
+      }}>
         <div>
-          <h1 className="page-title">Clinic Inventory Portal</h1>
-          <p className="page-subtitle">Confirm receipt of NGO-allocated supplies and track requirements</p>
+          <h1 className="page-title" style={{
+            fontSize: '2rem',
+            marginBottom: '0.25rem',
+            textShadow: '0 0 20px rgba(6, 182, 212, 0.2)'
+          }}>
+            Clinic Inventory Dashboard
+          </h1>
+          <p className="page-subtitle" style={{
+            fontSize: '1.1rem',
+            opacity: 0.6,
+            color: '#94a3b8',
+            fontWeight: '400'
+          }}>
+            Welcome back, {user?.organization_name || 'Health Facility'}
+          </p>
         </div>
-        <div style={{ display: 'flex', gap: '1rem' }}>
-          <button
-            className="btn-secondary"
+
+        <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+          <motion.button
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
             onClick={() => navigate('/clinic/request-products')}
             style={{
-              display: 'flex', alignItems: 'center', gap: '0.5rem', minWidth: '200px', justifyContent: 'center', borderRadius: '12px', fontFamily: "'Orbitron', sans-serif", border: '1px solid #00e5ff'
+              display: 'flex', alignItems: 'center', gap: '0.5rem',
+              padding: '0.75rem 1.25rem', fontSize: '0.9rem',
+              borderRadius: '10px', fontWeight: '600',
+              border: '1px solid #00e5ff', background: 'rgba(0, 229, 255, 0.05)',
+              color: '#00e5ff', cursor: 'pointer'
             }}
           >
-            <Package size={18} />
-            REQUEST REQUIREMENTS
-          </button>
-          <button
-            className="btn-secondary"
+            <Package size={18} /> REQUEST
+          </motion.button>
+
+          <motion.button
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
             onClick={() => navigate('/clinic/request-status')}
             style={{
-              display: 'flex', alignItems: 'center', gap: '0.5rem', minWidth: '200px', justifyContent: 'center', borderRadius: '12px', fontFamily: "'Orbitron', sans-serif"
+              display: 'flex', alignItems: 'center', gap: '0.5rem',
+              padding: '0.75rem 1.25rem', fontSize: '0.9rem',
+              borderRadius: '10px', fontWeight: '600',
+              border: '1px solid rgba(255,255,255,0.1)', background: 'rgba(15, 23, 42, 0.6)',
+              color: '#fff', cursor: 'pointer'
             }}
           >
-            <Clock size={18} />
-            MY ALLOCATIONS
-          </button>
-          <button
-            className="btn-submit"
+            <History size={18} /> MY STATUS
+          </motion.button>
+
+          <motion.button
+            whileHover={{ scale: 1.05, boxShadow: '0 0 20px rgba(0, 255, 148, 0.3)' }}
+            whileTap={{ scale: 0.95 }}
             onClick={() => navigate('/clinic/receipts')}
             style={{
-              display: 'flex', alignItems: 'center', gap: '0.5rem', minWidth: '200px', justifyContent: 'center', borderRadius: '12px', letterSpacing: '0.05em'
+              display: 'flex', alignItems: 'center', gap: '0.5rem',
+              padding: '0.75rem 1.5rem', fontSize: '0.9rem',
+              borderRadius: '10px', fontWeight: '700',
+              border: 'none', background: 'linear-gradient(135deg, #00ff94 0%, #00e5ff 100%)',
+              color: '#000', cursor: 'pointer'
             }}
           >
-            <CheckSquare size={18} />
-            CONFIRM RECEIPT
-          </button>
+            <CheckSquare size={18} /> CONFIRM RECEIPT
+          </motion.button>
         </div>
       </div>
 

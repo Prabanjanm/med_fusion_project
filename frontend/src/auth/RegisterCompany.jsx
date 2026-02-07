@@ -42,7 +42,8 @@ const RegisterCompany = () => {
         email: '',
         id_number: '',
         secondary_id: '',
-        password: ''
+        password: '',
+        has_80g: false
     });
 
     // Roles allowed for registration
@@ -100,7 +101,8 @@ const RegisterCompany = () => {
     const activeColor = activeRoleObj ? activeRoleObj.color : '#06b6d4';
 
     const handleChange = (e) => {
-        setFormData({ ...formData, [e.target.name]: e.target.value });
+        const value = e.target.type === 'checkbox' ? e.target.checked : e.target.value;
+        setFormData({ ...formData, [e.target.name]: value });
     };
 
     const nextStep = () => {
@@ -140,7 +142,7 @@ const RegisterCompany = () => {
                 await ngoAPI.register({
                     ngo_name: formData.name,
                     csr_1_number: formData.id_number,
-                    has_80g: true, // Defaulting as UI doesn't have field
+                    has_80g: formData.has_80g, // Verified from checkbox
                     official_email: formData.email,
                     password: formData.password // ✅ Send password immediately
                 });
@@ -342,6 +344,26 @@ const RegisterCompany = () => {
                                                 onBlur={handleInputBlur}
                                                 style={{ background: 'rgba(0,0,0,0.3)' }}
                                             />
+                                        </div>
+                                    )}
+
+                                    {/* 80G CHECKBOX FOR NGO */}
+                                    {selectedRole === 'ngo' && (
+                                        <div className="input-group-modern" style={{ marginTop: '1.2rem', display: 'flex', alignItems: 'center', gap: '10px', background: 'rgba(255,255,255,0.03)', padding: '10px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.1)' }}>
+                                            <input
+                                                type="checkbox"
+                                                name="has_80g"
+                                                id="has80g"
+                                                checked={formData.has_80g}
+                                                onChange={handleChange}
+                                                style={{ width: '18px', height: '18px', accentColor: activeColor, cursor: 'pointer' }}
+                                            />
+                                            <div>
+                                                <label htmlFor="has80g" className="input-label" style={{ display: 'block', fontSize: '0.85rem', color: '#fff', margin: 0, fontWeight: '600', cursor: 'pointer' }}>
+                                                    80G Certificate Available
+                                                </label>
+                                                <p style={{ margin: 0, fontSize: '0.7rem', color: '#64748b' }}>Check this if your NGO has valid tax exemption status.</p>
+                                            </div>
                                         </div>
                                     )}
                                 </motion.div>

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, Check, Lock, ShieldCheck, ChevronRight, ChevronLeft } from 'lucide-react';
+import { X, Check, Lock, ShieldCheck, ChevronRight, ChevronLeft, Activity } from 'lucide-react';
 import '../styles/WizardModal.css';
 
 /**
@@ -119,7 +119,7 @@ const WizardModal = ({ isOpen, onClose, title, steps, onComplete, isSubmitting }
                             </>
                         ) : (
                             <>
-                                Next <ChevronRight size={16} />
+                                NEXT <ChevronRight size={16} />
                             </>
                         )}
                     </button>
@@ -133,7 +133,6 @@ const WizardModal = ({ isOpen, onClose, title, steps, onComplete, isSubmitting }
  * Helper Component for displaying a Review Summary
  */
 export const ReviewSummary = ({ data, customRender }) => {
-    // Generate a mock hash for preview visualization
     const [hash, setHash] = useState('');
 
     useEffect(() => {
@@ -143,34 +142,44 @@ export const ReviewSummary = ({ data, customRender }) => {
 
     return (
         <div className="review-container">
-            <div className="review-data-grid">
-                {Object.entries(data).map(([key, value]) => {
-                    if (!value || typeof value === 'object') return null; // Skip complex objects or empty
-                    return (
-                        <div key={key} className="review-card">
-                            <div className="review-label">{key.replace(/([A-Z])/g, ' $1').trim()}</div>
-                            <div className="review-value">{value}</div>
-                        </div>
-                    );
-                })}
-                {customRender && customRender()}
+            <div className="review-scroll-area">
+                <div className="review-grid">
+                    {Object.entries(data).map(([key, value]) => {
+                        if (!value || typeof value === 'object') return null;
+                        return (
+                            <div key={key} className="review-item">
+                                <span className="review-key">{key.replace(/([A-Z])/g, ' $1').trim()}</span>
+                                <span className="review-dots"></span>
+                                <span className="review-val">{value}</span>
+                            </div>
+                        );
+                    })}
+                    {customRender && customRender()}
+                </div>
             </div>
 
-            <div className="blockchain-summary">
-                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '10px' }}>
-                    <ShieldCheck className="text-cyan" size={24} />
-                    <h4 style={{ color: '#fff', margin: 0 }}>Blockchain Verification Preview</h4>
-                </div>
-                <p style={{ color: '#94A3B8', fontSize: '0.9rem', marginBottom: '1rem' }}>
-                    The data above will be immutably recorded. Once submitted, this transaction cannot be modified.
-                </p>
-
-                <div className="hash-display">
-                    {hash}
+            <div className="blockchain-panel">
+                <div className="panel-header">
+                    <ShieldCheck className="panel-icon" size={20} />
+                    <span>LEDGER SECURITY PROTOCOL</span>
+                    <div className="status-dot"></div>
                 </div>
 
-                <div className="trust-badge">
-                    <Lock size={14} /> End-to-End Encrypted & Verified
+                <div className="hash-box">
+                    <div className="hash-label">CRYPTOGRAPHIC TRACE ID</div>
+                    <div className="hash-text">{hash}</div>
+                </div>
+
+                <div className="security-footer">
+                    <div className="badge">
+                        <Lock size={12} /> SECURED
+                    </div>
+                    <div className="badge">
+                        <Activity size={12} /> REAL-TIME
+                    </div>
+                    <div className="badge">
+                        SHA-256
+                    </div>
                 </div>
             </div>
         </div>

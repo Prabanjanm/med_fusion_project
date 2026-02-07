@@ -5,6 +5,7 @@ import InteractiveRipple from '../components/InteractiveRipple';
 import AmbientHoverRipple from '../components/AmbientHoverRipple';
 import CSRJourneyMap from '../components/CSRJourneyMap'; // Restored Import
 import Logo from '../components/Logo';
+import Footer from '../components/Footer';
 import '../styles/Home.css';
 import { ShieldCheck, CheckCircle, Search, FileCheck, Lock, ArrowRight, Eye } from 'lucide-react';
 
@@ -171,7 +172,12 @@ const Home = () => {
             </section>
 
             {/* INTERACTIVE PROOF SECTION WITH HOVER */}
-            <section className="section" style={{ padding: '8rem 0', background: 'linear-gradient(to bottom, #020617 0%, #0f172a 100%)', position: 'relative', overflow: 'hidden', marginTop: '-2px' }}>
+            <section className="section" style={{ 
+                padding: '8rem 0', 
+                background: 'linear-gradient(to bottom, transparent 0%, #020617 20%, #0f172a 80%, transparent 100%)', 
+                position: 'relative', 
+                overflow: 'hidden' 
+            }}>
                 <div className="container" style={{ maxWidth: '1000px', margin: '0 auto' }}>
                     <div style={{ textAlign: 'center', marginBottom: '6rem' }}>
                         <h2 style={{ fontFamily: 'Inter, sans-serif', fontSize: '2.5rem', fontWeight: '700', color: '#fff', marginBottom: '1rem', letterSpacing: '-1px' }}>
@@ -243,6 +249,7 @@ const Home = () => {
                 </div>
             </section>
 
+            <Footer />
         </div>
     );
 };

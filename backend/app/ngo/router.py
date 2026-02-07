@@ -147,3 +147,13 @@ async def allocation_history_endpoint(
     ngo = Depends(require_role("NGO"))
 ):
     return await get_allocation_history(db, ngo)
+
+
+@router.get("/clinics/{clinic_id}/feedback")
+async def get_clinic_feedback_endpoint(
+    clinic_id: int,
+    db: AsyncSession = Depends(get_db),
+    ngo = Depends(require_role("NGO"))
+):
+    from app.ngo.service import get_clinic_feedback
+    return await get_clinic_feedback(db, ngo, clinic_id)

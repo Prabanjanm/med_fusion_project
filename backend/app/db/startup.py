@@ -43,6 +43,26 @@ async def seed_trusted_companies(db):
             "company_name": "Global Pharma Care",
             "cin": "L11111TN2025PLC000000",
             "pan": "PHARMA123G"
+        },
+        {
+            "company_name": "MediLife Solutions",
+            "cin": "L99887KA2023PLC112233",
+            "pan": "MEDLIFE456",
+        },
+        {
+            "company_name": "BioTech Research Corp",
+            "cin": "L55443DL2021PLC778899",
+            "pan": "BIOTEC789X",
+        },
+        {
+            "company_name": "Future Health Systems",
+            "cin": "L22334MH2022PLC445566",
+            "pan": "FUTHEA321Z",
+        },
+        {
+            "company_name": "CureAll Pharmaceuticals",
+            "cin": "L88776WB2020PLC998877",
+            "pan": "CUREALL111",
         }
     ]
 
@@ -92,6 +112,30 @@ async def seed_trusted_ngos(db):
             "csr_1_number": "CSR12345678",
             "has_80g": True,
             "official_email": "aiswaryam.cse2024@citchennai.net"
+        },
+        {
+            "ngo_name": "Hope for All",
+            "csr_1_number": "CSR00011223",
+            "has_80g": True,
+            "official_email": "contact@hopeforall.org"
+        },
+        {
+            "ngo_name": "Care India Foundation",
+            "csr_1_number": "CSR00044556",
+            "has_80g": True,
+            "official_email": "info@careindia.org"
+        },
+        {
+            "ngo_name": "Smile Giver Trust",
+            "csr_1_number": "CSR00077889",
+            "has_80g": False,
+            "official_email": "support@smilegiver.org"
+        },
+        {
+            "ngo_name": "Bright Future NGO",
+            "csr_1_number": "CSR00099112",
+            "has_80g": True,
+            "official_email": "hello@brightfuture.org"
         }
     ]
 

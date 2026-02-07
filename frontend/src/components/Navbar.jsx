@@ -1,9 +1,9 @@
 import React from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
-import { LogOut, User, Bell, Mail, Inbox, AlertCircle, Clock } from 'lucide-react';
+import { LogOut, User, Bell, AlertCircle, Clock } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { auditorAPI } from '../services/api';
+import { auditorAPI, ngoAPI, clinicAPI } from '../services/api';
 import '../styles/Navbar.css';
 
 const Navbar = () => {
@@ -20,24 +20,69 @@ const Navbar = () => {
   };
 
   const fetchNotifications = async () => {
-    if (user?.role === 'auditor') {
-      try {
-        setLoading(true);
+    if (!user) return;
+    try {
+      const alerts = [];
+      setLoading(true);
+
+      if (user?.role === 'auditor') {
         const [pendingCsr, pendingNgo] = await Promise.all([
-          auditorAPI.getPendingCompanies(),
-          auditorAPI.getPendingNGOs()
+          auditorAPI.getPendingCompanies().catch(() => []),
+          auditorAPI.getPendingNGOs().catch(() => [])
         ]);
+        const total = (pendingCsr?.length || 0) + (pendingNgo?.length || 0);
+        if (total > 0) {
+          alerts.push({
+            id: 'audit-review',
+            title: 'Review Applications',
+            desc: `${total} CSR/NGO registrations pending verification`,
+            time: 'Immediate Action Required',
+            type: 'registration'
+          });
+        }
+      } else if (user?.role === 'ngo') {
+        const dashboardData = await ngoAPI.getDashboardData().catch(() => ({}));
+        const requirements = dashboardData.clinic_requirements || [];
+        const pendingReqs = requirements.filter(r => r.status === 'PENDING' || r.status === 'CLINIC_REQUESTED');
 
-        const alerts = [];
-        pendingCsr.forEach(c => alerts.push({ id: `csr-${c.id}`, title: 'New CSR Registration', desc: c.company_name, time: 'Pending Action', type: 'registration' }));
-        pendingNgo.forEach(n => alerts.push({ id: `ngo-${n.id}`, title: 'New NGO Registration', desc: n.ngo_name, time: 'Pending Action', type: 'registration' }));
-
-        setNotifications(alerts);
-      } catch (error) {
-        console.error("Failed to fetch notifications", error);
-      } finally {
-        setLoading(false);
+        if (pendingReqs.length > 0) {
+          alerts.push({
+            id: 'ngo-reqs',
+            title: 'Clinic Requirements',
+            desc: `${pendingReqs.length} pending clinic resource requests`,
+            time: 'Action Required',
+            type: 'requirement'
+          });
+        } else {
+          const available = await ngoAPI.getAvailableDonations().catch(() => []);
+          if (available.length > 0) {
+            alerts.push({
+              id: 'ngo-donations',
+              title: 'Available Donations',
+              desc: `${available.length} items ready for NGO acceptance`,
+              time: 'New Items',
+              type: 'donation'
+            });
+          }
+        }
+      } else if (user?.role === 'clinic') {
+        const pending = await clinicAPI.getPendingAllocations().catch(() => []);
+        if (pending.length > 0) {
+          alerts.push({
+            id: 'clinic-receipts',
+            title: 'Confirm Receipts',
+            desc: `${pending.length} incoming allocations to verify`,
+            time: 'Action Required',
+            type: 'receipt'
+          });
+        }
       }
+
+      setNotifications(alerts.slice(0, 1)); // Strict: Keep only one notification
+    } catch (error) {
+      console.error("Failed to fetch notifications", error);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -57,22 +102,29 @@ const Navbar = () => {
     return labels[role] || role;
   };
 
+  const handleNotificationClick = (n) => {
+    if (user?.role === 'auditor') navigate('/auditor/pending-requests');
+    if (user?.role === 'ngo') {
+      if (n.id === 'ngo-donations') navigate('/ngo/pending-donations');
+      else navigate('/ngo/allocate');
+    }
+    if (user?.role === 'clinic') navigate('/clinic/receipts');
+    setShowNotifications(false);
+  };
+
   return (
     <header className="dashboard-navbar">
       <div className="navbar-content">
-        {/* Empty left side - logo only in sidebar */}
         <div></div>
 
-        {/* Right Side: User Profile & Actions */}
         <div className="navbar-actions">
-          {/* Real-time Notification Inbox */}
           <div className="notification-wrapper" style={{ position: 'relative' }}>
             <button
               className={`nav-icon-btn ${showNotifications ? 'active' : ''}`}
               onClick={() => setShowNotifications(!showNotifications)}
               title="Notifications"
             >
-              <Inbox size={20} color={notifications.length > 0 ? "#00e5ff" : "#94a3b8"} />
+              <Bell size={20} color={notifications.length > 0 ? "#00e5ff" : "#94a3b8"} />
               {notifications.length > 0 && (
                 <span className="notif-badge">{notifications.length}</span>
               )}
@@ -87,13 +139,13 @@ const Navbar = () => {
                   className="notif-dropdown"
                 >
                   <div className="notif-header">
-                    <h3>Verification Inbox</h3>
-                    <span className="notif-count">{notifications.length} Priority Alerts</span>
+                    <h3>Action Required</h3>
+                    <span className="notif-count">{notifications.length} Priority Alert</span>
                   </div>
                   <div className="notif-body">
                     {notifications.length > 0 ? (
                       notifications.map(n => (
-                        <div key={n.id} className="notif-item" onClick={() => { navigate('/auditor/pending-requests'); setShowNotifications(false); }}>
+                        <div key={n.id} className="notif-item" onClick={() => handleNotificationClick(n)}>
                           <div className="notif-icon-circle">
                             <AlertCircle size={14} color="#00e5ff" />
                           </div>
@@ -112,7 +164,12 @@ const Navbar = () => {
                     )}
                   </div>
                   <div className="notif-footer">
-                    <button onClick={() => { navigate('/auditor/pending-requests'); setShowNotifications(false); }}>View All Applications</button>
+                    <button onClick={() => {
+                      if (user?.role === 'auditor') navigate('/auditor/pending-requests');
+                      if (user?.role === 'ngo') navigate('/ngo/allocate');
+                      if (user?.role === 'clinic') navigate('/clinic/receipts');
+                      setShowNotifications(false);
+                    }}>Go to Actions Page</button>
                   </div>
                 </motion.div>
               )}

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Truck, Activity, Search, Building2, Package } from 'lucide-react';
+import { Truck, Activity, Search, Building2, Package, ChevronDown, History } from 'lucide-react';
 import Layout from '../components/Layout';
 import StatusBadge from '../components/StatusBadge';
 import SummaryCard from '../components/SummaryCard';
@@ -178,6 +178,9 @@ const AuditorNgoRegistry = () => {
                                             <p style={{ margin: 0, color: '#fff', fontWeight: '600' }}>{ngo.pending_donations}</p>
                                         </div>
                                         <StatusBadge status={ngo.status} />
+                                        <div style={{ marginLeft: '1rem', color: '#64748b', display: 'flex', alignItems: 'center' }}>
+                                            {expandedRow === ngo.id ? <ChevronDown size={20} /> : <History size={20} title="View History" />}
+                                        </div>
                                     </div>
                                 </div>
 

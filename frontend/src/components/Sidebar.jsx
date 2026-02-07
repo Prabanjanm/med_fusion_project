@@ -17,6 +17,7 @@ import {
     ShoppingCart,
     Stethoscope
 } from 'lucide-react';
+import Logo from './Logo';
 import '../styles/Sidebar.css';
 
 const Sidebar = ({ role }) => {
@@ -67,9 +68,8 @@ const Sidebar = ({ role }) => {
 
     return (
         <aside className="sidebar">
-            <div className="sidebar-header">
-                <ShieldCheck className="logo-icon" />
-                <span className="brand-name">CSR HealthTrace</span>
+            <div className="sidebar-header" style={{ paddingLeft: '1.2rem' }}>
+                <Logo size="small" />
             </div>
 
             <nav className="sidebar-nav">

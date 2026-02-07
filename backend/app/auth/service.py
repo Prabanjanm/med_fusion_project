@@ -29,11 +29,13 @@ async def login_user(db, email: str, password: str):
     # Verify organization based on role
     organization_verified = False
 
+    org_name = None
     if user.role == "CSR" and user.company_id:
         result = await db.execute(select(Company).where(Company.id == user.company_id))
         company = result.scalar_one_or_none()
         if company:
             organization_verified = company.is_verified
+            org_name = company.company_name
             print("COMPANY VERIFIED:", organization_verified)
 
     elif user.role == "NGO" and user.ngo_id:
@@ -41,6 +43,7 @@ async def login_user(db, email: str, password: str):
         ngo = result.scalar_one_or_none()
         if ngo:
             organization_verified = ngo.is_verified
+            org_name = ngo.ngo_name
             print("NGO VERIFIED:", organization_verified)
 
     elif user.role == "CLINIC" and user.clinic_id:
@@ -48,10 +51,12 @@ async def login_user(db, email: str, password: str):
         clinic = result.scalar_one_or_none()
         if clinic:
             organization_verified = clinic.is_active
+            org_name = clinic.clinic_name
             print("CLINIC ACTIVE:", organization_verified)
 
     elif user.role in ["AUDITOR", "ADMIN"]:  # ✅ Allow Auditors/Admins to login
         organization_verified = True
+        org_name = "System Authority"
 
     if not organization_verified:
         raise ValueError(f"{user.role} not verified or not active")
@@ -62,6 +67,7 @@ async def login_user(db, email: str, password: str):
         "company_id": user.company_id,
         "ngo_id": user.ngo_id,
         "clinic_id": user.clinic_id,
+        "organization_name": org_name
     })
 
     # CRITICAL: Frontend needs role in response to navigate to correct dashboard

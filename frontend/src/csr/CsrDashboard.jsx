@@ -154,7 +154,7 @@ const CsrDashboard = () => {
               marginBottom: '0.25rem',
               textShadow: '0 0 20px rgba(6, 182, 212, 0.2)'
             }}>
-              Overview
+              Donor Dashboard
             </h1>
             <p className="page-subtitle" style={{
               fontSize: '1.1rem',
@@ -164,7 +164,7 @@ const CsrDashboard = () => {
               textTransform: 'none',
               fontWeight: '400'
             }}>
-              Welcome back, {user?.company_name || 'Partner'}
+              Welcome back, {user?.organization_name || user?.company_name || 'Partner'}
             </p>
           </div>
 

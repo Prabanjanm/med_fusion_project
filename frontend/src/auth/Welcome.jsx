@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { Building2, Handshake, FileCheck, Stethoscope, ArrowRight } from 'lucide-react';
 import '../styles/Auth.css';
 import CSREcosystemScene from '../components/CSREcosystemScene';
+import Logo from '../components/Logo';
 
 class ErrorBoundary extends React.Component {
     constructor(props) {
@@ -99,12 +100,12 @@ const Welcome = () => {
                     zIndex: 10
                 }}
             >
-                <motion.div variants={itemVariants} style={{ textAlign: 'center', marginBottom: '3rem' }}>
-                    <h1 className="login-title" style={{ fontSize: '2.5rem', marginBottom: '0.5rem', letterSpacing: '2px' }}>
-                        CSR COMPLIANCE NETWORK
-                    </h1>
+                <motion.div variants={itemVariants} style={{ textAlign: 'center', marginBottom: '3rem', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                    <div style={{ marginBottom: '1.5rem' }}>
+                        <Logo size="large" />
+                    </div>
                     <p className="login-subtitle" style={{ fontSize: '1.2rem', color: '#94a3b8' }}>
-                        Select your role to begin
+                        Global Trust & Transparency Network
                     </p>
                 </motion.div>
 

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { User, Activity, FileText, Search, Building } from 'lucide-react';
+import { User, Activity, FileText, Search, Building, ChevronDown, History } from 'lucide-react';
 import Layout from '../components/Layout';
 import StatusBadge from '../components/StatusBadge';
 import SummaryCard from '../components/SummaryCard';
@@ -176,6 +176,9 @@ const AuditorCsrRegistry = () => {
                                             <p style={{ margin: 0, color: '#fff', fontWeight: '600' }}>{new Date(csr.last_active).toLocaleDateString()}</p>
                                         </div>
                                         <StatusBadge status={csr.status} />
+                                        <div style={{ marginLeft: '1rem', color: '#64748b', display: 'flex', alignItems: 'center' }}>
+                                            {expandedRow === csr.id ? <ChevronDown size={20} /> : <History size={20} title="View History" />}
+                                        </div>
                                     </div>
                                 </div>
 

@@ -356,13 +356,21 @@ async def accept_csr_donation(db, payload, donation_id: int):
     result = await db.execute(select(NGO.ngo_name).where(NGO.id == ngo_id))
     ngo_name = result.scalar() or "NGO Partner"
 
+    # Fetch Company name for Metadata
+    company_result = await db.execute(select(Company.company_name).where(Company.id == donation.company_id))
+    company_name = company_result.scalar() or "CSR Partner"
+
     try:
         audit = await run_in_threadpool(
             log_to_blockchain,
             action="DONATION_ACCEPTED",
             entity=str(donation.id),
             role="NGO",
-            donor_name=ngo_name
+            donor_name=ngo_name,
+            metadata={
+                "ngo_name": ngo_name,
+                "company_name": company_name
+            }
         )
     except Exception as e:
         print(f"Blockchain Error: {e}")
@@ -504,6 +512,14 @@ async def allocate_donation(db, payload, donation_id, clinic_requirement_id):
     # Fetch NGO name for audit trail
     result = await db.execute(select(NGO.ngo_name).where(NGO.id == ngo_id))
     ngo_name = result.scalar() or "NGO Partner"
+    
+    # Fetch Clinic Name for Metadata
+    clinic_result = await db.execute(select(Clinic.clinic_name).where(Clinic.id == requirement.clinic_id))
+    clinic_name = clinic_result.scalar() or "Clinic"
+
+    # Fetch Company Name for Metadata
+    company_result = await db.execute(select(Company.company_name).where(Company.id == donation.company_id))
+    company_name = company_result.scalar() or "CSR Partner"
 
     try:
         audit = await run_in_threadpool(
@@ -511,7 +527,12 @@ async def allocate_donation(db, payload, donation_id, clinic_requirement_id):
             action="DONATION_ALLOCATED",
             entity=str(donation.id),
             role="NGO",
-            donor_name=ngo_name
+            donor_name=ngo_name,
+            metadata={
+                "clinic_name": clinic_name,
+                "company_name": company_name,
+                "ngo_name": ngo_name
+            }
         )
     except Exception as e:
         print(f"Blockchain Error: {e}")
@@ -548,3 +569,45 @@ async def get_allocation_history(db: AsyncSession, ngo: dict):
             "quality_rating": alloc.quality_rating
         })
     return allocations
+
+
+async def get_clinic_feedback(db: AsyncSession, ngo: dict, clinic_id: int):
+    ngo_id = ngo.get("ngo_id")
+    from app.models.clinic import Clinic
+    
+    # Verify clinic belongs to NGO
+    clinic = await db.get(Clinic, clinic_id)
+    if not clinic:
+        raise HTTPException(404, "Clinic not found")
+        
+    if clinic.ngo_id != ngo_id:
+        raise HTTPException(403, "Clinic does not belong to this NGO")
+        
+    # Fetch feedback using similar logic to admin service
+    result = await db.execute(
+        select(
+            DonationAllocation, Donation, ClinicRequirement
+        )
+        .join(Donation, DonationAllocation.donation_id == Donation.id)
+        .join(ClinicRequirement, DonationAllocation.clinic_requirement_id == ClinicRequirement.id)
+        .where(
+            ClinicRequirement.clinic_id == clinic_id,
+            ClinicRequirement.ngo_id == ngo_id,
+            DonationAllocation.feedback.isnot(None) # Only fetch if feedback exists
+        )
+        .order_by(DonationAllocation.received_at.desc())
+    )
+    
+    feedback_history = []
+    for row in result.all():
+        alloc, donation, req = row
+        feedback_history.append({
+            "id": alloc.id,
+            "item_name": donation.item_name,
+            "quantity": donation.quantity,
+            "feedback": alloc.feedback,
+            "quality_rating": alloc.quality_rating,
+            "received_at": alloc.received_at
+        })
+        
+    return feedback_history

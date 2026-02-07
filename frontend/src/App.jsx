@@ -6,6 +6,7 @@ import ProtectedRoutes from './routes/ProtectedRoutes';
 import Login from './auth/Login';
 import SetPassword from './auth/SetPassword';
 import RegisterCompany from './auth/RegisterCompany';
+import ForgotPassword from './auth/ForgotPassword';
 import RoleSelection from './auth/RoleSelection';
 import Home from './pages/Home';
 
@@ -71,6 +72,7 @@ function App() {
           <Route path="/register" element={<Navigate to="/auth/select?mode=register" replace />} />
 
           <Route path="/auth/set-password" element={<SetPassword />} />
+          <Route path="/auth/forgot-password" element={<ForgotPassword />} />
 
           {/* Role Specific Auth Routes */}
           <Route path="/:roleId/login" element={<Login />} />

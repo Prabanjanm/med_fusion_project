@@ -13,19 +13,52 @@ import { auditorAPI } from '../services/api';
 import '../styles/DashboardLayout.css';
 import '../styles/BlockchainLedger.css';
 
-// Custom Filter Dropdown to fix UI issues and include all entities
+// Custom Filter Dropdown with Role Grouping
 const ParticipantFilter = ({ blocks, selected, onChange }) => {
   const [isOpen, setIsOpen] = useState(false);
 
-  // Extract unique participants from the actual logs (Both Sources and Destinations)
-  const participants = React.useMemo(() => {
-    const allEntities = blocks.flatMap(b => [
-      b.entity,                 // The Source (e.g., Global Pharma Care)
-      b.data.clinic_name        // The Destination (e.g., City Hope)
-    ]).filter(Boolean); // Remove null/undefined
+  // Group participants by Role
+  const groupedParticipants = React.useMemo(() => {
+    const groups = {
+      CSR: new Set(),
+      NGO: new Set(),
+      CLINIC: new Set()
+    };
 
-    return [...new Set(allEntities)].sort(); // Unique and Sorted
+    blocks.forEach(b => {
+      // 1. Identify Role of the Block Author (Source)
+      const role = (b.role || 'CSR').toUpperCase().trim();
+
+      // Map legacy or specific roles to broad categories
+      let category = 'CSR';
+      if (role.includes('NGO')) category = 'NGO';
+      else if (role.includes('CLINIC')) category = 'CLINIC';
+      else if (role.includes('CSR') || role.includes('COMPANY')) category = 'CSR';
+
+      if (groups[category] && b.entity) {
+        groups[category].add(b.entity);
+      }
+
+      // 2. Extract Participants from Payload Data (Destination/Target)
+      if (b.data) {
+        if (b.data.clinic_name) groups.CLINIC.add(b.data.clinic_name);
+        if (b.data.ngo_name || b.data.ngo_id) {
+          // Sometimes we might only have ID if name missing, but usually name is preferred.
+          // Assuming business logic ensures names are present per previous backend fix.
+          if (b.data.ngo_name) groups.NGO.add(b.data.ngo_name);
+        }
+        if (b.data.company_name) groups.CSR.add(b.data.company_name);
+      }
+    });
+
+    return {
+      CSR: Array.from(groups.CSR).sort(),
+      NGO: Array.from(groups.NGO).sort(),
+      CLINIC: Array.from(groups.CLINIC).sort()
+    };
   }, [blocks]);
+
+  const hasAny = groupedParticipants.CSR.length > 0 || groupedParticipants.NGO.length > 0 || groupedParticipants.CLINIC.length > 0;
 
   return (
     <div style={{ position: 'relative', minWidth: '280px', zIndex: 50 }}>
@@ -72,7 +105,7 @@ const ParticipantFilter = ({ blocks, selected, onChange }) => {
               border: '1px solid rgba(255, 255, 255, 0.1)',
               borderRadius: '16px',
               padding: '0.5rem',
-              maxHeight: '300px',
+              maxHeight: '400px',
               overflowY: 'auto',
               boxShadow: '0 20px 40px -5px rgba(0,0,0,0.5)',
               zIndex: 100
@@ -90,33 +123,57 @@ const ParticipantFilter = ({ blocks, selected, onChange }) => {
                 background: selected === 'ALL' ? 'rgba(0, 212, 255, 0.1)' : 'transparent',
                 marginBottom: '4px',
                 fontWeight: 600,
-                fontSize: '0.9rem'
+                fontSize: '0.9rem',
+                borderBottom: '1px solid rgba(255,255,255,0.05)'
               }}
             >
               SHOW ALL RECORDS
             </div>
 
-            <div style={{ height: '1px', background: 'rgba(255,255,255,0.1)', margin: '8px 4px' }}></div>
-
-            {participants.map(p => (
-              <div
-                key={p}
-                onClick={() => { onChange(p); setIsOpen(false); }}
-                className="filter-option"
-                style={{
-                  padding: '12px 16px',
-                  borderRadius: '10px',
-                  cursor: 'pointer',
-                  color: selected === p ? '#fff' : '#cbd5e1',
-                  background: selected === p ? 'rgba(255, 255, 255, 0.1)' : 'transparent',
-                  marginBottom: '2px',
-                  fontSize: '0.9rem',
-                  transition: 'all 0.2s'
-                }}
-              >
-                {p}
+            {!hasAny && (
+              <div style={{ padding: '1rem', color: '#64748b', fontSize: '0.8rem', textAlign: 'center' }}>
+                No participants found
               </div>
+            )}
+
+            {Object.entries(groupedParticipants).map(([category, items]) => (
+              items.length > 0 && (
+                <div key={category}>
+                  <div style={{
+                    padding: '8px 16px',
+                    fontSize: '0.7rem',
+                    color: '#64748b',
+                    fontWeight: 700,
+                    letterSpacing: '1px',
+                    marginTop: '8px',
+                    background: 'rgba(255,255,255,0.02)'
+                  }}>
+                    {category} PARTNERS
+                  </div>
+                  {items.map(p => (
+                    <div
+                      key={p}
+                      onClick={() => { onChange(p); setIsOpen(false); }}
+                      className="filter-option"
+                      style={{
+                        padding: '10px 16px',
+                        borderRadius: '8px',
+                        cursor: 'pointer',
+                        color: selected === p ? '#fff' : '#cbd5e1',
+                        background: selected === p ? 'rgba(255, 255, 255, 0.1)' : 'transparent',
+                        margin: '2px 4px',
+                        fontSize: '0.9rem',
+                        transition: 'all 0.2s',
+                        paddingLeft: '24px' // Indent items
+                      }}
+                    >
+                      {p}
+                    </div>
+                  ))}
+                </div>
+              )
             ))}
+
           </motion.div>
         )}
       </AnimatePresence>
@@ -143,116 +200,7 @@ const AuditTrail = () => {
     loadLedger();
   }, []);
 
-  // Custom Filter Dropdown to fix UI issues and include all entities
-  const ParticipantFilter = ({ blocks, selected, onChange }) => {
-    const [isOpen, setIsOpen] = useState(false);
 
-    // Extract unique participants from the actual logs (Both Sources and Destinations)
-    const participants = React.useMemo(() => {
-      const allEntities = blocks.flatMap(b => [
-        b.entity,                 // The Source (e.g., Global Pharma Care)
-        b.data.clinic_name        // The Destination (e.g., City Hope)
-      ]).filter(Boolean); // Remove null/undefined
-
-      return [...new Set(allEntities)].sort(); // Unique and Sorted
-    }, [blocks]);
-
-    return (
-      <div style={{ position: 'relative', minWidth: '280px', zIndex: 50 }}>
-        {/* Trigger Button */}
-        <div
-          onClick={() => setIsOpen(!isOpen)}
-          style={{
-            width: '100%',
-            padding: '0 1.5rem',
-            borderRadius: '16px',
-            height: '64px',
-            background: 'rgba(15, 23, 42, 0.8)',
-            border: `1px solid ${isOpen ? '#00d4ff' : 'rgba(0, 229, 255, 0.15)'}`,
-            color: '#fff',
-            fontSize: '1rem',
-            cursor: 'pointer',
-            fontWeight: '600',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            transition: 'all 0.2s ease',
-            boxShadow: isOpen ? '0 0 20px rgba(0, 212, 255, 0.1)' : 'none'
-          }}
-        >
-          <span style={{ color: selected === 'ALL' ? '#94a3b8' : '#fff' }}>
-            {selected === 'ALL' ? 'FILTER BY PARTICIPANT' : selected}
-          </span>
-          <ChevronDown size={20} style={{ color: '#64748b', transform: isOpen ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }} />
-        </div>
-
-        {/* Styled Dropdown Options */}
-        <AnimatePresence>
-          {isOpen && (
-            <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: 10 }}
-              style={{
-                position: 'absolute',
-                top: '115%',
-                left: 0,
-                right: 0,
-                background: '#0f172a',
-                border: '1px solid rgba(255, 255, 255, 0.1)',
-                borderRadius: '16px',
-                padding: '0.5rem',
-                maxHeight: '300px',
-                overflowY: 'auto',
-                boxShadow: '0 20px 40px -5px rgba(0,0,0,0.5)',
-                zIndex: 100
-              }}
-              className="premium-scrollbar"
-            >
-              <div
-                onClick={() => { onChange('ALL'); setIsOpen(false); }}
-                className="filter-option"
-                style={{
-                  padding: '12px 16px',
-                  borderRadius: '10px',
-                  cursor: 'pointer',
-                  color: selected === 'ALL' ? '#00d4ff' : '#94a3b8',
-                  background: selected === 'ALL' ? 'rgba(0, 212, 255, 0.1)' : 'transparent',
-                  marginBottom: '4px',
-                  fontWeight: 600,
-                  fontSize: '0.9rem'
-                }}
-              >
-                SHOW ALL RECORDS
-              </div>
-
-              <div style={{ height: '1px', background: 'rgba(255,255,255,0.1)', margin: '8px 4px' }}></div>
-
-              {participants.map(p => (
-                <div
-                  key={p}
-                  onClick={() => { onChange(p); setIsOpen(false); }}
-                  className="filter-option"
-                  style={{
-                    padding: '12px 16px',
-                    borderRadius: '10px',
-                    cursor: 'pointer',
-                    color: selected === p ? '#fff' : '#cbd5e1',
-                    background: selected === p ? 'rgba(255, 255, 255, 0.1)' : 'transparent',
-                    marginBottom: '2px',
-                    fontSize: '0.9rem',
-                    transition: 'all 0.2s'
-                  }}
-                >
-                  {p}
-                </div>
-              ))}
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </div>
-    );
-  };
 
   const loadLedger = async () => {
     setLoading(true);
@@ -313,8 +261,10 @@ const AuditTrail = () => {
       b.txHash?.toLowerCase().includes(searchTerm.toLowerCase());
 
     const matchesClinic = selectedClinic === 'ALL' ||
-      b.data.clinic_name === selectedClinic ||
-      b.entity === selectedClinic;
+      (b.data.clinic_name && b.data.clinic_name.toLowerCase().trim() === selectedClinic.toLowerCase().trim()) ||
+      (b.data.ngo_name && b.data.ngo_name.toLowerCase().trim() === selectedClinic.toLowerCase().trim()) ||
+      (b.data.company_name && b.data.company_name.toLowerCase().trim() === selectedClinic.toLowerCase().trim()) ||
+      (b.entity && b.entity.toLowerCase().trim() === selectedClinic.toLowerCase().trim());
 
     return matchesSearch && matchesClinic;
   });
@@ -346,16 +296,14 @@ const AuditTrail = () => {
             </div>
             <button
               onClick={handleSync}
-              className={`btn-secondary ${syncing ? 'loading' : ''}`}
+              className={`btn-primary ${syncing ? 'loading' : ''}`}
               style={{
                 display: 'flex',
                 alignItems: 'center',
                 gap: '10px',
                 minWidth: '160px',
                 height: '48px',
-                borderRadius: '12px',
-                background: 'rgba(255,255,255,0.03)',
-                border: '1px solid rgba(255,255,255,0.1)'
+                borderRadius: '12px'
               }}
             >
               <RefreshCw size={18} className={syncing ? 'spin-animation' : ''} />
@@ -736,7 +684,7 @@ const AuditTrail = () => {
                 <p style={{ maxWidth: '400px', margin: '0 auto 2.5rem', fontSize: '0.9rem', lineHeight: '1.6' }}>
                   The network is active but no transactions have been recorded under the current filter criteria.
                 </p>
-                <button onClick={loadLedger} className="btn-secondary" style={{ padding: '0.8rem 2.5rem' }}>FORCE SYNC</button>
+                <button onClick={loadLedger} className="btn-primary" style={{ padding: '0.8rem 2.5rem' }}>FORCE SYNC</button>
               </div>
             )}
           </div>

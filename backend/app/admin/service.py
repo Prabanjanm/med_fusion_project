@@ -185,11 +185,18 @@ async def get_donation_logs(db: AsyncSession):
             Clinic.clinic_name,
             
             # ✅ Company Name for Entity ID
-            Company.company_name
+            Company.company_name,
+
+            # ✅ NGO Name for Entity ID
+            NGO.ngo_name
         )
         .outerjoin(
             Company,
             Company.id == Donation.company_id
+        )
+        .outerjoin(
+            NGO,
+            NGO.id == Donation.ngo_id
         )
         .outerjoin(
             DonationAllocation,
@@ -244,16 +251,18 @@ async def get_verified_clinics(db: AsyncSession):
             Clinic.id,
             Clinic.clinic_name,
             Clinic.address,
-            User.email.label("official_email"),
+            Clinic.pincode,
+            Clinic.official_email,
             Clinic.is_active,
             func.count(distinct(ClinicRequirement.id)).label("total_requirements"),
-            func.count(distinct(case((DonationAllocation.received == True, DonationAllocation.id), else_=None))).label("confirmed_receipts")
+            func.count(distinct(case((DonationAllocation.received == True, DonationAllocation.id), else_=None))).label("confirmed_receipts"),
+            # Calculate Active Needs properly (Not Fully Allocated)
+            func.count(distinct(case((ClinicRequirement.status != 'ALLOCATED', ClinicRequirement.id), else_=None))).label("active_needs")
         )
-        .outerjoin(User, User.clinic_id == Clinic.id)
         .outerjoin(ClinicRequirement, ClinicRequirement.clinic_id == Clinic.id)
         .outerjoin(DonationAllocation, DonationAllocation.clinic_requirement_id == ClinicRequirement.id)
         .where(Clinic.is_active.is_(True))
-        .group_by(Clinic.id, User.email)
+        .group_by(Clinic.id)
         .order_by(Clinic.id.desc())
     )
     return result.mappings().all()
@@ -424,21 +433,29 @@ async def get_clinic_with_requirements(
             Clinic.clinic_name,
             Clinic.is_active,
             Clinic.address,
+            Clinic.official_email,
+            Clinic.pincode,
 
             ClinicRequirement.id.label("requirement_id"),
             ClinicRequirement.item_name,
             ClinicRequirement.quantity,
-            ClinicRequirement.urgency,
+            ClinicRequirement.priority,
             ClinicRequirement.created_at,
 
             DonationAllocation.id.label("allocation_id"),
             DonationAllocation.received,
             DonationAllocation.received_at,
-            DonationAllocation.feedback,
-            DonationAllocation.quality_rating
+            DonationAllocation.feedback.label("alloc_feedback"),
+            DonationAllocation.quality_rating.label("alloc_rating"),
+
+            NGO.ngo_name,
+            Company.company_name
         )
         .join(ClinicRequirement, ClinicRequirement.clinic_id == Clinic.id, isouter=True)
         .join(DonationAllocation, DonationAllocation.clinic_requirement_id == ClinicRequirement.id, isouter=True)
+        .join(Donation, DonationAllocation.donation_id == Donation.id, isouter=True)
+        .join(NGO, Donation.ngo_id == NGO.id, isouter=True)
+        .join(Company, Donation.company_id == Company.id, isouter=True)
         .where(Clinic.id == clinic_id)
         .order_by(ClinicRequirement.created_at.desc())
     )
@@ -451,24 +468,32 @@ async def get_clinic_with_requirements(
         "id": rows[0]["id"],
         "clinic_name": rows[0]["clinic_name"],
         "address": rows[0]["address"],
+        "official_email": rows[0]["official_email"],
+        "pincode": rows[0]["pincode"],
         "is_active": rows[0]["is_active"],
         "requirements": []
     }
 
     for row in rows:
         if row["requirement_id"] is not None:
+            # Map priority int to urgency label
+            priority_map = {1: "CRITICAL", 2: "HIGH", 3: "NORMAL", 4: "LOW"}
+            urgency = priority_map.get(row["priority"], "NORMAL")
+
             clinic["requirements"].append({
                 "id": row["requirement_id"],
                 "item_name": row["item_name"],
                 "quantity": row["quantity"],
-                "urgency": row["urgency"],
+                "urgency": urgency,
                 "created_at": row["created_at"],
                 "allocation": {
                     "id": row["allocation_id"],
                     "received": row["received"],
                     "received_at": row["received_at"],
-                    "feedback": row["feedback"],
-                    "quality_rating": row["quality_rating"]
+                    "feedback": row["alloc_feedback"],
+                    "quality_rating": row["alloc_rating"],
+                    "ngo_name": row["ngo_name"],
+                    "company_name": row["company_name"]
                 } if row["allocation_id"] else None
             })
 

@@ -14,6 +14,7 @@ const NgoClinicRequests = () => {
     const [modalType, setModalType] = useState('approve'); // 'approve' or 'deny'
     const [selectedDonationIds, setSelectedDonationIds] = useState([]); // Now an array for multi-batch
     const [denialReason, setDenialReason] = useState('');
+    const [searchTerm, setSearchTerm] = useState(''); // Added Search State
     const { state } = useLocation();
     const filterClinicId = state?.clinicId;
     const filterClinicName = state?.clinicName;
@@ -185,6 +186,31 @@ const NgoClinicRequests = () => {
                     )}
                 </div>
 
+                {/* Search Bar for Requirements */}
+                <div style={{ marginBottom: '2rem', display: 'flex', gap: '1rem' }}>
+                    <div style={{ flex: 1, position: 'relative' }}>
+                        <input
+                            type="text"
+                            placeholder="Search by Clinic Name or Product..."
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                            style={{
+                                width: '100%',
+                                padding: '1rem 1.5rem',
+                                paddingLeft: '3.5rem',
+                                borderRadius: '16px',
+                                background: 'rgba(15, 23, 42, 0.4)',
+                                border: '1px solid rgba(255, 255, 255, 0.1)',
+                                color: '#fff',
+                                fontSize: '1rem'
+                            }}
+                        />
+                        <div style={{ position: 'absolute', left: '1.2rem', top: '50%', transform: 'translateY(-50%)', opacity: 0.5 }}>
+                            🔍
+                        </div>
+                    </div>
+                </div>
+
                 {/* Requests List */}
                 {loading ? (
                     <div style={{ padding: '3rem', textAlign: 'center' }}>
@@ -205,85 +231,91 @@ const NgoClinicRequests = () => {
                     </div>
                 ) : (
                     <div style={{ display: 'grid', gap: '1.5rem' }}>
-                        {requests.map(request => (
-                            <div
-                                key={request.id}
-                                style={{
-                                    background: 'rgba(15, 23, 42, 0.4)',
-                                    backdropFilter: 'blur(20px)',
-                                    border: request.priority === 1 ? '2px solid rgba(239, 68, 68, 0.5)' : '1px solid rgba(255, 255, 255, 0.08)',
-                                    borderRadius: '24px',
-                                    padding: '2rem'
-                                }}
-                            >
-                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1.5rem' }}>
-                                    <div>
-                                        <h3 style={{ fontSize: '1.25rem', color: '#fff', marginBottom: '0.5rem' }}>
-                                            {request.item_name}
-                                        </h3>
-                                        <div style={{ color: '#64748b', fontSize: '0.9rem' }}>
-                                            Clinic: <strong style={{ color: '#00e5ff' }}>{request.clinic_name || 'Clinic ' + request.clinic_id}</strong> <br />
-                                            Required: {request.quantity} units
+                        {requests
+                            .filter(r =>
+                                searchTerm === '' ||
+                                r.clinic_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                                r.item_name?.toLowerCase().includes(searchTerm.toLowerCase())
+                            )
+                            .map(request => (
+                                <div
+                                    key={request.id}
+                                    style={{
+                                        background: 'rgba(15, 23, 42, 0.4)',
+                                        backdropFilter: 'blur(20px)',
+                                        border: request.priority === 1 ? '2px solid rgba(239, 68, 68, 0.5)' : '1px solid rgba(255, 255, 255, 0.08)',
+                                        borderRadius: '24px',
+                                        padding: '2rem'
+                                    }}
+                                >
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1.5rem' }}>
+                                        <div>
+                                            <h3 style={{ fontSize: '1.25rem', color: '#fff', marginBottom: '0.5rem' }}>
+                                                {request.item_name}
+                                            </h3>
+                                            <div style={{ color: '#64748b', fontSize: '0.9rem' }}>
+                                                Clinic: <strong style={{ color: '#00e5ff' }}>{request.clinic_name || 'Clinic ' + request.clinic_id}</strong> <br />
+                                                Required: {request.quantity} units
+                                            </div>
+                                        </div>
+                                        <div style={{
+                                            padding: '0.5rem 1rem',
+                                            borderRadius: '20px',
+                                            background: `rgba(${request.priority === 1 ? '239, 68, 68' : '16, 185, 129'}, 0.1)`,
+                                            border: `1px solid ${getPriorityColor(request.priority)}`,
+                                            color: getPriorityColor(request.priority),
+                                            fontSize: '0.85rem',
+                                            fontWeight: 600,
+                                            textTransform: 'uppercase',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: '0.5rem'
+                                        }}>
+                                            {request.priority === 1 && <AlertTriangle size={14} />}
+                                            {getPriorityLabel(request.priority)}
                                         </div>
                                     </div>
-                                    <div style={{
-                                        padding: '0.5rem 1rem',
-                                        borderRadius: '20px',
-                                        background: `rgba(${request.priority === 1 ? '239, 68, 68' : '16, 185, 129'}, 0.1)`,
-                                        border: `1px solid ${getPriorityColor(request.priority)}`,
-                                        color: getPriorityColor(request.priority),
-                                        fontSize: '0.85rem',
-                                        fontWeight: 600,
-                                        textTransform: 'uppercase',
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        gap: '0.5rem'
-                                    }}>
-                                        {request.priority === 1 && <AlertTriangle size={14} />}
-                                        {getPriorityLabel(request.priority)}
+
+                                    <div style={{ marginBottom: '1.5rem', padding: '1rem', background: 'rgba(255,255,255,0.02)', borderRadius: '12px' }}>
+                                        <p style={{ color: '#64748b', fontSize: '0.85rem', marginBottom: '0.5rem' }}>Purpose</p>
+                                        <p style={{ color: '#94a3b8', lineHeight: 1.6 }}>{request.purpose}</p>
                                     </div>
-                                </div>
 
-                                <div style={{ marginBottom: '1.5rem', padding: '1rem', background: 'rgba(255,255,255,0.02)', borderRadius: '12px' }}>
-                                    <p style={{ color: '#64748b', fontSize: '0.85rem', marginBottom: '0.5rem' }}>Purpose</p>
-                                    <p style={{ color: '#94a3b8', lineHeight: 1.6 }}>{request.purpose}</p>
-                                </div>
+                                    <div style={{ display: 'flex', gap: '1rem', justifyContent: 'flex-end' }}>
+                                        {request.status !== 'NGO_APPROVED' && (
+                                            <button
+                                                onClick={() => handleDeny(request)}
+                                                style={{
+                                                    background: 'rgba(239, 68, 68, 0.1)',
+                                                    border: '1px solid rgba(239, 68, 68, 0.3)',
+                                                    borderRadius: '12px',
+                                                    padding: '0.75rem 1.5rem',
+                                                    color: '#ef4444',
+                                                    cursor: 'pointer',
+                                                    display: 'flex', alignItems: 'center', gap: '0.5rem'
+                                                }}
+                                            >
+                                                <XCircle size={18} /> Deny
+                                            </button>
+                                        )}
 
-                                <div style={{ display: 'flex', gap: '1rem', justifyContent: 'flex-end' }}>
-                                    {request.status !== 'NGO_APPROVED' && (
                                         <button
-                                            onClick={() => handleDeny(request)}
+                                            onClick={() => handleApprove(request)}
                                             style={{
-                                                background: 'rgba(239, 68, 68, 0.1)',
-                                                border: '1px solid rgba(239, 68, 68, 0.3)',
+                                                background: 'linear-gradient(135deg, #10b981 0%, #34d399 100%)',
+                                                border: 'none',
                                                 borderRadius: '12px',
                                                 padding: '0.75rem 1.5rem',
-                                                color: '#ef4444',
+                                                color: '#fff',
                                                 cursor: 'pointer',
                                                 display: 'flex', alignItems: 'center', gap: '0.5rem'
                                             }}
                                         >
-                                            <XCircle size={18} /> Deny
+                                            <CheckCircle size={18} /> Allocate Stock
                                         </button>
-                                    )}
-
-                                    <button
-                                        onClick={() => handleApprove(request)}
-                                        style={{
-                                            background: 'linear-gradient(135deg, #10b981 0%, #34d399 100%)',
-                                            border: 'none',
-                                            borderRadius: '12px',
-                                            padding: '0.75rem 1.5rem',
-                                            color: '#fff',
-                                            cursor: 'pointer',
-                                            display: 'flex', alignItems: 'center', gap: '0.5rem'
-                                        }}
-                                    >
-                                        <CheckCircle size={18} /> Allocate Stock
-                                    </button>
+                                    </div>
                                 </div>
-                            </div>
-                        ))}
+                            ))}
                     </div>
                 )}
 

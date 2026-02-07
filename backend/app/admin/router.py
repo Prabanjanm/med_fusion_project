@@ -97,26 +97,64 @@ async def fetch_audit_trail(db: AsyncSession = Depends(get_db)):
             return blockchain_trail
             
         # Fallback to DB logs if blockchain is empty/offline
+        # Fallback to DB logs if blockchain is empty/offline
         logs = await get_donation_logs(db)
         fallback = []
         for log in logs:
+            base_ref = f"DON-{log['id']}"
+            
+            # 1. Base CSR Creation Event (Always exists for a valid donation)
             fallback.append({
                 "timestamp": log["authorized_at"].isoformat() if log["authorized_at"] else datetime.now().isoformat(),
                 "role": "CSR",
                 "entity_name": log["company_name"] or "CSR Partner",
-                "action": log["status"] or "DONATION_CREATED",
-                "reference_id": f"DON-{log['id']}",
-                "tx_hash": f"0xDB_LEDGER_{log['id']}_SECURE",
-                
-                # Rich Data for UI Filtering & Display
+                "action": "DONATION_CREATED",
+                "reference_id": base_ref,
+                "tx_hash": f"0xDB_CSR_{log['id']}_GENESIS",
                 "clinic_name": log["clinic_name"],
+                "ngo_name": log["ngo_name"],
+                "company_name": log["company_name"],
                 "item_name": log["item_name"],
                 "quantity": log["quantity"],
-                "purpose": log["purpose"],
-                "ngo_accepted": log["status"] == "NGO_ACCEPTED",
-                "clinic_received": log["status"] == "CLINIC_ACCEPTED"
+                "purpose": log["purpose"]
             })
+
+            # 2. NGO Allocation Event
+            if log["allocated_at"] or log["clinic_requirement_id"]:
+                 fallback.append({
+                    "timestamp": log["allocated_at"].isoformat() if log["allocated_at"] else datetime.now().isoformat(),
+                    "role": "NGO",
+                    "entity_name": log["ngo_name"] or "NGO Partner",
+                    "action": "ALLOCATION_PROCESSED",
+                    "reference_id": f"{base_ref}-ALLOC",
+                    "tx_hash": f"0xDB_NGO_{log['id']}_ALLOC",
+                    "clinic_name": log["clinic_name"],
+                    "ngo_name": log["ngo_name"],
+                    "company_name": log["company_name"],
+                    "item_name": log["item_name"],
+                    "quantity": log["quantity"]
+                 })
+
+            # 3. Clinic Receipt Event
+            if log["received"]:
+                 fallback.append({
+                    "timestamp": log["received_at"].isoformat() if log["received_at"] else datetime.now().isoformat(),
+                    "role": "CLINIC",
+                    "entity_name": log["clinic_name"] or "Clinic",
+                    "action": "SUPPLIES_RECEIVED",
+                    "reference_id": f"{base_ref}-RECV",
+                    "tx_hash": f"0xDB_CLN_{log['id']}_RECV",
+                    "clinic_name": log["clinic_name"],
+                    "ngo_name": log["ngo_name"],
+                    "company_name": log["company_name"],
+                    "item_name": log["item_name"],
+                    "quantity": log["quantity"]
+                 })
+
+        # Sort fallback by timestamp descending to mimic blockchain order
+        fallback.sort(key=lambda x: x["timestamp"], reverse=True)
         return fallback
+
     except Exception as e:
         print(f"Audit Trail Fallback Error: {e}")
         return []

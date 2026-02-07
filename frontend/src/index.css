@@ -127,3 +127,13 @@ input:-webkit-autofill:active {
   -webkit-text-fill-color: white !important;
   caret-color: white;
 }
+
+/* Fix Dropdown Backgrounds Globally */
+select {
+  background-color: transparent;
+}
+
+select option {
+  background-color: #1e293b !important;
+  color: var(--text-main) !important;
+}
