@@ -39,3 +39,8 @@ class ConfirmItem(BaseModel):
 class ConfirmRequirementsRequest(BaseModel):
     clinic_id: int
     confirmed_items: List[ConfirmItem]
+
+
+
+class ConfirmDonationRequest(BaseModel):
+    donation_id: int

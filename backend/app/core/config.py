@@ -22,11 +22,12 @@ class Settings(BaseSettings):
     EMAIL_FROM_ADDRESS: str
     FRONTEND_URL: str
     EMAIL_TIMEOUT: int = 600  # seconds
-    GANACHE_URL: str = "http://127.0.0.1:7545"
-    CONTRACT_ADDRESS: str = "0x90F8bf6A479f320ead074411a4B0e7944Ea8c9C1"
+    BLOCKCHAIN_ENABLED: bool = False
+    GANACHE_URL: str | None = None
+    AUDIT_CONTRACT_ADDRESS: str | None = None
     @property
-    def CHECKSUM_CONTRACT_ADDRESS(self) -> str:
-        return Web3.to_checksum_address(self.CONTRACT_ADDRESS)
+    def CHECKSUM_AUDIT_CONTRACT_ADDRESS(self) -> str:
+        return Web3.to_checksum_address(self.AUDIT_CONTRACT_ADDRESS)
 
 
     class Config:

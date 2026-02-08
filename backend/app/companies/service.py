@@ -4,31 +4,44 @@ from app.models.company import Company
 from app.models.user import User
 from app.models.trusted_company import TrustedCompany
 from app.core.id_generator import generate_uid
-from fastapi import HTTPException
+from fastapi import HTTPException,UploadFile
 from app.services.storage_service import upload_org_document
 
 
 
-async def register_company(db: AsyncSession, data):
+async def register_company(
+    db: AsyncSession,
+    company_name: str,
+    cin: str,
+    pan: str,
+    official_email: str,
+    csr_policy_doc: UploadFile,
+    board_resolution_doc: UploadFile,
+):
     """
-    Register CSR company with documents stored in bucket
+    Register a CSR company with document upload.
+    Company is verified only after admin approval.
     """
 
-    # 1️⃣ Trusted registry check
+    # 1️⃣ Verify company in trusted registry
     trusted = await db.execute(
         select(TrustedCompany).where(
-            TrustedCompany.cin == data.cin,
-            TrustedCompany.pan == data.pan
+            TrustedCompany.cin == cin,
+            TrustedCompany.pan == pan,
         )
     )
-    if not trusted.scalar_one_or_none():
-        raise HTTPException(status_code=400, detail="Company not found in trusted registry")
 
-    # 2️⃣ Existing company check
-    existing_company = await db.execute(
-        select(Company).where(Company.cin == data.cin)
+    if not trusted.scalar_one_or_none():
+        raise HTTPException(
+            status_code=400,
+            detail="Company not found in trusted registry",
+        )
+
+    # 2️⃣ Check if company already exists
+    existing = await db.execute(
+        select(Company).where(Company.cin == cin)
     )
-    company = existing_company.scalar_one_or_none()
+    company = existing.scalar_one_or_none()
 
     if company:
         return {
@@ -37,34 +50,38 @@ async def register_company(db: AsyncSession, data):
             "next_step": "Please login or wait for admin verification",
         }
 
-    csr_uid = generate_uid("CSR")
+    # 3️⃣ Read uploaded files
+    try:
+        csr_policy_bytes = await csr_policy_doc.read()
+        board_resolution_bytes = await board_resolution_doc.read()
+    except Exception:
+        raise HTTPException(
+            status_code=400,
+            detail="Failed to read uploaded files",
+        )
 
-    # 3️⃣ Upload documents
-    csr_policy = upload_org_document(
-        entity="csr",
-        entity_uid=csr_uid,
-        file_bytes=await data.csr_policy_doc.read(),
-        filename=data.csr_policy_doc.filename,
-        content_type=data.csr_policy_doc.content_type,
+    # 4️⃣ Upload documents to storage bucket
+    csr_policy_path = upload_org_document(
+        file_bytes=csr_policy_bytes,
+        filename=csr_policy_doc.filename,
+        folder="csr_policy",
     )
 
-    board_resolution = upload_org_document(
-        entity="csr",
-        entity_uid=csr_uid,
-        file_bytes=await data.board_resolution_doc.read(),
-        filename=data.board_resolution_doc.filename,
-        content_type=data.board_resolution_doc.content_type,
+    board_resolution_path = upload_org_document(
+        file_bytes=board_resolution_bytes,
+        filename=board_resolution_doc.filename,
+        folder="board_resolution",
     )
 
-    # 4️⃣ Create company record
+    # 5️⃣ Create company record (unverified)
     company = Company(
-        csr_uid=csr_uid,
-        company_name=data.company_name,
-        cin=data.cin,
-        pan=data.pan,
-        official_email=data.official_email,
-        csr_policy_doc=csr_policy["path"],
-        board_resolution_doc=board_resolution["path"],
+        csr_uid=generate_uid("CSR"),
+        company_name=company_name,
+        cin=cin,
+        pan=pan,
+        official_email=official_email,
+        csr_policy_doc=csr_policy_path,
+        board_resolution_doc=board_resolution_path,
         is_verified=False,
     )
 
@@ -72,20 +89,23 @@ async def register_company(db: AsyncSession, data):
     await db.commit()
     await db.refresh(company)
 
-    # 5️⃣ Create user placeholder
+    # 6️⃣ Create user stub (password set later)
     existing_user = await db.execute(
-        select(User).where(User.email == data.official_email)
+        select(User).where(User.email == official_email)
     )
+
     if not existing_user.scalar_one_or_none():
-        db.add(User(
-            email=data.official_email,
+        user = User(
+            email=official_email,
+            role="CSR",
             company_id=company.id,
             password_set=False,
-        ))
+        )
+        db.add(user)
         await db.commit()
 
     return {
         "message": "Company registered successfully",
-        "csr_uid": csr_uid,
+        "csr_uid": company.csr_uid,
         "next_step": "Admin will verify documents. Password setup link will be emailed after approval.",
     }

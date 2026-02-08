@@ -120,45 +120,53 @@ async def fetch_verified_ngos(
 ):
     return await get_verified_ngos(db)
 
+from sqlalchemy import select, func
 
 @router.get("/dashboard")
-async def admin_dashboard(
-    db: AsyncSession = Depends(get_db),
-):
-    result = await db.execute(
-        select(ClinicRequirements)
+async def admin_dashboard(db: AsyncSession = Depends(get_db)):
+
+    total_requirements = await db.scalar(
+        select(func.count()).select_from(ClinicRequirements)
     )
-    rows = result.scalars().all()
+
+    confirmed = await db.scalar(
+        select(func.count())
+        .select_from(ClinicRequirements)
+        .where(ClinicRequirements.status == "CONFIRMED")
+    )
+
+    allocated = await db.scalar(
+        select(func.count())
+        .select_from(ClinicRequirements)
+        .where(ClinicRequirements.status == "ALLOCATED")
+    )
 
     return {
         "kpis": {
-            "total_requirements": len(rows),
-            "pending_confirmations": len(
-                [r for r in rows if r.status == "DRAFT"]
-            ),
-            "emergency_cases": len(
-                [r for r in rows if r.priority == "EMERGENCY"]
-            ),
+            "total_requirements": total_requirements or 0,
+            "confirmed": confirmed or 0,
+            "allocated": allocated or 0,
         }
     }
 
 
-@router.get("/blockchain/audit")
-async def admin_blockchain_audit():
-    logs = []
-    total = contract.functions.totalLogs().call()
 
-    for i in range(total):
-        action, record_hash, timestamp = contract.functions.getLog(i).call()
-        logs.append({
-            "index": i,
-            "action": action,
-            "record_hash": record_hash,
-            "timestamp": timestamp,
-        })
+# @router.get("/blockchain/audit")
+# async def admin_blockchain_audit():
+#     logs = []
+#     total = contract.functions.totalLogs().call()
 
-    return {
-        "total_logs": total,
-        "logs": logs,
-        "network": "Ethereum (Ganache)",
-    }
+#     for i in range(total):
+#         action, record_hash, timestamp = contract.functions.getLog(i).call()
+#         logs.append({
+#             "index": i,
+#             "action": action,
+#             "record_hash": record_hash,
+#             "timestamp": timestamp,
+#         })
+
+#     return {
+#         "total_logs": total,
+#         "logs": logs,
+#         "network": "Ethereum (Ganache)",
+#     }

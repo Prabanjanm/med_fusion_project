@@ -17,14 +17,37 @@ async def get_pending_companies(db: AsyncSession):
     result = await db.execute(
         select(Company).where(Company.is_verified.is_(False))
     )
-    return result.scalars().all()
+    companies = result.scalars().all()
+
+    return [
+        {
+            "csr_uid": c.csr_uid,
+            "company_name": c.company_name,
+            "cin": c.cin,
+            "pan": c.pan,
+            "is_verified": c.is_verified,
+        }
+        for c in companies
+    ]
 
 
 async def get_pending_ngos(db: AsyncSession):
     result = await db.execute(
-        select(NGO).where(NGO.is_verified.is_(False))
+        select(NGO).where(NGO.is_verified == False)
     )
-    return result.scalars().all()
+    ngos = result.scalars().all()
+
+    return [
+        {
+            "ngo_uid": n.ngo_uid,
+            "ngo_name": n.ngo_name,
+            "csr_1_number": n.csr_1_number,
+            "official_email": n.official_email,
+            "is_verified": n.is_verified,
+        }
+        for n in ngos
+    ]
+
 
 
 async def review_company(

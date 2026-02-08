@@ -196,3 +196,26 @@ If you were not expecting this, please ignore this email.
     except Exception as exc:
         raise RuntimeError(f"Failed to send NGO email: {exc}") from exc
 
+async def send_reset_password_email(
+    to_email: str,
+    reset_link: str,
+):
+    subject = "Reset your password"
+    body = f"""
+    Hello,
+
+    You requested to reset your password.
+
+    Click the link below to set a new password:
+    {reset_link}
+
+    This link is valid for 30 minutes.
+
+    If you didn’t request this, please ignore this email.
+    """
+
+    await send_email(
+        to_email=to_email,
+        subject=subject,
+        body=body,
+    )

@@ -9,7 +9,7 @@ from app.db.database import engine, AsyncSessionLocal
 from app.db.base import Base
 from app.db.startup import seed_trusted_companies, seed_trusted_ngos
 from app.blockchain.ganache_runner import start_ganache
-
+from app.core.config import settings
 
 
 # Import all models so SQLAlchemy knows about them for table creation
@@ -38,7 +38,12 @@ async def startup():
     async with AsyncSessionLocal() as db:
         await seed_trusted_ngos(db)
     # start_ganache()
-
+    # url = start_ganache()
+    # if url:
+    #     settings.GANACHE_URL = url
+    #     print(f"🔗 Blockchain RPC: {url}")
+    # else:
+    #     print("⚠️ Blockchain disabled")
 
 app.include_router(auth_router)
 app.include_router(company_router)

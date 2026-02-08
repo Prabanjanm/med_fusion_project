@@ -54,3 +54,8 @@ class AllocationItem(BaseModel):
 class AllocateDonationRequest(BaseModel):
     donation_id: int
     allocations: List[AllocationItem]
+
+
+class ForwardDonationRequest(BaseModel):
+    donation_id: int
+    clinic_id: int

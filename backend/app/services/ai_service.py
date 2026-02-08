@@ -107,17 +107,17 @@ async def generate_weekly_requirements(
             status="DRAFT",
         )
         db.add(req)
-        audit = write_to_blockchain(
-        action="REQUIREMENT_CREATED",
-        payload={
-            "clinic_id": clinic_id,
-            "asset": asset_name,
-            "suggested_quantity": suggested_qty,
-        }
-    )
+    #     audit = write_to_blockchain(
+    #     action="REQUIREMENT_CREATED",
+    #     payload={
+    #         "clinic_id": clinic_id,
+    #         "asset": asset_name,
+    #         "suggested_quantity": suggested_qty,
+    #     }
+    # )
 
-        req.blockchain_tx = audit["tx_hash"]
-        req.blockchain_hash = audit["record_hash"]
+    #     req.blockchain_tx = audit["tx_hash"]
+    #     req.blockchain_hash = audit["record_hash"]
 
         response.append({
             "asset_name": asset_name,

@@ -6,7 +6,7 @@ class AdminReviewRequest(BaseModel):
     approve: bool  # True = VERIFY, False = REJECT
     remarks: Optional[str] = None
 class PendingCompanyResponse(BaseModel):
-    id: int
+    csr_uid: str
     company_name: str
     cin: str
     pan: str
@@ -18,7 +18,7 @@ class PendingCompanyResponse(BaseModel):
 
 
 class PendingNGOResponse(BaseModel):
-    id: int
+    ngo_uid: str
     ngo_name: str
     csr_1_number: str
     official_email: str

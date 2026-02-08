@@ -10,15 +10,30 @@ from app.models.donation_allocation import DonationAllocation
 router = APIRouter(prefix="/companies", tags=["Companies"])
 
 
+from fastapi import UploadFile, File, Form
+
 @router.post("/register")
 async def register_company_endpoint(
-    data: CompanyRegister,
-    db: AsyncSession = Depends(get_db)
+    company_name: str = Form(...),
+    cin: str = Form(...),
+    pan: str = Form(...),
+    official_email: str = Form(...),
+
+    csr_policy_doc: UploadFile = File(...),
+    board_resolution_doc: UploadFile = File(...),
+
+    db: AsyncSession = Depends(get_db),
 ):
-    try:
-        return await register_company(db, data)
-    except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+    return await register_company(
+        db=db,
+        company_name=company_name,
+        cin=cin,
+        pan=pan,
+        official_email=official_email,
+        csr_policy_doc=csr_policy_doc,
+        board_resolution_doc=board_resolution_doc,
+    )
+
 
 
 @router.get("/dashboard")

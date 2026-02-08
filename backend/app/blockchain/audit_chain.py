@@ -7,7 +7,7 @@ w3 = Web3(Web3.HTTPProvider(settings.GANACHE_URL))
 
 contract = w3.eth.contract(
     address=settings.AUDIT_CONTRACT_ADDRESS,
-    abi=settings.AUDIT_CONTRACT_ABI,
+    # abi=settings.AUDIT_CONTRACT_ABI,
 )
 
 def generate_hash(data: dict) -> str:

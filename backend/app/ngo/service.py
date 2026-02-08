@@ -4,7 +4,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.models.trusted_ngo import TrustedNGO
 from app.models.ngo import NGO
 from app.models.user import User
-from fastapi import HTTPException, status
+from fastapi import HTTPException, UploadFile, status
 from app.models.ngo import NGO
 from app.models.donation import Donation
 from app.models.company import Company
@@ -15,60 +15,80 @@ from app.services.storage_service import upload_org_document
 
 
 
-async def register_and_verify_ngo(db: AsyncSession, data):
+async def register_ngo(
+    db: AsyncSession,
+    ngo_name: str,
+    csr_1_number: str,
+    has_80g: bool,
+    official_email: str,
+    registration_doc: UploadFile,
+    certificate_80g_doc: UploadFile,
+):
     """
-    Register NGO with documents stored in bucket
+    Register NGO with document upload.
+    Admin approval required before login.
     """
 
+    # 1️⃣ Verify NGO in trusted registry
     trusted = await db.execute(
         select(TrustedNGO).where(
-            TrustedNGO.csr_1_number == data.csr_1_number,
-            TrustedNGO.has_80g == data.has_80g,
-            TrustedNGO.official_email == data.official_email,
+            TrustedNGO.csr_1_number == csr_1_number,
+            TrustedNGO.has_80g == has_80g,
+            TrustedNGO.official_email == official_email,
         )
     )
-    if not trusted.scalar_one_or_none():
-        raise HTTPException(status_code=400, detail="NGO verification failed")
 
-    existing_ngo = await db.execute(
-        select(NGO).where(NGO.csr_1_number == data.csr_1_number)
+    if not trusted.scalar_one_or_none():
+        raise HTTPException(
+            status_code=400,
+            detail="NGO not found or verification failed in registry",
+        )
+
+    # 2️⃣ Check if NGO already registered
+    existing = await db.execute(
+        select(NGO).where(NGO.csr_1_number == csr_1_number)
     )
-    ngo = existing_ngo.scalar_one_or_none()
+    ngo = existing.scalar_one_or_none()
 
     if ngo:
         return {
             "message": "NGO already registered",
             "ngo_uid": ngo.ngo_uid,
-            "next_step": "Please login or wait for admin verification",
+            "next_step": "Please wait for admin verification",
         }
 
-    ngo_uid = generate_uid("NGO")
+    # 3️⃣ Read uploaded files
+    try:
+        registration_bytes = await registration_doc.read()
+        certificate_bytes = await certificate_80g_doc.read()
+    except Exception:
+        raise HTTPException(
+            status_code=400,
+            detail="Failed to read uploaded documents",
+        )
 
-    # Upload docs
-    registration_doc = upload_org_document(
-        entity="ngo",
-        entity_uid=ngo_uid,
-        file_bytes=await data.registration_doc.read(),
-        filename=data.registration_doc.filename,
-        content_type=data.registration_doc.content_type,
+    # 4️⃣ Upload documents to bucket
+    registration_path = upload_org_document(
+        file_bytes=registration_bytes,
+        filename=registration_doc.filename,
+        folder="ngo_registration",
     )
 
-    certificate_80g = upload_org_document(
-        entity="ngo",
-        entity_uid=ngo_uid,
-        file_bytes=await data.certificate_80g_doc.read(),
-        filename=data.certificate_80g_doc.filename,
-        content_type=data.certificate_80g_doc.content_type,
+    certificate_path = upload_org_document(
+        file_bytes=certificate_bytes,
+        filename=certificate_80g_doc.filename,
+        folder="ngo_80g",
     )
 
+    # 5️⃣ Create NGO record (unverified)
     ngo = NGO(
-        ngo_uid=ngo_uid,
-        ngo_name=data.ngo_name,
-        csr_1_number=data.csr_1_number,
-        has_80g=data.has_80g,
-        official_email=data.official_email,
-        registration_doc=registration_doc["path"],
-        certificate_80g_doc=certificate_80g["path"],
+        ngo_uid=generate_uid("NGO"),
+        ngo_name=ngo_name,
+        csr_1_number=csr_1_number,
+        has_80g=has_80g,
+        official_email=official_email,
+        registration_doc=registration_path,
+        certificate_80g_doc=certificate_path,
         is_verified=False,
     )
 
@@ -78,10 +98,9 @@ async def register_and_verify_ngo(db: AsyncSession, data):
 
     return {
         "message": "NGO registered successfully",
-        "ngo_uid": ngo_uid,
+        "ngo_uid": ngo.ngo_uid,
         "next_step": "Admin will verify documents. Password setup link will be emailed after approval.",
     }
-
 
 
 
