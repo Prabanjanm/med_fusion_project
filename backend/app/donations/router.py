@@ -29,11 +29,7 @@ async def create_donation_endpoint(
         "donation_id": result["donation"].id,
         "status": result["donation"].status,
         "created_at": result["donation"].created_at,
-         "audit": {
-            "tx_hash": result["audit"]["tx_hash"],
-            "block_number": result["audit"]["block_number"],
-            "status": result["audit"]["status"]
-        }
+       
     }
 
 

@@ -34,39 +34,45 @@ def upload_register_image(
 
 
 
+from urllib.parse import quote
+
 def get_signed_file_url(bucket: str, path: str, expires_in: int = 3600):
-    response = supabase.storage.from_(bucket).create_signed_url(
-        path,
-        expires_in
-    )
-    return response["signedURL"]
+    try:
+        if not bucket or not path:
+            return None
+
+        # 🔒 Encode spaces & unsafe chars
+        safe_path = quote(path, safe="/")
+
+        response = supabase.storage.from_(bucket).create_signed_url(
+            safe_path,
+            expires_in,
+        )
+        return response["signedURL"]
+
+    except Exception as e:
+        print("SIGNED URL FAILED")
+        print("Bucket:", bucket)
+        print("Path:", path)
+        print("Error:", e)
+        return None
 
 
 import uuid
 from app.core.supabase import supabase
 
-DOCUMENT_BUCKET = "org-documents"
 
+BUCKET_NAME = "org-documents"
 
-def upload_org_document(
-    entity: str,        # "csr" | "ngo"
-    entity_uid: str,    # CSR-XXXX / NGO-XXXX
-    file_bytes: bytes,
-    filename: str,
-    content_type: str,
-):
-    """
-    Upload CSR / NGO documents to Supabase bucket
-    """
-    file_path = f"{entity}/{entity_uid}/{uuid.uuid4()}_{filename}"
+def upload_org_document(file_bytes: bytes, filename: str, folder: str) -> str:
+    unique_name = f"{uuid.uuid4()}_{filename}"
+    path = f"{folder}/{unique_name}"
 
-    supabase.storage.from_(DOCUMENT_BUCKET).upload(
-        file_path,
-        file_bytes,
-        {"content-type": content_type},
+    supabase.storage.from_(BUCKET_NAME).upload(
+        path=path,
+        file=file_bytes,
+        file_options={"content-type": "application/pdf"},
     )
 
-    return {
-        "bucket": DOCUMENT_BUCKET,
-        "path": file_path,
-    }
+    return path  # 🔑 ONLY PATH
+

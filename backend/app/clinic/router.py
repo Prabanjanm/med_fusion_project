@@ -3,15 +3,16 @@ from fastapi import APIRouter, Depends, HTTPException
 from app.db.deps import get_db
 from app.core.security import require_role
 from app.clinic.service import confirm_receipt
-from app.clinic.schema import ConfirmReceiptResponse, ConfirmRequirementsRequest
+from app.clinic.schema import ConfirmDonationRequest, ConfirmReceiptResponse, ConfirmRequirementsRequest
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select
+from sqlalchemy import select, update
 from app.models.donation_allocation import DonationAllocation   
 from app.models.clinic_requirment import ClinicRequirement
 from app.services.storage_service import get_signed_file_url
 from app.models.ocr_extracted_data import OCRExtractedData
 from app.models.clinic_feedback import ClinicFeedback
-from med_fusion_project.backend.app.blockchain.audit_chain import write_to_blockchain
+from app.models.donation import Donation
+# from med_fusion_project.backend.app.blockchain.audit_chain import write_to_blockchain
 
 router = APIRouter(prefix="/clinic", tags=["Clinic"])
 
@@ -476,16 +477,16 @@ async def confirm_requirements(
                 req.priority = "NORMAL"
     
 
-    audit = write_to_blockchain(
-     action="REQUIREMENT_CONFIRMED",
-     payload={
-        "clinic_id": data.clinic_id,
-        "confirmed_items": data.confirmed_items,
-    }
-)
+#     audit = write_to_blockchain(
+#      action="REQUIREMENT_CONFIRMED",
+#      payload={
+#         "clinic_id": data.clinic_id,
+#         "confirmed_items": data.confirmed_items,
+#     }
+# )
 
-    req.blockchain_tx = audit["tx_hash"]
-    req.blockchain_hash = audit["record_hash"]
+#     req.blockchain_tx = audit["tx_hash"]
+#     req.blockchain_hash = audit["record_hash"]
 
     await db.commit()
 
@@ -540,3 +541,85 @@ async def submit_feedback(
     await db.commit()
 
     return {"message": "Feedback submitted successfully"}
+
+@router.get("/donations/received")
+async def clinic_received_donations(
+    clinic_id: int,
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Clinic sees donations received (derived from allocated requirements)
+    """
+
+    result = await db.execute(
+        select(
+            Donation.id,
+            Donation.item_name,
+            Donation.quantity,
+            Donation.purpose,
+            Donation.status,
+            Donation.created_at,
+        )
+        .join(
+            ClinicRequirements,
+            ClinicRequirements.status == "ALLOCATED",
+        )
+        .where(
+            ClinicRequirements.clinic_id == clinic_id,
+            Donation.status == "FORWARDED",
+        )
+        .distinct()
+        .order_by(Donation.created_at.desc())
+    )
+
+    donations = result.all()
+
+    return {
+        "clinic_id": clinic_id,
+        "donations": [
+            {
+                "donation_id": d.id,
+                "item_name": d.item_name,
+                "quantity": d.quantity,
+                "purpose": d.purpose,
+                "status": d.status,
+                "received_at": d.created_at,
+            }
+            for d in donations
+        ],
+    }
+
+
+
+@router.post("/donations/confirm")
+async def confirm_donation(
+    data: ConfirmDonationRequest,
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Clinic confirms receipt of a forwarded donation
+    """
+
+    result = await db.execute(
+        select(Donation).where(
+            Donation.id == data.donation_id,
+            Donation.status == "FORWARDED",
+        )
+    )
+    donation = result.scalar_one_or_none()
+
+    if not donation:
+        raise HTTPException(
+            status_code=404,
+            detail="Donation not found or not forwarded",
+        )
+
+    donation.status = "RECEIVED"
+
+    await db.commit()
+
+    return {
+        "message": "Donation confirmed successfully",
+        "donation_id": donation.id,
+        "status": donation.status,
+    }

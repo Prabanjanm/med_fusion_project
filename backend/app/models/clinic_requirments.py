@@ -15,8 +15,6 @@ class ClinicRequirements(Base):
     priority = Column(String, default="NORMAL")
     status = Column(String, default="DRAFT")
     source_upload_id = Column(Integer, ForeignKey("clinic_uploads.id"))
-    blockchain_tx = Column(String, nullable=True)
-    blockchain_hash = Column(String, nullable=True)
 
 
     created_at = Column(DateTime, default=datetime.utcnow)

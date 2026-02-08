@@ -222,3 +222,85 @@ async def set_ngo_password(
     await db.commit()
 
     return {"message": "NGO password set successfully"}
+
+
+from fastapi import APIRouter, Depends, HTTPException
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select
+
+from app.db.deps import get_db
+from app.models.user import User
+from app.auth.utils import create_reset_password_token
+from app.notifications.email_service import send_reset_password_email
+from app.core.config import settings
+
+
+
+@router.post("/forgot-password")
+async def forgot_password(
+    email: str,
+    db: AsyncSession = Depends(get_db),
+):
+    result = await db.execute(
+        select(User).where(User.email == email)
+    )
+    user = result.scalar_one_or_none()
+
+    if not user:
+        # Security best practice: don't reveal user existence
+        return {"message": "If the email exists, reset link will be sent"}
+
+    token = create_reset_password_token(email)
+
+    reset_link = (
+        f"{settings.FRONTEND_URL}/static/reset-password.html"
+        f"?token={token}"
+    )
+
+    await send_reset_password_email(
+        to_email=email,
+        reset_link=reset_link,
+    )
+
+    return {"message": "Password reset link sent to email"}
+
+
+from jose import jwt, JWTError
+from app.auth.utils import hash_password
+
+
+@router.post("/reset-password")
+async def reset_password(
+    token: str,
+    new_password: str,
+    db: AsyncSession = Depends(get_db),
+):
+    try:
+        payload = jwt.decode(
+            token,
+            settings.SECRET_KEY,
+            algorithms=[settings.ALGORITHM],
+        )
+    except JWTError:
+        raise HTTPException(status_code=400, detail="Invalid or expired token")
+
+    if payload.get("type") != "RESET_PASSWORD":
+        raise HTTPException(status_code=400, detail="Invalid token type")
+
+    email = payload.get("sub")
+
+    result = await db.execute(
+        select(User).where(User.email == email)
+    )
+    user = result.scalar_one_or_none()
+
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    # 🔑 OVERWRITE PASSWORD
+    user.password_hash = hash_password(new_password)
+    user.password_set = True
+
+    await db.commit()
+
+    return {"message": "Password reset successful"}

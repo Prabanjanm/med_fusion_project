@@ -35,7 +35,7 @@ def ocr_image(pil_image: Image.Image) -> str:
 
     return text
 
-IGNORE_KEYWORDS = ["date", "total", "day"]
+IGNORE_KEYWORDS = ["date", "total", "day", "total patients","date"]
 
 def parse_assets(text: str):
     results = []

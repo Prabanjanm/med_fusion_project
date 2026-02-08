@@ -1,10 +1,10 @@
 from collections import defaultdict
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, Form, HTTPException, UploadFile,File
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select
+from sqlalchemy import select, update
 from app.db.deps import get_db
 from app.ngo.schema import AllocateDonationRequest, NGORegister, ClinicCreate
-from app.ngo.service import accept_csr_donation, register_and_verify_ngo
+from app.ngo.service import accept_csr_donation
 from app.core.security import require_role
 from app.ngo.service import check_ngo_acceptance_eligibility
 from app.ngo.accept_service import accept_donation_safely
@@ -13,7 +13,7 @@ from app.models.clinic_requirment import ClinicRequirement
 from app.models.ngo import NGO
 from app.core.security import require_role
 from app.ngo.schema import ClinicNeedCreate
-from app.ngo.service import create_clinic_need , get_current_ngo, get_available_donations , get_accepted_donations, get_clinic_requirements, allocate_donation
+from app.ngo.service import create_clinic_need , get_current_ngo, get_available_donations , get_accepted_donations, get_clinic_requirements, allocate_donation,register_ngo
 from app.db.deps import get_db
 from app.models.donation import Donation
 from app.models.donation_allocation import DonationAllocation
@@ -22,7 +22,7 @@ from app.models.clinic_requirments import ClinicRequirements
 from app.models.donation_allocations import DonationAllocations
 from app.models.clinic_uploads import ClinicUpload
 from app.services.storage_service import get_signed_file_url
-from med_fusion_project.backend.app.blockchain.audit_chain import write_to_blockchain
+# from med_fusion_project.backend.app.blockchain.audit_chain import write_to_blockchain
 
 router = APIRouter(
     prefix="/ngo",
@@ -30,19 +30,28 @@ router = APIRouter(
 )
 
 
-@router.post("/register", summary="Register and verify NGO")
-async def register_ngo(
-    data: NGORegister,
-    db: AsyncSession = Depends(get_db)
+
+@router.post("/register")
+async def register_ngo_endpoint(
+    ngo_name: str = Form(...),
+    csr_1_number: str = Form(...),
+    has_80g: bool = Form(...),
+    official_email: str = Form(...),
+
+    registration_doc: UploadFile = File(...),
+    certificate_80g_doc: UploadFile = File(...),
+
+    db: AsyncSession = Depends(get_db),
 ):
-    try:
-        ngo = await register_and_verify_ngo(db, data)
-        return {
-            "message": "NGO verified successfully. Please set password.",
-            "ngo_uid": ngo["ngo_uid"]
-        }
-    except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+    return await register_ngo(
+        db=db,
+        ngo_name=ngo_name,
+        csr_1_number=csr_1_number,
+        has_80g=has_80g,
+        official_email=official_email,
+        registration_doc=registration_doc,
+        certificate_80g_doc=certificate_80g_doc,
+    )
 
 
 
@@ -98,18 +107,18 @@ async def register_clinic_endpoint(
 
 
 
-@router.post("/clinic-needs")
-async def create_need(
-    data: ClinicNeedCreate,
-    db=Depends(get_db),
-    ngo=Depends(get_current_ngo),
-    _: dict = Depends(require_role("NGO"))
-):
-    """
-    NGO records a clinic requirement after physical audit.
-    Clinic must be onboarded before allocation.
-    """
-    return await create_clinic_need(db, ngo, data)
+# @router.post("/clinic-needs")
+# async def create_need(
+#     data: ClinicNeedCreate,
+#     db=Depends(get_db),
+#     ngo=Depends(get_current_ngo),
+#     _: dict = Depends(require_role("NGO"))
+# ):
+#     """
+#     NGO records a clinic requirement after physical audit.
+#     Clinic must be onboarded before allocation.
+#     """
+#     return await create_clinic_need(db, ngo, data)
 
 @router.post("/donations/{donation_id}/accept")
 async def accept_donation_endpoint(
@@ -184,16 +193,16 @@ async def allocate_donation(
             allocated_quantity=item.allocate_quantity,
         )
         db.add(allocation)
-    audit = write_to_blockchain(
-    action="NGO_ALLOCATION",
-    payload={
-        "donation_id": data.donation_id,
-        "allocations": data.allocations,
-    }
-)
+#     audit = write_to_blockchain(
+#     action="NGO_ALLOCATION",
+#     payload={
+#         "donation_id": data.donation_id,
+#         "allocations": data.allocations,
+#     }
+# )
 
-    allocation.blockchain_tx = audit["tx_hash"]
-    allocation.blockchain_hash = audit["record_hash"]
+#     allocation.blockchain_tx = audit["tx_hash"]
+#     allocation.blockchain_hash = audit["record_hash"]
 
     await db.commit()
 
@@ -201,7 +210,47 @@ async def allocate_donation(
         "message": "Donation allocated successfully",
         "status": "ALLOCATION_COMPLETED",
     }
+from app.ngo.schema import ForwardDonationRequest
 
+@router.post("/donations/forward")
+async def forward_donation_to_clinic(
+    data: ForwardDonationRequest,
+    db: AsyncSession = Depends(get_db),
+):
+    donation = await db.get(Donation, data.donation_id)
+
+    if not donation:
+        raise HTTPException(status_code=404, detail="Donation not found")
+
+    if donation.status != "AUTHORIZED":
+        raise HTTPException(status_code=400, detail="Donation already used")
+
+    donation.clinic_id = data.clinic_id
+    donation.status = "FORWARDED"
+#     await db.execute(
+#     update(ClinicRequirements)
+#     .where(
+#         ClinicRequirements.clinic_id == data.clinic_id,
+#         ClinicRequirements.status == "CONFIRMED",
+#     )
+#     .values(status="ALLOCATED")
+# )
+    result = await db.execute(
+        update(ClinicRequirements)
+        .where(ClinicRequirements.clinic_id == data.clinic_id)
+        .values(status="ALLOCATED")
+    )
+
+    await db.commit()
+
+    return {
+        "message": "Donation forwarded to clinic successfully",
+        "donation_id": donation.id,
+        "clinic_id": data.clinic_id,
+    }
+
+
+from collections import defaultdict
 
 @router.get("/requirements/confirmed")
 async def ngo_view_confirmed_requirements(
@@ -219,7 +268,7 @@ async def ngo_view_confirmed_requirements(
         ).join(
             ClinicUpload,
             ClinicUpload.id == ClinicRequirements.source_upload_id,
-            isouter=True,  # in case upload is missing
+            isouter=True,
         ).where(
             ClinicRequirements.status == "CONFIRMED"
         )
@@ -234,8 +283,11 @@ async def ngo_view_confirmed_requirements(
         "clinics": [],
     })
 
+    print("Debugging bucket and file paths:")
+
     for req, bucket, path in rows:
         key = req.asset_name.lower()
+        print(f"Processing requirement: {req.id}, bucket: {bucket}, path: {path}")
 
         proof_url = None
         if bucket and path:
@@ -249,14 +301,13 @@ async def ngo_view_confirmed_requirements(
             "clinic_id": req.clinic_id,
             "requirement_id": req.id,
             "required_quantity": req.confirmed_quantity,
-            "proof_url": proof_url,
+            "proof_url": proof_url,  # may be None (OK)
         })
 
     return {
         "message": "Confirmed clinic requirements with proof",
         "requirements": list(grouped.values()),
     }
-
 
 @router.get("/dashboard")
 async def ngo_dashboard(
